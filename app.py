@@ -9,7 +9,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 import os, hashlib, requests
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
+app = Flask(__name__, static_folder='.', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'saefacil-2026')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', 'saefacil-jwt-2026')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)

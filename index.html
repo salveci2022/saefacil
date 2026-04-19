@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0F4C81">
+<title>SAE Fácil — IA para Enfermagem</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --azul:#0F4C81;--azul2:#1A6DB5;--azul3:#E8F0FB;
+  --verde:#0A7C5C;--verde2:#E6F4EF;
+  --roxo:#5B3FA6;--roxo2:#EEE9FA;
+  --laranja:#D4720A;--laranja2:#FDF0E0;
+  --vermelho:#C62828;--vermelho2:#FFEBEE;
+  --cinza:#F4F6F9;--cinza2:#E8ECF2;--cinza3:#6B7590;
+  --texto:#1A1F2E;--branco:#fff;
+  --sombra:0 2px 16px rgba(15,76,129,.10);
+  --sombra2:0 8px 40px rgba(15,76,129,.18);
+  --r:16px;--r2:12px;--r3:99px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--cinza);color:var(--texto);overscroll-behavior:none}
+input,textarea,select,button{font-family:inherit}
+
+/* TELAS */
+.tela{display:none;min-height:100vh;flex-direction:column}
+.tela.ativa{display:flex}
+
+/* LOGIN */
+#tela-login{background:linear-gradient(150deg,#0a3260 0%,#1A6DB5 55%,#0A7C5C 100%);align-items:center;justify-content:center;padding:20px}
+.lc{background:#fff;border-radius:28px;padding:36px 28px;width:100%;max-width:420px;box-shadow:var(--sombra2)}
+.lc-logo{text-align:center;margin-bottom:32px}
+.lc-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:38px}
+.lc-titulo{font-size:26px;font-weight:800;color:var(--azul)}
+.lc-sub{font-size:13px;color:var(--cinza3);margin-top:4px}
+.fg{margin-bottom:14px}
+.fl{font-size:11px;font-weight:700;color:var(--cinza3);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.05em}
+.fi{width:100%;padding:13px 16px;border:1.5px solid var(--cinza2);border-radius:var(--r2);font-size:15px;color:var(--texto);background:var(--cinza);outline:none;transition:.2s}
+.fi:focus{border-color:var(--azul2);background:#fff;box-shadow:0 0 0 3px rgba(26,109,181,.1)}
+select.fi{cursor:pointer}
+.btn-p{width:100%;padding:15px;border:none;border-radius:var(--r2);font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;transition:.2s;letter-spacing:.02em}
+.btn-p:active{transform:scale(.98)}
+.ls{text-align:center;margin-top:16px;font-size:13px;color:var(--cinza3)}
+.ls span{color:var(--azul2);cursor:pointer;font-weight:700}
+.ferr{font-size:12px;color:var(--vermelho);margin-top:5px;display:none}
+
+/* HEADER */
+.hdr{background:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 var(--cinza2);position:sticky;top:0;z-index:100}
+.hdr-esq{display:flex;align-items:center;gap:10px}
+.hdr-ic{width:38px;height:38px;background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.hdr-t{font-size:16px;font-weight:800;color:var(--azul)}
+.hdr-s{font-size:11px;color:var(--cinza3)}
+.av{width:38px;height:38px;border-radius:50%;background:var(--azul3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--azul);cursor:pointer}
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid var(--cinza2);z-index:100;padding-bottom:env(safe-area-inset-bottom,8px)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 6px;cursor:pointer;gap:2px;position:relative}
+.ni-ic{font-size:24px;line-height:1}
+.ni-lb{font-size:10px;font-weight:600;color:var(--cinza3);transition:.2s}
+.ni.on .ni-lb{color:var(--azul)}
+.ni-dot{width:5px;height:5px;border-radius:50%;background:var(--azul);margin-top:1px;opacity:0;transition:.2s}
+.ni.on .ni-dot{opacity:1}
+.ni-fab{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--azul),var(--azul2));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(15,76,129,.4)}
+.ni-fab span{font-size:26px;color:#fff}
+
+/* CONTEÚDO */
+.cnt{flex:1;padding:18px 16px 110px;overflow-y:auto}
+@media(min-width:600px){.cnt{max-width:680px;margin:0 auto;padding:24px 24px 110px}}
+
+/* CARDS */
+.card{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--sombra);margin-bottom:14px}
+.ct{font-size:11px;font-weight:800;color:var(--cinza3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px}
+
+/* HOME */
+.gr h2{font-size:23px;font-weight:800;margin-bottom:3px}
+.gr p{font-size:14px;color:var(--cinza3);margin-bottom:20px}
+.st-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.st{background:#fff;border-radius:var(--r2);padding:14px 10px;text-align:center;box-shadow:var(--sombra)}
+.st-n{font-size:26px;font-weight:800;color:var(--azul)}
+.st-l{font-size:10px;color:var(--cinza3);font-weight:600;margin-top:2px}
+.ac-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+@media(min-width:500px){.ac-grid{grid-template-columns:repeat(4,1fr)}}
+.ac{background:#fff;border-radius:var(--r);padding:18px 12px;box-shadow:var(--sombra);cursor:pointer;text-align:center;transition:.15s;border:2px solid transparent}
+.ac:active{transform:scale(.97);border-color:var(--azul3)}
+.ac-ic{font-size:34px;margin-bottom:10px}
+.ac-t{font-size:13px;font-weight:700}
+.ac-s{font-size:11px;color:var(--cinza3);margin-top:2px}
+
+/* PLANO BANNER */
+.plano-banner{background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:var(--r);padding:18px;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.plano-banner h3{font-size:16px;font-weight:800}
+.plano-banner p{font-size:12px;opacity:.85;margin-top:3px}
+.plano-banner .btn-up{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:8px 16px;border-radius:var(--r3);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* NOVA SAE */
+.sb{display:flex;gap:5px;margin-bottom:22px}
+.sb-i{flex:1;height:5px;border-radius:3px;background:var(--cinza2);transition:.3s}
+.sb-i.on{background:var(--azul)}
+.sb-i.ok{background:var(--verde)}
+.st-tit{font-size:21px;font-weight:800;margin-bottom:5px}
+.st-sub{font-size:14px;color:var(--cinza3);margin-bottom:22px}
+.cg{margin-bottom:15px}
+.cl{font-size:11px;font-weight:700;color:var(--cinza3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;display:block}
+.ci{width:100%;padding:13px 16px;border:1.5px solid var(--cinza2);border-radius:var(--r2);font-size:15px;color:var(--texto);background:var(--cinza);outline:none;transition:.2s;resize:none}
+.ci:focus{border-color:var(--azul2);background:#fff;box-shadow:0 0 0 3px rgba(26,109,181,.1)}
+textarea.ci{min-height:90px}
+.bv{width:100%;padding:13px;border:2px dashed var(--azul2);border-radius:var(--r2);background:var(--azul3);color:var(--azul);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;margin-bottom:10px}
+.bv.rec{background:#FFEBEE;border-color:var(--vermelho);color:var(--vermelho);animation:pulsar 1s infinite}
+@keyframes pulsar{0%,100%{opacity:1}50%{opacity:.6}}
+.og{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ob{padding:11px 8px;border:1.5px solid var(--cinza2);border-radius:var(--r2);background:#fff;font-size:13px;cursor:pointer;transition:.15s;text-align:center;color:var(--texto);font-weight:500}
+.ob.on{border-color:var(--azul);background:var(--azul3);color:var(--azul);font-weight:700}
+.tipo-btn{padding:15px;border:1.5px solid var(--cinza2);border-radius:var(--r2);background:#fff;font-size:14px;cursor:pointer;transition:.15s;text-align:left;color:var(--texto);width:100%;margin-bottom:8px}
+.tipo-btn.on{border-color:var(--azul);background:var(--azul3)}
+.tipo-btn strong{display:block;font-size:15px;margin-bottom:3px}
+.tipo-btn span{font-size:12px;color:var(--cinza3)}
+.bnav{display:flex;gap:10px;margin-top:22px}
+.bvolt{flex:1;padding:14px;border:1.5px solid var(--cinza2);border-radius:var(--r2);background:#fff;font-size:15px;font-weight:600;cursor:pointer;color:var(--cinza3)}
+.bav{flex:2;padding:14px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+
+/* RESULTADO */
+.res-card{background:linear-gradient(135deg,#EBF3FF,#E6F4EF);border-radius:var(--r);padding:20px;margin-bottom:14px;border:1px solid rgba(15,76,129,.12)}
+.res-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ia-chip{background:var(--azul);color:#fff;font-size:11px;font-weight:800;padding:4px 11px;border-radius:var(--r3)}
+.res-tit{font-size:15px;font-weight:800;color:var(--azul)}
+.res-txt{font-size:14px;line-height:1.8;color:var(--texto);white-space:pre-wrap;outline:none;min-height:100px}
+.btn-acs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.ba{padding:13px;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.ba:active{transform:scale(.97)}
+.ba-cop{background:var(--azul3);color:var(--azul)}
+.ba-pdf{background:var(--verde2);color:var(--verde)}
+.ba-nov{background:var(--cinza2);color:var(--texto)}
+.ba-sal{background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff}
+.ba-zap{background:#25D366;color:#fff}
+
+/* LOADING */
+.ld{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:16px}
+.ld-dots{display:flex;gap:7px}
+.ld-d{width:11px;height:11px;border-radius:50%;background:var(--azul);animation:bounce 1.2s infinite}
+.ld-d:nth-child(2){animation-delay:.2s}
+.ld-d:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+.ld-msg{font-size:14px;color:var(--cinza3);font-weight:600;text-align:center}
+
+/* HISTÓRICO */
+.hi{background:#fff;border-radius:var(--r2);padding:15px;box-shadow:var(--sombra);margin-bottom:10px;cursor:pointer;border-left:4px solid var(--azul);transition:.15s}
+.hi:active{transform:scale(.99)}
+.hi-pac{font-size:15px;font-weight:700}
+.hi-meta{font-size:11px;color:var(--cinza3);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.hi-prev{font-size:12px;color:var(--cinza3);margin-top:7px;line-height:1.5}
+.chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r3);font-size:10px;font-weight:800}
+.ch-az{background:var(--azul3);color:var(--azul)}
+.ch-vd{background:var(--verde2);color:var(--verde)}
+.ch-rx{background:var(--roxo2);color:var(--roxo)}
+.ch-lr{background:var(--laranja2);color:var(--laranja)}
+
+/* PERFIL */
+.pf-hdr{display:flex;align-items:center;gap:16px;margin-bottom:22px}
+.pf-av{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--azul),var(--verde));display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff}
+.pf-nome{font-size:20px;font-weight:800}
+.pf-cargo{font-size:14px;color:var(--cinza3)}
+.plano-card{background:linear-gradient(135deg,var(--azul),var(--azul2));border-radius:var(--r);padding:20px;color:#fff;margin-bottom:14px}
+.pc-label{font-size:12px;opacity:.8}
+.pc-nome{font-size:22px;font-weight:800;margin-top:4px}
+.pc-desc{font-size:13px;opacity:.8;margin-top:6px}
+.mi{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--cinza2);cursor:pointer}
+.mi:last-child{border-bottom:none}
+.mi-ic{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mi-txt{flex:1}
+.mi-tit{font-size:15px;font-weight:700}
+.mi-sub{font-size:12px;color:var(--cinza3);margin-top:1px}
+
+/* CALC */
+.calc-result{background:linear-gradient(135deg,var(--azul3),var(--verde2));border-radius:var(--r2);padding:16px;margin-top:14px;text-align:center}
+.calc-valor{font-size:32px;font-weight:800;color:var(--azul)}
+.calc-unid{font-size:14px;color:var(--cinza3);margin-top:4px}
+
+/* TOAST */
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:420px;pointer-events:none}
+.ti{background:var(--texto);color:#fff;border-radius:var(--r2);padding:13px 18px;font-size:14px;font-weight:600;text-align:center;animation:sd .3s ease;pointer-events:all}
+.ti.ok{background:var(--verde)}
+.ti.err{background:var(--vermelho)}
+@keyframes sd{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;animation:mu .3s ease}
+@keyframes mu{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-tit{font-size:20px;font-weight:800;margin-bottom:8px}
+.modal-sub{font-size:14px;color:var(--cinza3);margin-bottom:24px}
+
+/* BUSCA */
+.busca-box{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--r2);padding:10px 14px;box-shadow:var(--sombra);margin-bottom:16px}
+.busca-ic{font-size:18px}
+.busca-input{border:none;outline:none;font-size:15px;flex:1;background:transparent;font-family:inherit}
+
+/* CALCULADORA */
+.calc-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px}
+.ctab{padding:8px 16px;border-radius:var(--r3);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--cinza2);background:#fff;color:var(--cinza3);transition:.15s}
+.ctab.on{background:var(--azul3);border-color:var(--azul);color:var(--azul)}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="tela-login" class="tela ativa">
+  <div class="lc">
+    <div class="lc-logo">
+      <div class="lc-icon">🩺</div>
+      <div class="lc-titulo">SAE Fácil</div>
+      <div class="lc-sub">Sistematização de Enfermagem com Inteligência Artificial</div>
+    </div>
+
+    <div id="form-login">
+      <div class="fg"><label class="fl">E-mail</label><input type="email" id="l-email" class="fi" placeholder="seu@email.com"></div>
+      <div class="fg"><label class="fl">Senha</label><input type="password" id="l-senha" class="fi" placeholder="••••••••"><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
+      <button class="btn-p" onclick="fazerLogin()">Entrar</button>
+      <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
+    </div>
+
+    <div id="form-cadastro" style="display:none">
+      <div class="fg"><label class="fl">Nome completo</label><input type="text" id="c-nome" class="fi" placeholder="Enf. Maria Silva"></div>
+      <div class="fg"><label class="fl">Categoria</label>
+        <select id="c-cat" class="fi"><option value="">Selecione...</option><option>Enfermeiro(a)</option><option>Técnico(a) de Enfermagem</option><option>Enfermeiro(a) Especialista</option></select>
+      </div>
+      <div class="fg"><label class="fl">COREN</label><input type="text" id="c-coren" class="fi" placeholder="COREN-DF 000000 Enf"></div>
+      <div class="fg"><label class="fl">E-mail</label><input type="email" id="c-email" class="fi" placeholder="seu@email.com"></div>
+      <div class="fg"><label class="fl">Senha</label><input type="password" id="c-senha" class="fi" placeholder="Mínimo 6 caracteres"><div id="c-erro" class="ferr">Preencha todos os campos</div></div>
+      <button class="btn-p" onclick="fazerCadastro()">Criar conta gratuita</button>
+      <div class="ls">Já tem conta? <span onclick="ver('form-login')">Entrar</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="tela-app" class="tela">
+  <div class="hdr">
+    <div class="hdr-esq">
+      <div class="hdr-ic">🩺</div>
+      <div><div class="hdr-t">SAE Fácil</div><div class="hdr-s" id="hdr-s">Carregando...</div></div>
+    </div>
+    <div class="av" id="av" onclick="ir('perfil')">?</div>
+  </div>
+
+  <div class="cnt">
+
+    <!-- HOME -->
+    <div id="pag-home" class="pag">
+      <div class="gr">
+        <h2 id="saud">Bom dia! 👋</h2>
+        <p id="gr-nome">Bem-vindo ao SAE Fácil</p>
+      </div>
+      <div class="st-row">
+        <div class="st"><div class="st-n" id="s-hj">0</div><div class="st-l">hoje</div></div>
+        <div class="st"><div class="st-n" id="s-ms">0</div><div class="st-l">este mês</div></div>
+        <div class="st"><div class="st-n" id="s-tt">0</div><div class="st-l">total</div></div>
+      </div>
+      <div id="plano-banner" class="plano-banner" onclick="mostrarPlanos()">
+        <div><h3>🆓 Plano Gratuito</h3><p>5 SAEs restantes este mês • Clique para ver o Pro</p></div>
+        <button class="btn-up">Ver Pro</button>
+      </div>
+      <div class="ac-grid">
+        <div class="ac" onclick="irNovaSAE('evolucao')"><div class="ac-ic">📝</div><div class="ac-t">Evolução</div><div class="ac-s">SOAP com IA</div></div>
+        <div class="ac" onclick="irNovaSAE('prescricao')"><div class="ac-ic">💊</div><div class="ac-t">Prescrição</div><div class="ac-s">Enfermagem</div></div>
+        <div class="ac" onclick="irNovaSAE('passagem')"><div class="ac-ic">🔄</div><div class="ac-t">Plantão</div><div class="ac-s">SBAR</div></div>
+        <div class="ac" onclick="irNovaSAE('nanda')"><div class="ac-ic">🔬</div><div class="ac-t">NANDA</div><div class="ac-s">NIC-NOC</div></div>
+      </div>
+      <div class="card">
+        <div class="ct">Últimas SAEs</div>
+        <div id="ul-saes"><div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora e economize tempo!</div></div>
+      </div>
+    </div>
+
+    <!-- NOVA SAE -->
+    <div id="pag-nova" class="pag" style="display:none">
+      <div class="sb" id="sb"></div>
+
+      <!-- STEP 1 -->
+      <div id="s1">
+        <div class="st-tit">👤 Dados do paciente</div>
+        <div class="st-sub">Digite ou toque no microfone para falar</div>
+        <button class="bv" id="bv1" onclick="voz(1)">🎤 Falar dados do paciente</button>
+        <div class="cg"><label class="cl">Nome e idade do paciente</label><input type="text" id="p-nome" class="ci" placeholder="Ex: João da Silva, 58 anos, masculino"></div>
+        <div class="cg"><label class="cl">Leito / Setor / Unidade</label><input type="text" id="p-leito" class="ci" placeholder="Ex: Leito 12 — UTI Adulto Cardio"></div>
+        <div class="cg"><label class="cl">Diagnóstico médico principal</label><input type="text" id="p-diag" class="ci" placeholder="Ex: IAM com supra de ST + HAS"></div>
+        <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico a dipirona, DM tipo 2, IRC"></div>
+        <div class="bnav"><button class="bav" onclick="av(2)" style="flex:1">Próximo →</button></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="s2" style="display:none">
+        <div class="st-tit">🩺 Avaliação clínica</div>
+        <div class="st-sub">Sinais vitais e achados do exame físico</div>
+        <button class="bv" id="bv2" onclick="voz(2)">🎤 Falar avaliação clínica</button>
+        <div class="cg"><label class="cl">Sinais vitais</label><input type="text" id="a-sv" class="ci" placeholder="PA 130x80mmHg, FC 88bpm, FR 20irpm, SpO2 96%, Tax 37.2°C, Dor 4/10"></div>
+        <div class="cg"><label class="cl">Estado geral e queixas</label><textarea id="a-eq" class="ci" placeholder="Paciente consciente, orientado em tempo e espaço, eupneico, corado, hidratado. Refere dor torácica em aperto 4/10..."></textarea></div>
+        <div class="cg"><label class="cl">Sistemas avaliados</label>
+          <div class="og">
+            <button class="ob" onclick="tog(this)">❤️ Cardiovascular</button>
+            <button class="ob" onclick="tog(this)">🫁 Respiratório</button>
+            <button class="ob" onclick="tog(this)">🧠 Neurológico</button>
+            <button class="ob" onclick="tog(this)">🦷 Gastrointestinal</button>
+            <button class="ob" onclick="tog(this)">💧 Renal/Urinário</button>
+            <button class="ob" onclick="tog(this)">🦴 Osteoarticular</button>
+            <button class="ob" onclick="tog(this)">🩹 Tegumentar</button>
+            <button class="ob" onclick="tog(this)">😰 Dor</button>
+          </div>
+        </div>
+        <div class="cg"><label class="cl">Exames e procedimentos recentes</label><input type="text" id="a-ex" class="ci" placeholder="Ex: ECG com BRE novo, troponina 2.1, acesso venoso periférico MSD"></div>
+        <div class="bnav"><button class="bvolt" onclick="vt(1)">← Voltar</button><button class="bav" onclick="av(3)">Próximo →</button></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="s3" style="display:none">
+        <div class="st-tit">📄 Tipo de documento</div>
+        <div class="st-sub">Selecione o que a IA vai gerar</div>
+        <button class="tipo-btn" id="tb-evolucao" onclick="tipo('evolucao')"><strong>📝 Evolução de Enfermagem</strong><span>Formato SOAP — Subjetivo, Objetivo, Avaliação, Plano</span></button>
+        <button class="tipo-btn" id="tb-prescricao" onclick="tipo('prescricao')"><strong>💊 Prescrição de Enfermagem</strong><span>Cuidados, procedimentos e intervenções numeradas</span></button>
+        <button class="tipo-btn" id="tb-passagem" onclick="tipo('passagem')"><strong>🔄 Passagem de Plantão</strong><span>Método SBAR — relatório para o próximo turno</span></button>
+        <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico NANDA-NIC-NOC</strong><span>Diagnósticos, intervenções e resultados esperados</span></button>
+        <div class="cg" style="margin-top:14px"><label class="cl">Observações adicionais (opcional)</label><textarea id="a-obs" class="ci" placeholder="Informações extras para a IA considerar..."></textarea></div>
+        <div class="bnav"><button class="bvolt" onclick="vt(2)">← Voltar</button><button class="bav" onclick="gerar()">✨ Gerar com IA</button></div>
+      </div>
+
+      <!-- STEP 4 RESULTADO -->
+      <div id="s4" style="display:none">
+        <div class="st-tit">✨ Documento gerado</div>
+        <div class="st-sub">Revise e edite diretamente no texto</div>
+        <div id="ld-ia" class="ld">
+          <div class="ld-dots"><div class="ld-d"></div><div class="ld-d"></div><div class="ld-d"></div></div>
+          <div class="ld-msg" id="ld-msg">IA analisando os dados clínicos...</div>
+        </div>
+        <div id="res-ia" style="display:none">
+          <div class="res-card">
+            <div class="res-hdr"><span class="ia-chip">✨ IA</span><span class="res-tit" id="res-tit">Evolução de Enfermagem</span></div>
+            <div class="res-txt" id="res-txt" contenteditable="true"></div>
+          </div>
+          <div class="btn-acs">
+            <button class="ba ba-cop" onclick="copiar()">📋 Copiar</button>
+            <button class="ba ba-pdf" onclick="pdf()">📄 PDF</button>
+            <button class="ba ba-zap" onclick="whatsapp()">📲 WhatsApp</button>
+            <button class="ba ba-sal" onclick="salvar()">💾 Salvar</button>
+          </div>
+          <button class="ba ba-nov" style="width:100%;margin-top:8px" onclick="irNovaSAE()">🔄 Nova SAE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALCULADORA -->
+    <div id="pag-calc" class="pag" style="display:none">
+      <div class="gr"><h2>🧮 Calculadoras</h2><p>Doses, gotejamento e diluições</p></div>
+      <div class="calc-tabs">
+        <button class="ctab on" onclick="calcTab('dose',this)">Dose/Kg</button>
+        <button class="ctab" onclick="calcTab('gote',this)">Gotejamento</button>
+        <button class="ctab" onclick="calcTab('dilui',this)">Diluição</button>
+        <button class="ctab" onclick="calcTab('imc',this)">IMC</button>
+      </div>
+
+      <!-- DOSE -->
+      <div id="calc-dose">
+        <div class="card">
+          <div class="ct">Cálculo de Dose por Peso</div>
+          <div class="cg"><label class="cl">Dose prescrita (mg/kg)</label><input type="number" id="d-dose" class="ci" placeholder="Ex: 10" step="0.1"></div>
+          <div class="cg"><label class="cl">Peso do paciente (kg)</label><input type="number" id="d-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
+          <div class="cg"><label class="cl">Concentração do frasco (mg/mL)</label><input type="number" id="d-conc" class="ci" placeholder="Ex: 50" step="0.1"></div>
+          <button class="bav" style="width:100%" onclick="calcDose()">Calcular</button>
+          <div id="r-dose" class="calc-result" style="display:none">
+            <div class="calc-valor" id="rv-dose">—</div>
+            <div class="calc-unid">mL a administrar</div>
+            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-dose2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GOTEJAMENTO -->
+      <div id="calc-gote" style="display:none">
+        <div class="card">
+          <div class="ct">Gotejamento de Soro</div>
+          <div class="cg"><label class="cl">Volume total (mL)</label><input type="number" id="g-vol" class="ci" placeholder="Ex: 500"></div>
+          <div class="cg"><label class="cl">Tempo de infusão (horas)</label><input type="number" id="g-tempo" class="ci" placeholder="Ex: 6" step="0.5"></div>
+          <div class="cg"><label class="cl">Tipo de equipo</label>
+            <select id="g-equipo" class="ci"><option value="20">Macro (20 gotas/mL)</option><option value="60">Micro (60 gotas/mL)</option></select>
+          </div>
+          <button class="bav" style="width:100%" onclick="calcGote()">Calcular</button>
+          <div id="r-gote" class="calc-result" style="display:none">
+            <div class="calc-valor" id="rv-gote">—</div>
+            <div class="calc-unid">gotas por minuto</div>
+            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-gote2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DILUIÇÃO -->
+      <div id="calc-dilui" style="display:none">
+        <div class="card">
+          <div class="ct">Diluição de Medicamento</div>
+          <div class="cg"><label class="cl">Dose desejada (mg)</label><input type="number" id="dl-dose" class="ci" placeholder="Ex: 200" step="0.1"></div>
+          <div class="cg"><label class="cl">Concentração disponível (mg/mL)</label><input type="number" id="dl-conc" class="ci" placeholder="Ex: 50" step="0.1"></div>
+          <div class="cg"><label class="cl">Volume diluente (mL)</label><input type="number" id="dl-dil" class="ci" placeholder="Ex: 100" step="1"></div>
+          <button class="bav" style="width:100%" onclick="calcDilui()">Calcular</button>
+          <div id="r-dilui" class="calc-result" style="display:none">
+            <div class="calc-valor" id="rv-dilui">—</div>
+            <div class="calc-unid">mL do medicamento a retirar</div>
+            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-dilui2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMC -->
+      <div id="calc-imc" style="display:none">
+        <div class="card">
+          <div class="ct">Índice de Massa Corporal</div>
+          <div class="cg"><label class="cl">Peso (kg)</label><input type="number" id="i-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
+          <div class="cg"><label class="cl">Altura (cm)</label><input type="number" id="i-alt" class="ci" placeholder="Ex: 170"></div>
+          <button class="bav" style="width:100%" onclick="calcIMC()">Calcular</button>
+          <div id="r-imc" class="calc-result" style="display:none">
+            <div class="calc-valor" id="rv-imc">—</div>
+            <div class="calc-unid" id="rv-imc2">kg/m²</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="pag-hist" class="pag" style="display:none">
+      <div class="gr"><h2>📋 Histórico</h2><p>Todas as SAEs salvas</p></div>
+      <div class="busca-box">
+        <span class="busca-ic">🔍</span>
+        <input type="text" class="busca-input" placeholder="Buscar por paciente ou diagnóstico..." oninput="buscar(this.value)">
+      </div>
+      <div id="lista-hist"></div>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="pag-perfil" class="pag" style="display:none">
+      <div class="pf-hdr">
+        <div class="pf-av" id="pf-av">?</div>
+        <div><div class="pf-nome" id="pf-nome">...</div><div class="pf-cargo" id="pf-cargo">Enfermagem</div><div style="font-size:12px;color:var(--cinza3);margin-top:2px" id="pf-coren">COREN</div></div>
+      </div>
+      <div class="plano-card">
+        <div class="pc-label">Plano atual</div>
+        <div class="pc-nome" id="pc-nome">🆓 Gratuito</div>
+        <div class="pc-desc" id="pc-desc">10 SAEs/mês • Upgrade para Pro: R$ 29/mês</div>
+      </div>
+      <div class="card">
+        <div class="mi" onclick="mostrarPlanos()">
+          <div class="mi-ic" style="background:var(--verde2)">⭐</div>
+          <div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 29/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div>
+          <span>›</span>
+        </div>
+        <div class="mi" onclick="toast('Em breve: biblioteca com todos os 267 diagnósticos NANDA!','')">
+          <div class="mi-ic" style="background:var(--roxo2)">📚</div>
+          <div class="mi-txt"><div class="mi-tit">Biblioteca NANDA</div><div class="mi-sub">267 diagnósticos, intervenções NIC e resultados NOC</div></div>
+          <span>›</span>
+        </div>
+        <div class="mi" onclick="toast('Em breve: plano para sua equipe!','')">
+          <div class="mi-ic" style="background:var(--azul3)">👥</div>
+          <div class="mi-txt"><div class="mi-tit">Plano Equipe — R$ 197/mês</div><div class="mi-sub">Até 10 profissionais + relatório gerencial</div></div>
+          <span>›</span>
+        </div>
+        <div class="mi" onclick="sair()">
+          <div class="mi-ic" style="background:#FFEBEE">🚪</div>
+          <div class="mi-txt"><div class="mi-tit">Sair</div><div class="mi-sub">Encerrar sessão</div></div>
+          <span>›</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cnt -->
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="ni on" id="ni-home" onclick="ir('home')"><span class="ni-ic">🏠</span><span class="ni-lb">Início</span><div class="ni-dot"></div></div>
+    <div class="ni" id="ni-calc" onclick="ir('calc')"><span class="ni-ic">🧮</span><span class="ni-lb">Calcular</span><div class="ni-dot"></div></div>
+    <div class="ni" id="ni-nova" onclick="irNovaSAE()">
+      <div class="ni-fab"><span>➕</span></div>
+      <span class="ni-lb" style="margin-top:20px">Nova SAE</span>
+    </div>
+    <div class="ni" id="ni-hist" onclick="ir('hist')"><span class="ni-ic">📋</span><span class="ni-lb">Histórico</span><div class="ni-dot"></div></div>
+    <div class="ni" id="ni-perfil" onclick="ir('perfil')"><span class="ni-ic">👤</span><span class="ni-lb">Perfil</span><div class="ni-dot"></div></div>
+  </nav>
+</div>
+
+<!-- MODAL PLANOS -->
+<div class="modal-bg" id="modal-planos">
+  <div class="modal">
+    <div class="modal-tit">⭐ Assine o SAE Fácil Pro</div>
+    <div class="modal-sub">Desbloqueie tudo por apenas R$ 29/mês</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
+        <span style="font-size:20px">✅</span>
+        <div><div style="font-weight:700">SAEs ilimitadas</div><div style="font-size:12px;color:var(--cinza3)">Sem limite mensal</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
+        <span style="font-size:20px">📄</span>
+        <div><div style="font-weight:700">PDF com cabeçalho profissional</div><div style="font-size:12px;color:var(--cinza3)">Com logo, COREN e assinatura digital</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
+        <span style="font-size:20px">🧮</span>
+        <div><div style="font-weight:700">Calculadoras avançadas</div><div style="font-size:12px;color:var(--cinza3)">Dose, gotejamento, diluição, IMC</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0">
+        <span style="font-size:20px">☁️</span>
+        <div><div style="font-weight:700">Histórico em nuvem</div><div style="font-size:12px;color:var(--cinza3)">Acesse de qualquer dispositivo</div></div>
+      </div>
+    </div>
+    <button class="btn-p" onclick="assinar()">Assinar por R$ 29/mês →</button>
+    <div class="ls" style="margin-top:12px"><span onclick="fecharModal()">Agora não</span></div>
+  </div>
+</div>
+
+<script>
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : window.location.origin;
+let U = null, SAES = [], TIPO = 'evolucao', STEP = 1, REC = null, GRAV = false;
+
+// ═══ INIT ═══
+window.onload = () => {
+  U = JSON.parse(localStorage.getItem('sae_u') || 'null');
+  SAES = JSON.parse(localStorage.getItem('sae_d') || '[]');
+  if (U) iniciar();
+  const h = new Date().getHours();
+  const s = document.getElementById('saud');
+  if (s) s.textContent = h < 12 ? 'Bom dia! 👋' : h < 18 ? 'Boa tarde! 👋' : 'Boa noite! 👋';
+};
+
+// ═══ AUTH ═══
+function ver(id) { ['form-login','form-cadastro'].forEach(f => document.getElementById(f).style.display = f === id ? 'block' : 'none'); }
+
+async function fazerLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const senha = document.getElementById('l-senha').value;
+  const erro = document.getElementById('l-erro');
+  try {
+    const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, senha}) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro);
+    U = { ...d, email };
+    localStorage.setItem('sae_u', JSON.stringify(U));
+    iniciar();
+  } catch(e) {
+    // fallback local
+    const us = JSON.parse(localStorage.getItem('sae_us') || '[]');
+    const u = us.find(u => u.email === email && u.senha === senha);
+    if (u) { U = u; localStorage.setItem('sae_u', JSON.stringify(U)); iniciar(); return; }
+    // modo demo
+    if (email && senha.length >= 3) {
+      U = { nome: email.split('@')[0], email, categoria:'Enfermeiro(a)', coren:'COREN-DF 000000', plano:'gratuito' };
+      localStorage.setItem('sae_u', JSON.stringify(U));
+      iniciar(); return;
+    }
+    erro.style.display = 'block';
+  }
+}
+
+async function fazerCadastro() {
+  const nome = document.getElementById('c-nome').value.trim();
+  const cat = document.getElementById('c-cat').value;
+  const coren = document.getElementById('c-coren').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  const senha = document.getElementById('c-senha').value;
+  const erro = document.getElementById('c-erro');
+  if (!nome || !cat || !email || senha.length < 6) { erro.style.display = 'block'; return; }
+  erro.style.display = 'none';
+  try {
+    const r = await fetch(`${API}/api/auth/registro`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome, categoria:cat, coren, email, senha}) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro);
+    U = { ...d, email };
+  } catch(e) {
+    const us = JSON.parse(localStorage.getItem('sae_us') || '[]');
+    U = { nome, categoria:cat, coren, email, senha, plano:'gratuito' };
+    us.push(U); localStorage.setItem('sae_us', JSON.stringify(us));
+  }
+  localStorage.setItem('sae_u', JSON.stringify(U));
+  iniciar();
+  toast('Conta criada! Bem-vindo(a) 🎉', 'ok');
+}
+
+function sair() { localStorage.removeItem('sae_u'); location.reload(); }
+
+// ═══ APP ═══
+function iniciar() {
+  document.getElementById('tela-login').classList.remove('ativa');
+  document.getElementById('tela-app').classList.add('ativa');
+  const ini = (U.nome||'U')[0].toUpperCase();
+  document.getElementById('av').textContent = ini;
+  document.getElementById('pf-av').textContent = ini;
+  document.getElementById('pf-nome').textContent = U.nome || '';
+  document.getElementById('pf-cargo').textContent = U.categoria || 'Enfermagem';
+  document.getElementById('pf-coren').textContent = U.coren || '';
+  document.getElementById('hdr-s').textContent = U.coren || 'SAE Fácil';
+  document.getElementById('gr-nome').textContent = `Olá, ${(U.nome||'').split(' ')[0]}! Bora documentar? 📋`;
+  atualizarStats();
+  renderUltimas();
+}
+
+// ═══ NAV ═══
+function ir(pag) {
+  document.querySelectorAll('.pag').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  document.getElementById(`pag-${pag}`).style.display = 'block';
+  const ni = document.getElementById(`ni-${pag}`);
+  if (ni) ni.classList.add('on');
+  if (pag === 'hist') renderHist();
+  window.scrollTo(0,0);
+}
+
+function irNovaSAE(t) {
+  resetar();
+  if (t) tipo(t);
+  ir('nova');
+  document.getElementById('ni-nova').classList.add('on');
+}
+
+// ═══ STEPS ═══
+function resetar() {
+  STEP = 1; TIPO = 'evolucao';
+  ['p-nome','p-leito','p-diag','p-aler','a-sv','a-ex','a-obs'].forEach(id => { const e=document.getElementById(id); if(e)e.value=''; });
+  const eq = document.getElementById('a-eq'); if(eq) eq.value = '';
+  document.querySelectorAll('.ob').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('on'));
+  mostrarStep(1);
+}
+
+function renderSB() {
+  document.getElementById('sb').innerHTML = [1,2,3,4].map(i =>
+    `<div class="sb-i ${i<STEP?'ok':i===STEP?'on':''}"></div>`).join('');
+}
+
+function mostrarStep(n) {
+  [1,2,3,4].forEach(i => { const e=document.getElementById(`s${i}`); if(e)e.style.display=i===n?'block':'none'; });
+  STEP = n; renderSB(); window.scrollTo(0,0);
+}
+
+function av(n) {
+  if (n===2 && !document.getElementById('p-nome').value.trim()) { toast('Informe o nome do paciente','err'); return; }
+  mostrarStep(n);
+}
+function vt(n) { mostrarStep(n); }
+function tog(el) { el.classList.toggle('on'); }
+function tipo(t) {
+  TIPO = t;
+  ['evolucao','prescricao','passagem','nanda'].forEach(x => {
+    const b = document.getElementById(`tb-${x}`);
+    if(b) b.classList.toggle('on', x===t);
+  });
+}
+
+// ═══ VOZ ═══
+function voz(step) {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { toast('Use Chrome para reconhecimento de voz','err'); return; }
+  const btn = document.getElementById(`bv${step}`);
+  if (GRAV) { REC?.stop(); GRAV=false; btn.classList.remove('rec'); btn.innerHTML='🎤 Falar dados'; return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  REC = new SR(); REC.lang='pt-BR'; REC.continuous=false; REC.interimResults=false;
+  REC.onstart = () => { GRAV=true; btn.classList.add('rec'); btn.innerHTML='⏹ Parar gravação'; };
+  REC.onresult = (e) => {
+    const txt = e.results[0][0].transcript;
+    if (step===1) document.getElementById('p-nome').value = txt;
+    if (step===2) document.getElementById('a-eq').value = txt;
+    GRAV=false; btn.classList.remove('rec'); btn.innerHTML=step===1?'🎤 Falar dados do paciente':'🎤 Falar avaliação clínica';
+    toast('✅ Voz capturada!','ok');
+  };
+  REC.onerror = () => { GRAV=false; btn.classList.remove('rec'); btn.innerHTML=step===1?'🎤 Falar dados do paciente':'🎤 Falar avaliação clínica'; toast('Erro no microfone','err'); };
+  REC.start();
+}
+
+// ═══ GERAR ═══
+async function gerar() {
+  if (!TIPO) { toast('Selecione o tipo de documento','err'); return; }
+  mostrarStep(4);
+  document.getElementById('ld-ia').style.display = 'flex';
+  document.getElementById('res-ia').style.display = 'none';
+
+  const msgs = ['IA analisando os dados clínicos...','Aplicando protocolos COFEN...','Estruturando o documento...','Revisando terminologia técnica...','Quase pronto...'];
+  let mi=0;
+  const ldm = document.getElementById('ld-msg');
+  const iv = setInterval(()=>{ ldm.textContent=msgs[mi++%msgs.length]; },2000);
+
+  const pac = {
+    nome: document.getElementById('p-nome').value,
+    leito: document.getElementById('p-leito').value,
+    diagnostico: document.getElementById('p-diag').value,
+    alergias: document.getElementById('p-aler').value,
+    sv: document.getElementById('a-sv').value,
+    queixas: document.getElementById('a-eq').value,
+    sistemas: [...document.querySelectorAll('.og .on')].map(b=>b.textContent.trim()),
+    exames: document.getElementById('a-ex').value,
+    obs: document.getElementById('a-obs').value
+  };
+
+  const titulos = { evolucao:'📝 Evolução de Enfermagem — SOAP', prescricao:'💊 Prescrição de Enfermagem', passagem:'🔄 Passagem de Plantão — SBAR', nanda:'🔬 Diagnósticos NANDA-NIC-NOC' };
+
+  let texto = '';
+  try {
+    const r = await fetch(`${API}/api/gerar-sae`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${U?.token||''}`},
+      body: JSON.stringify({ tipo:TIPO, paciente:pac })
+    });
+    const d = await r.json();
+    if (d.limite) { clearInterval(iv); mostrarPlanos(); return; }
+    if (r.ok) texto = d.texto;
+  } catch(e) {}
+
+  if (!texto) texto = template(TIPO, pac);
+
+  clearInterval(iv);
+  document.getElementById('ld-ia').style.display = 'none';
+  document.getElementById('res-ia').style.display = 'block';
+  document.getElementById('res-tit').textContent = titulos[TIPO];
+  document.getElementById('res-txt').textContent = texto;
+}
+
+function template(tipo, p) {
+  const dt = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if (tipo==='evolucao') return `EVOLUÇÃO DE ENFERMAGEM
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito}
+Diagnóstico: ${p.diagnostico}
+
+S — SUBJETIVO:
+${p.queixas || 'Paciente refere queixas conforme avaliação.'}
+Alergias: ${p.alergias || 'Nega alergias conhecidas'}
+
+O — OBJETIVO:
+Sinais vitais: ${p.sv || 'A verificar'}
+Sistemas avaliados: ${p.sistemas?.join(', ') || 'Não informados'}
+Exames/Procedimentos: ${p.exames || 'Conforme prontuário'}
+
+A — AVALIAÇÃO:
+Paciente em acompanhamento para ${p.diagnostico || 'diagnóstico em investigação'}. Condições clínicas avaliadas no turno. ${p.queixas ? 'Apresenta as queixas descritas.' : 'Sem intercorrências no período.'}
+
+P — PLANO:
+• Manter monitorização dos sinais vitais a cada 4 horas
+• Administrar medicamentos conforme prescrição médica
+• Controle de balanço hídrico
+• Avaliação contínua do quadro clínico
+• Comunicar alterações à equipe médica imediatamente
+• ${p.obs || 'Continuar cuidados de enfermagem prescritos'}
+
+Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
+Assinatura: _______________________________`;
+
+  if (tipo==='prescricao') return `PRESCRIÇÃO DE ENFERMAGEM
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito} | Diagnóstico: ${p.diagnostico}
+
+01. Verificar e registrar sinais vitais a cada 4 horas (PA, FC, FR, SpO2, Tax)
+02. Monitorizar nível de consciência e orientação temporal/espacial
+03. Realizar balanço hídrico rigoroso — anotar toda ingesta e eliminação
+04. Verificar e manter permeabilidade do acesso venoso — avaliar sinais flogísticos
+05. Administrar medicamentos conforme prescrição médica nos horários corretos
+06. Avaliar intensidade da dor — usar escala numérica 0 a 10 a cada turno
+07. Realizar higiene oral 3 vezes ao dia e higiene corporal conforme protocolo
+08. Posicionamento e mudança de decúbito a cada 2 horas
+09. Orientar paciente e familiar sobre diagnóstico, cuidados e restrições
+10. Registrar intercorrências e evolução em prontuário eletrônico
+11. Comunicar imediatamente ao médico plantonista qualquer alteração clínica
+
+Observações: ${p.obs || 'Nenhuma observação adicional'}
+
+Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
+Assinatura: _______________________________`;
+
+  if (tipo==='passagem') return `PASSAGEM DE PLANTÃO — MÉTODO SBAR
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito}
+
+S — SITUAÇÃO:
+Paciente com ${p.diagnostico||'diagnóstico médico conforme prontuário'}. ${p.queixas ? p.queixas : 'Sem queixas relatadas no período.'}
+
+B — BACKGROUND (Histórico):
+Internado em ${p.leito||'leito informado no prontuário'}. Diagnóstico: ${p.diagnostico||'a confirmar'}.
+Alergias: ${p.alergias||'Nega'}. Sinais vitais: ${p.sv||'estáveis'}.
+Exames e procedimentos realizados: ${p.exames||'conforme prontuário'}.
+
+A — AVALIAÇÃO:
+Paciente clinicamente ${p.queixas?'com queixas descritas':'estável'} no período. Sistemas avaliados: ${p.sistemas?.join(', ')||'conforme rotina'}.
+${p.obs||'Sem intercorrências significativas no turno.'}
+
+R — RECOMENDAÇÃO:
+• Manter monitorização dos sinais vitais
+• Observar evolução do quadro clínico
+• Continuar prescrições médicas e de enfermagem vigentes
+• Atentar para: ${p.obs||'cuidados de rotina conforme protocolo'}
+
+PENDÊNCIAS:
+□ Verificar resultados de exames pendentes
+□ Confirmar horário de procedimentos agendados
+
+Enf. que passa: ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
+Assinatura: _______________________________`;
+
+  return `DIAGNÓSTICOS DE ENFERMAGEM — NANDA-NIC-NOC
+Data: ${dt}
+Paciente: ${p.nome} | Diagnóstico médico: ${p.diagnostico}
+
+DIAGNÓSTICO 1: Dor aguda (00132)
+• Relacionado a: agentes lesivos físicos (${p.diagnostico})
+• Evidenciado por: relato verbal de dor, alteração de sinais vitais
+• NIC — Manejo da dor: avaliar dor a cada 2h, administrar analgésicos conforme prescrição
+• NOC — Controle da dor: meta nível 4 (dor controlada) em 24-48h
+
+DIAGNÓSTICO 2: Risco de infecção (00004)
+• Relacionado a: procedimentos invasivos, hospitalização
+• NIC — Controle de infecção: técnica asséptica em procedimentos, higiene das mãos
+• NOC — Controle de risco: ausência de sinais flogísticos em 72h
+
+DIAGNÓSTICO 3: Déficit de conhecimento (00126)
+• Relacionado a: falta de informação sobre doença e tratamento
+• Evidenciado por: verbalização de dúvidas
+• NIC — Ensino: processo de doença, orientar paciente e familiar
+• NOC — Conhecimento sobre doença: verbaliza compreensão do tratamento
+
+DIAGNÓSTICO 4: Ansiedade (00146)
+• Relacionado a: hospitalização e incerteza sobre prognóstico
+• Evidenciado por: expressão de preocupação
+• NIC — Redução da ansiedade: presença terapêutica, informações claras
+• NOC — Nível de ansiedade: redução da ansiedade em 48h
+
+Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
+Assinatura: _______________________________`;
+}
+
+// ═══ AÇÕES ═══
+function copiar() {
+  navigator.clipboard.writeText(document.getElementById('res-txt').textContent).then(()=>toast('Copiado! 📋','ok'));
+}
+
+function pdf() {
+  const txt = document.getElementById('res-txt').textContent;
+  const tit = document.getElementById('res-tit').textContent;
+  const dt = new Date().toLocaleDateString('pt-BR');
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tit}</title>
+<style>
+body{font-family:Arial,sans-serif;padding:40px 50px;font-size:13px;line-height:1.9;color:#1A1F2E;max-width:800px;margin:0 auto}
+.header{border-bottom:3px solid #0F4C81;padding-bottom:16px;margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between}
+.logo-area h1{color:#0F4C81;font-size:22px;margin-bottom:4px}
+.logo-area p{color:#6B7590;font-size:12px}
+.prof-area{text-align:right;font-size:12px;color:#6B7590}
+.prof-area strong{display:block;color:#1A1F2E;font-size:14px}
+h2{color:#0F4C81;font-size:15px;margin-bottom:12px;padding:8px 12px;background:#E8F0FB;border-left:4px solid #0F4C81;border-radius:0 8px 8px 0}
+pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.9}
+.footer{margin-top:40px;border-top:1px solid #E8ECF2;padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:#6B7590}
+.assinatura{margin-top:50px;border-top:1px solid #1A1F2E;padding-top:8px;font-size:12px;color:#1A1F2E;display:inline-block;min-width:300px}
+@media print{body{padding:20px}}
+</style></head><body>
+<div class="header">
+  <div class="logo-area"><h1>🩺 SAE Fácil</h1><p>Sistematização de Assistência de Enfermagem com IA</p></div>
+  <div class="prof-area"><strong>${U?.nome||''}</strong>${U?.categoria||''}<br>${U?.coren||''}<br>${dt}</div>
+</div>
+<h2>${tit}</h2>
+<pre>${txt}</pre>
+<div style="margin-top:40px">
+  <div class="assinatura">${U?.nome||'___________________________'}<br>COREN: ${U?.coren||'_______________'}</div>
+</div>
+<div class="footer"><span>SAE Fácil — IA para Enfermagem</span><span>Gerado em ${dt}</span></div>
+<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script>
+</body></html>`);
+  w.document.close();
+}
+
+function whatsapp() {
+  const txt = document.getElementById('res-txt').textContent;
+  const tit = document.getElementById('res-tit').textContent;
+  const msg = `*${tit}*\n\n${txt}\n\n_Gerado pelo SAE Fácil_`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function salvar() {
+  const sae = {
+    id: Date.now(), tipo: TIPO,
+    paciente: document.getElementById('p-nome').value,
+    leito: document.getElementById('p-leito').value,
+    diagnostico: document.getElementById('p-diag').value,
+    texto: document.getElementById('res-txt').textContent,
+    data: new Date().toISOString()
+  };
+  SAES.unshift(sae);
+  localStorage.setItem('sae_d', JSON.stringify(SAES));
+  atualizarStats();
+  renderUltimas();
+  toast('SAE salva com sucesso! 💾','ok');
+}
+
+// ═══ STATS ═══
+function atualizarStats() {
+  const hoje = new Date().toDateString();
+  const mes = new Date().getMonth();
+  const hj = SAES.filter(s=>new Date(s.data).toDateString()===hoje).length;
+  const ms = SAES.filter(s=>new Date(s.data).getMonth()===mes).length;
+  document.getElementById('s-hj').textContent = hj;
+  document.getElementById('s-ms').textContent = ms;
+  document.getElementById('s-tt').textContent = SAES.length;
+  const resto = Math.max(0, 10 - ms);
+  const pb = document.getElementById('plano-banner');
+  if (pb) pb.querySelector('p').textContent = `${resto} SAEs restantes este mês • Clique para ver o Pro`;
+}
+
+function renderUltimas() {
+  const el = document.getElementById('ul-saes');
+  if (!SAES.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora!</div>'; return; }
+  el.innerHTML = SAES.slice(0,3).map(s=>`
+    <div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="hi-pac">${s.paciente||'Paciente'}</div>
+        <span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span>
+      </div>
+      <div class="hi-meta"><span>${new Date(s.data).toLocaleDateString('pt-BR')}</span><span>${s.leito||''}</span></div>
+      <div class="hi-prev">${(s.texto||'').substring(0,80)}...</div>
+    </div>`).join('');
+}
+
+function renderHist(filtro='') {
+  const el = document.getElementById('lista-hist');
+  const lista = filtro ? SAES.filter(s=>(s.paciente+s.diagnostico+s.leito).toLowerCase().includes(filtro.toLowerCase())) : SAES;
+  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--cinza3)">Nenhuma SAE encontrada</div>'; return; }
+  el.innerHTML = lista.map(s=>`
+    <div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div class="hi-pac">${s.paciente||'Paciente'}</div>
+        <span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span>
+      </div>
+      <div class="hi-meta">
+        <span>${new Date(s.data).toLocaleDateString('pt-BR')} ${new Date(s.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+        <span>${s.leito||''}</span><span>${s.diagnostico||''}</span>
+      </div>
+      <div class="hi-prev">${(s.texto||'').substring(0,100)}...</div>
+    </div>`).join('');
+}
+
+function buscar(v) { renderHist(v); }
+
+function verSAE(id) {
+  const s = SAES.find(x=>x.id===id);
+  if (!s) return;
+  irNovaSAE(s.tipo);
+  setTimeout(()=>{
+    document.getElementById('p-nome').value = s.paciente||'';
+    document.getElementById('p-leito').value = s.leito||'';
+    document.getElementById('p-diag').value = s.diagnostico||'';
+    TIPO = s.tipo;
+    mostrarStep(4);
+    document.getElementById('ld-ia').style.display = 'none';
+    document.getElementById('res-ia').style.display = 'block';
+    document.getElementById('res-txt').textContent = s.texto||'';
+    document.getElementById('res-tit').textContent = {evolucao:'📝 Evolução de Enfermagem',prescricao:'💊 Prescrição',passagem:'🔄 Passagem de Plantão',nanda:'🔬 NANDA-NIC-NOC'}[s.tipo]||'';
+  },100);
+}
+
+// ═══ HELPERS ═══
+function corTipo(t){ return {evolucao:'var(--azul)',prescricao:'var(--verde)',passagem:'var(--roxo)',nanda:'var(--laranja)'}[t]||'var(--azul)'; }
+function chipTipo(t){ return {evolucao:'ch-az',prescricao:'ch-vd',passagem:'ch-rx',nanda:'ch-lr'}[t]||'ch-az'; }
+function labelTipo(t){ return {evolucao:'Evolução',prescricao:'Prescrição',passagem:'Plantão',nanda:'NANDA'}[t]||t; }
+
+// ═══ CALCULADORAS ═══
+function calcTab(id, el) {
+  ['dose','gote','dilui','imc'].forEach(x=>{ document.getElementById(`calc-${x}`).style.display=x===id?'block':'none'; });
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function calcDose() {
+  const dose=parseFloat(document.getElementById('d-dose').value);
+  const peso=parseFloat(document.getElementById('d-peso').value);
+  const conc=parseFloat(document.getElementById('d-conc').value);
+  if (!dose||!peso||!conc) { toast('Preencha todos os campos','err'); return; }
+  const total = dose * peso;
+  const ml = total / conc;
+  document.getElementById('r-dose').style.display = 'block';
+  document.getElementById('rv-dose').textContent = ml.toFixed(2) + ' mL';
+  document.getElementById('rv-dose2').textContent = `Dose total: ${total.toFixed(1)} mg | ${conc} mg/mL`;
+}
+
+function calcGote() {
+  const vol=parseFloat(document.getElementById('g-vol').value);
+  const tempo=parseFloat(document.getElementById('g-tempo').value);
+  const eq=parseFloat(document.getElementById('g-equipo').value);
+  if (!vol||!tempo) { toast('Preencha todos os campos','err'); return; }
+  const gotas = (vol * eq) / (tempo * 60);
+  const mlh = vol / tempo;
+  document.getElementById('r-gote').style.display = 'block';
+  document.getElementById('rv-gote').textContent = Math.round(gotas) + ' gts/min';
+  document.getElementById('rv-gote2').textContent = `${mlh.toFixed(1)} mL/hora | ${vol}mL em ${tempo}h`;
+}
+
+function calcDilui() {
+  const dose=parseFloat(document.getElementById('dl-dose').value);
+  const conc=parseFloat(document.getElementById('dl-conc').value);
+  const dil=parseFloat(document.getElementById('dl-dil').value);
+  if (!dose||!conc) { toast('Preencha todos os campos','err'); return; }
+  const ml = dose / conc;
+  const concFinal = dose / ((dil||100) + ml);
+  document.getElementById('r-dilui').style.display = 'block';
+  document.getElementById('rv-dilui').textContent = ml.toFixed(2) + ' mL';
+  document.getElementById('rv-dilui2').textContent = `Retirar ${ml.toFixed(2)}mL do medicamento e diluir em ${dil||100}mL de diluente`;
+}
+
+function calcIMC() {
+  const peso=parseFloat(document.getElementById('i-peso').value);
+  const alt=parseFloat(document.getElementById('i-alt').value)/100;
+  if (!peso||!alt) { toast('Preencha todos os campos','err'); return; }
+  const imc = peso/(alt*alt);
+  const cls = imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade Grau I':imc<40?'Obesidade Grau II':'Obesidade Grau III';
+  document.getElementById('r-imc').style.display = 'block';
+  document.getElementById('rv-imc').textContent = imc.toFixed(1);
+  document.getElementById('rv-imc2').textContent = `kg/m² — ${cls}`;
+}
+
+// ═══ MODAL ═══
+function mostrarPlanos() { document.getElementById('modal-planos').classList.add('show'); }
+function fecharModal() { document.getElementById('modal-planos').classList.remove('show'); }
+function assinar() {
+  fecharModal();
+  window.open('https://hotmart.com/', '_blank');
+  toast('Redirecionando para pagamento...','ok');
+}
+
+// ═══ TOAST ═══
+function toast(msg, tipo='') {
+  const c = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `ti ${tipo}`; el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+</script>
+</body>
+</html>
