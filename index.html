@@ -8,13 +8,14 @@
 <meta name="theme-color" content="#0F4C81">
 <title>SAE Fácil — IA para Enfermagem</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
 :root{
   --azul:#0F4C81;--azul2:#1A6DB5;--azul3:#E8F0FB;
   --verde:#0A7C5C;--verde2:#E6F4EF;
   --roxo:#5B3FA6;--roxo2:#EEE9FA;
   --laranja:#D4720A;--laranja2:#FDF0E0;
   --vermelho:#C62828;--vermelho2:#FFEBEE;
+  --amarelo:#F59E0B;--amarelo2:#FFFBEB;
   --cinza:#F4F6F9;--cinza2:#E8ECF2;--cinza3:#6B7590;
   --texto:#1A1F2E;--branco:#fff;
   --sombra:0 2px 16px rgba(15,76,129,.10);
@@ -24,13 +25,11 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--cinza);color:var(--texto);overscroll-behavior:none}
 input,textarea,select,button{font-family:inherit}
-
-/* TELAS */
 .tela{display:none;min-height:100vh;flex-direction:column}
 .tela.ativa{display:flex}
 
 /* LOGIN */
-#tela-login{background:linear-gradient(150deg,#0a3260 0%,#1A6DB5 55%,#0A7C5C 100%);align-items:center;justify-content:center;padding:20px}
+#tela-login{background:linear-gradient(150deg,#061e3a 0%,#0F4C81 55%,#0A7C5C 100%);align-items:center;justify-content:center;padding:20px}
 .lc{background:#fff;border-radius:28px;padding:36px 28px;width:100%;max-width:420px;box-shadow:var(--sombra2)}
 .lc-logo{text-align:center;margin-bottom:32px}
 .lc-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:38px}
@@ -41,7 +40,7 @@ input,textarea,select,button{font-family:inherit}
 .fi{width:100%;padding:13px 16px;border:1.5px solid var(--cinza2);border-radius:var(--r2);font-size:15px;color:var(--texto);background:var(--cinza);outline:none;transition:.2s}
 .fi:focus{border-color:var(--azul2);background:#fff;box-shadow:0 0 0 3px rgba(26,109,181,.1)}
 select.fi{cursor:pointer}
-.btn-p{width:100%;padding:15px;border:none;border-radius:var(--r2);font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;transition:.2s;letter-spacing:.02em}
+.btn-p{width:100%;padding:15px;border:none;border-radius:var(--r2);font-size:15px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;transition:.2s}
 .btn-p:active{transform:scale(.98)}
 .ls{text-align:center;margin-top:16px;font-size:13px;color:var(--cinza3)}
 .ls span{color:var(--azul2);cursor:pointer;font-weight:700}
@@ -58,17 +57,16 @@ select.fi{cursor:pointer}
 /* NAV */
 .nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid var(--cinza2);z-index:100;padding-bottom:env(safe-area-inset-bottom,8px)}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 6px;cursor:pointer;gap:2px;position:relative}
-.ni-ic{font-size:24px;line-height:1}
+.ni-ic{font-size:22px;line-height:1}
 .ni-lb{font-size:10px;font-weight:600;color:var(--cinza3);transition:.2s}
 .ni.on .ni-lb{color:var(--azul)}
-.ni-dot{width:5px;height:5px;border-radius:50%;background:var(--azul);margin-top:1px;opacity:0;transition:.2s}
+.ni-dot{width:5px;height:5px;border-radius:50%;background:var(--azul);margin-top:1px;opacity:0}
 .ni.on .ni-dot{opacity:1}
 .ni-fab{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--azul),var(--azul2));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(15,76,129,.4)}
 .ni-fab span{font-size:26px;color:#fff}
 
-/* CONTEÚDO */
 .cnt{flex:1;padding:18px 16px 110px;overflow-y:auto}
-@media(min-width:600px){.cnt{max-width:680px;margin:0 auto;padding:24px 24px 110px}}
+@media(min-width:600px){.cnt{max-width:680px;margin:0 auto}}
 
 /* CARDS */
 .card{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--sombra);margin-bottom:14px}
@@ -84,16 +82,14 @@ select.fi{cursor:pointer}
 .ac-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 @media(min-width:500px){.ac-grid{grid-template-columns:repeat(4,1fr)}}
 .ac{background:#fff;border-radius:var(--r);padding:18px 12px;box-shadow:var(--sombra);cursor:pointer;text-align:center;transition:.15s;border:2px solid transparent}
-.ac:active{transform:scale(.97);border-color:var(--azul3)}
+.ac:active{transform:scale(.97)}
 .ac-ic{font-size:34px;margin-bottom:10px}
 .ac-t{font-size:13px;font-weight:700}
 .ac-s{font-size:11px;color:var(--cinza3);margin-top:2px}
-
-/* PLANO BANNER */
 .plano-banner{background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:var(--r);padding:18px;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
 .plano-banner h3{font-size:16px;font-weight:800}
 .plano-banner p{font-size:12px;opacity:.85;margin-top:3px}
-.plano-banner .btn-up{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:8px 16px;border-radius:var(--r3);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-up{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:8px 16px;border-radius:var(--r3);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 
 /* NOVA SAE */
 .sb{display:flex;gap:5px;margin-bottom:22px}
@@ -120,6 +116,12 @@ textarea.ci{min-height:90px}
 .bnav{display:flex;gap:10px;margin-top:22px}
 .bvolt{flex:1;padding:14px;border:1.5px solid var(--cinza2);border-radius:var(--r2);background:#fff;font-size:15px;font-weight:600;cursor:pointer;color:var(--cinza3)}
 .bav{flex:2;padding:14px;border:none;border-radius:var(--r2);background:linear-gradient(135deg,var(--azul),var(--azul2));color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+
+/* ALERTA CLÍNICO */
+.alerta-clinico{background:linear-gradient(135deg,#FFF8E1,#FFECB3);border:2px solid #FFB300;border-radius:var(--r);padding:16px;margin-bottom:14px;display:none}
+.alerta-clinico.show{display:block}
+.alerta-clinico h4{font-size:14px;font-weight:800;color:#E65100;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.alerta-clinico ul{font-size:13px;color:#BF360C;padding-left:16px;line-height:1.8}
 
 /* RESULTADO */
 .res-card{background:linear-gradient(135deg,#EBF3FF,#E6F4EF);border-radius:var(--r);padding:20px;margin-bottom:14px;border:1px solid rgba(15,76,129,.12)}
@@ -157,6 +159,62 @@ textarea.ci{min-height:90px}
 .ch-rx{background:var(--roxo2);color:var(--roxo)}
 .ch-lr{background:var(--laranja2);color:var(--laranja)}
 
+/* ESCORES */
+.escore-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px}
+.etab{padding:8px 16px;border-radius:var(--r3);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--cinza2);background:#fff;color:var(--cinza3)}
+.etab.on{background:var(--azul3);border-color:var(--azul);color:var(--azul)}
+.escore-resultado{border-radius:var(--r2);padding:18px;margin-top:14px;text-align:center;display:none}
+.escore-resultado.show{display:block}
+.er-valor{font-size:36px;font-weight:900}
+.er-class{font-size:16px;font-weight:700;margin-top:4px}
+.er-desc{font-size:13px;color:var(--cinza3);margin-top:6px;line-height:1.6}
+.er-verde{background:var(--verde2);color:var(--verde)}
+.er-amarelo{background:var(--amarelo2);color:#92400E}
+.er-vermelho{background:var(--vermelho2);color:var(--vermelho)}
+.er-roxo{background:var(--roxo2);color:var(--roxo)}
+
+/* NANDA */
+.nanda-busca{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--r2);padding:12px 14px;box-shadow:var(--sombra);margin-bottom:16px}
+.nanda-busca input{border:none;outline:none;font-size:15px;flex:1;background:transparent;font-family:inherit}
+.nanda-item{background:#fff;border-radius:var(--r2);padding:14px;box-shadow:var(--sombra);margin-bottom:8px;cursor:pointer;border-left:3px solid var(--azul);transition:.15s}
+.nanda-item:active{transform:scale(.99)}
+.nanda-codigo{font-size:11px;font-weight:800;color:var(--azul);margin-bottom:3px}
+.nanda-nome{font-size:14px;font-weight:700}
+.nanda-dominio{font-size:11px;color:var(--cinza3);margin-top:2px}
+.nanda-detalhe{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--cinza2)}
+.nanda-detalhe.show{display:block}
+.nanda-sec{font-size:12px;font-weight:800;color:var(--cinza3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;margin-top:10px}
+.nanda-txt{font-size:13px;color:var(--texto);line-height:1.7}
+
+/* PLANTÃO */
+.plantao-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.cronometro{font-size:28px;font-weight:900;color:var(--azul);font-variant-numeric:tabular-nums}
+.btn-plantao{padding:10px 18px;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer}
+.btn-iniciar{background:var(--verde);color:#fff}
+.btn-pausar{background:var(--amarelo);color:#fff}
+.btn-parar{background:var(--vermelho2);color:var(--vermelho);border:1.5px solid var(--vermelho)}
+.pac-plantao{background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--sombra);margin-bottom:10px}
+.pac-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pac-nome-p{font-size:15px;font-weight:700}
+.pac-leito-p{font-size:12px;color:var(--cinza3)}
+.checklist{display:flex;flex-direction:column;gap:6px}
+.check-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:.15s}
+.check-item:hover{background:var(--cinza)}
+.check-item.feito{opacity:.6}
+.check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--cinza2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;font-size:12px}
+.check-item.feito .check-box{background:var(--verde);border-color:var(--verde);color:#fff}
+.check-txt{font-size:13px;font-weight:500}
+.check-item.feito .check-txt{text-decoration:line-through;color:var(--cinza3)}
+
+/* CALCULADORA */
+.calc-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px}
+.ctab{padding:8px 16px;border-radius:var(--r3);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--cinza2);background:#fff;color:var(--cinza3)}
+.ctab.on{background:var(--azul3);border-color:var(--azul);color:var(--azul)}
+.calc-result{border-radius:var(--r2);padding:16px;margin-top:14px;text-align:center;display:none}
+.calc-result.show{display:block;background:linear-gradient(135deg,var(--azul3),var(--verde2))}
+.calc-valor{font-size:32px;font-weight:800;color:var(--azul)}
+.calc-unid{font-size:14px;color:var(--cinza3);margin-top:4px}
+
 /* PERFIL */
 .pf-hdr{display:flex;align-items:center;gap:16px;margin-bottom:22px}
 .pf-av{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--azul),var(--verde));display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff}
@@ -173,56 +231,42 @@ textarea.ci{min-height:90px}
 .mi-tit{font-size:15px;font-weight:700}
 .mi-sub{font-size:12px;color:var(--cinza3);margin-top:1px}
 
-/* CALC */
-.calc-result{background:linear-gradient(135deg,var(--azul3),var(--verde2));border-radius:var(--r2);padding:16px;margin-top:14px;text-align:center}
-.calc-valor{font-size:32px;font-weight:800;color:var(--azul)}
-.calc-unid{font-size:14px;color:var(--cinza3);margin-top:4px}
-
 /* TOAST */
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:420px;pointer-events:none}
 .ti{background:var(--texto);color:#fff;border-radius:var(--r2);padding:13px 18px;font-size:14px;font-weight:600;text-align:center;animation:sd .3s ease;pointer-events:all}
 .ti.ok{background:var(--verde)}
 .ti.err{background:var(--vermelho)}
+.ti.warn{background:#E65100}
 @keyframes sd{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 /* MODAL */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
 .modal-bg.show{display:flex}
-.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;animation:mu .3s ease}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:500px;animation:mu .3s ease;max-height:85vh;overflow-y:auto}
 @keyframes mu{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-tit{font-size:20px;font-weight:800;margin-bottom:8px}
 .modal-sub{font-size:14px;color:var(--cinza3);margin-bottom:24px}
-
-/* BUSCA */
 .busca-box{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--r2);padding:10px 14px;box-shadow:var(--sombra);margin-bottom:16px}
-.busca-ic{font-size:18px}
 .busca-input{border:none;outline:none;font-size:15px;flex:1;background:transparent;font-family:inherit}
-
-/* CALCULADORA */
-.calc-tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px}
-.ctab{padding:8px 16px;border-radius:var(--r3);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid var(--cinza2);background:#fff;color:var(--cinza3);transition:.15s}
-.ctab.on{background:var(--azul3);border-color:var(--azul);color:var(--azul)}
 </style>
 </head>
 <body>
 <div id="toast"></div>
 
-<!-- ═══ LOGIN ═══ -->
+<!-- LOGIN -->
 <div id="tela-login" class="tela ativa">
   <div class="lc">
     <div class="lc-logo">
       <div class="lc-icon">🩺</div>
       <div class="lc-titulo">SAE Fácil</div>
-      <div class="lc-sub">Sistematização de Enfermagem com Inteligência Artificial</div>
+      <div class="lc-sub">Sistematização de Enfermagem com IA · Líder no Brasil</div>
     </div>
-
     <div id="form-login">
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="l-email" class="fi" placeholder="seu@email.com"></div>
       <div class="fg"><label class="fl">Senha</label><input type="password" id="l-senha" class="fi" placeholder="••••••••"><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
       <button class="btn-p" onclick="fazerLogin()">Entrar</button>
       <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
     </div>
-
     <div id="form-cadastro" style="display:none">
       <div class="fg"><label class="fl">Nome completo</label><input type="text" id="c-nome" class="fi" placeholder="Enf. Maria Silva"></div>
       <div class="fg"><label class="fl">Categoria</label>
@@ -237,7 +281,7 @@ textarea.ci{min-height:90px}
   </div>
 </div>
 
-<!-- ═══ APP ═══ -->
+<!-- APP -->
 <div id="tela-app" class="tela">
   <div class="hdr">
     <div class="hdr-esq">
@@ -260,8 +304,8 @@ textarea.ci{min-height:90px}
         <div class="st"><div class="st-n" id="s-ms">0</div><div class="st-l">este mês</div></div>
         <div class="st"><div class="st-n" id="s-tt">0</div><div class="st-l">total</div></div>
       </div>
-      <div id="plano-banner" class="plano-banner" onclick="mostrarPlanos()">
-        <div><h3>🆓 Plano Gratuito</h3><p>5 SAEs restantes este mês • Clique para ver o Pro</p></div>
+      <div class="plano-banner" onclick="mostrarPlanos()">
+        <div><h3>🆓 Plano Gratuito</h3><p id="banner-txt">10 SAEs restantes este mês</p></div>
         <button class="btn-up">Ver Pro</button>
       </div>
       <div class="ac-grid">
@@ -270,35 +314,37 @@ textarea.ci{min-height:90px}
         <div class="ac" onclick="irNovaSAE('passagem')"><div class="ac-ic">🔄</div><div class="ac-t">Plantão</div><div class="ac-s">SBAR</div></div>
         <div class="ac" onclick="irNovaSAE('nanda')"><div class="ac-ic">🔬</div><div class="ac-t">NANDA</div><div class="ac-s">NIC-NOC</div></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div class="ac" onclick="ir('escores')"><div class="ac-ic">📊</div><div class="ac-t">Escores</div><div class="ac-s">Braden·Glasgow·Morse</div></div>
+        <div class="ac" onclick="ir('plantao-mode')"><div class="ac-ic">⏱️</div><div class="ac-t">Modo Plantão</div><div class="ac-s">Cronômetro+Checklist</div></div>
+        <div class="ac" onclick="ir('nanda-db')"><div class="ac-ic">📚</div><div class="ac-t">NANDA 2025</div><div class="ac-s">267 diagnósticos</div></div>
+        <div class="ac" onclick="ir('calc')"><div class="ac-ic">🧮</div><div class="ac-t">Calcular</div><div class="ac-s">Dose·Gotejamento</div></div>
+      </div>
       <div class="card">
         <div class="ct">Últimas SAEs</div>
-        <div id="ul-saes"><div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora e economize tempo!</div></div>
+        <div id="ul-saes"><div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora!</div></div>
       </div>
     </div>
 
     <!-- NOVA SAE -->
     <div id="pag-nova" class="pag" style="display:none">
       <div class="sb" id="sb"></div>
-
-      <!-- STEP 1 -->
       <div id="s1">
         <div class="st-tit">👤 Dados do paciente</div>
-        <div class="st-sub">Digite ou toque no microfone para falar</div>
+        <div class="st-sub">Digite ou use o microfone para falar</div>
         <button class="bv" id="bv1" onclick="voz(1)">🎤 Falar dados do paciente</button>
-        <div class="cg"><label class="cl">Nome e idade do paciente</label><input type="text" id="p-nome" class="ci" placeholder="Ex: João da Silva, 58 anos, masculino"></div>
-        <div class="cg"><label class="cl">Leito / Setor / Unidade</label><input type="text" id="p-leito" class="ci" placeholder="Ex: Leito 12 — UTI Adulto Cardio"></div>
-        <div class="cg"><label class="cl">Diagnóstico médico principal</label><input type="text" id="p-diag" class="ci" placeholder="Ex: IAM com supra de ST + HAS"></div>
-        <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico a dipirona, DM tipo 2, IRC"></div>
+        <div class="cg"><label class="cl">Nome e idade</label><input type="text" id="p-nome" class="ci" placeholder="Ex: João da Silva, 58 anos, masculino"></div>
+        <div class="cg"><label class="cl">Leito / Setor</label><input type="text" id="p-leito" class="ci" placeholder="Ex: Leito 12 — UTI Adulto Cardio"></div>
+        <div class="cg"><label class="cl">Diagnóstico médico</label><input type="text" id="p-diag" class="ci" placeholder="Ex: IAM com supra de ST + HAS"></div>
+        <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico dipirona, DM tipo 2, IRC"></div>
         <div class="bnav"><button class="bav" onclick="av(2)" style="flex:1">Próximo →</button></div>
       </div>
-
-      <!-- STEP 2 -->
       <div id="s2" style="display:none">
         <div class="st-tit">🩺 Avaliação clínica</div>
         <div class="st-sub">Sinais vitais e achados do exame físico</div>
         <button class="bv" id="bv2" onclick="voz(2)">🎤 Falar avaliação clínica</button>
-        <div class="cg"><label class="cl">Sinais vitais</label><input type="text" id="a-sv" class="ci" placeholder="PA 130x80mmHg, FC 88bpm, FR 20irpm, SpO2 96%, Tax 37.2°C, Dor 4/10"></div>
-        <div class="cg"><label class="cl">Estado geral e queixas</label><textarea id="a-eq" class="ci" placeholder="Paciente consciente, orientado em tempo e espaço, eupneico, corado, hidratado. Refere dor torácica em aperto 4/10..."></textarea></div>
+        <div class="cg"><label class="cl">Sinais vitais</label><input type="text" id="a-sv" class="ci" placeholder="PA 130x80, FC 88, FR 20, SpO2 96%, Tax 37.2, Dor 4/10"></div>
+        <div class="cg"><label class="cl">Estado geral e queixas</label><textarea id="a-eq" class="ci" placeholder="Paciente consciente, orientado, eupneico, corado, hidratado. Refere dor torácica 4/10..."></textarea></div>
         <div class="cg"><label class="cl">Sistemas avaliados</label>
           <div class="og">
             <button class="ob" onclick="tog(this)">❤️ Cardiovascular</button>
@@ -311,29 +357,29 @@ textarea.ci{min-height:90px}
             <button class="ob" onclick="tog(this)">😰 Dor</button>
           </div>
         </div>
-        <div class="cg"><label class="cl">Exames e procedimentos recentes</label><input type="text" id="a-ex" class="ci" placeholder="Ex: ECG com BRE novo, troponina 2.1, acesso venoso periférico MSD"></div>
+        <div class="cg"><label class="cl">Exames e procedimentos</label><input type="text" id="a-ex" class="ci" placeholder="Ex: ECG BRE novo, troponina 2.1, AV periférico MSD"></div>
         <div class="bnav"><button class="bvolt" onclick="vt(1)">← Voltar</button><button class="bav" onclick="av(3)">Próximo →</button></div>
       </div>
-
-      <!-- STEP 3 -->
       <div id="s3" style="display:none">
         <div class="st-tit">📄 Tipo de documento</div>
         <div class="st-sub">Selecione o que a IA vai gerar</div>
-        <button class="tipo-btn" id="tb-evolucao" onclick="tipo('evolucao')"><strong>📝 Evolução de Enfermagem</strong><span>Formato SOAP — Subjetivo, Objetivo, Avaliação, Plano</span></button>
-        <button class="tipo-btn" id="tb-prescricao" onclick="tipo('prescricao')"><strong>💊 Prescrição de Enfermagem</strong><span>Cuidados, procedimentos e intervenções numeradas</span></button>
-        <button class="tipo-btn" id="tb-passagem" onclick="tipo('passagem')"><strong>🔄 Passagem de Plantão</strong><span>Método SBAR — relatório para o próximo turno</span></button>
-        <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico NANDA-NIC-NOC</strong><span>Diagnósticos, intervenções e resultados esperados</span></button>
-        <div class="cg" style="margin-top:14px"><label class="cl">Observações adicionais (opcional)</label><textarea id="a-obs" class="ci" placeholder="Informações extras para a IA considerar..."></textarea></div>
+        <button class="tipo-btn" id="tb-evolucao" onclick="tipo('evolucao')"><strong>📝 Evolução de Enfermagem</strong><span>Formato SOAP — terminologia NANDA-I 2025</span></button>
+        <button class="tipo-btn" id="tb-prescricao" onclick="tipo('prescricao')"><strong>💊 Prescrição de Enfermagem</strong><span>Cuidados numerados padrão COFEN</span></button>
+        <button class="tipo-btn" id="tb-passagem" onclick="tipo('passagem')"><strong>🔄 Passagem de Plantão</strong><span>Método SBAR — para o próximo turno</span></button>
+        <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico NANDA-NIC-NOC</strong><span>Taxonomia oficial NANDA-I 2024-2026</span></button>
+        <div class="cg" style="margin-top:14px"><label class="cl">Observações adicionais</label><textarea id="a-obs" class="ci" placeholder="Informações extras para a IA considerar..."></textarea></div>
         <div class="bnav"><button class="bvolt" onclick="vt(2)">← Voltar</button><button class="bav" onclick="gerar()">✨ Gerar com IA</button></div>
       </div>
-
-      <!-- STEP 4 RESULTADO -->
       <div id="s4" style="display:none">
         <div class="st-tit">✨ Documento gerado</div>
         <div class="st-sub">Revise e edite diretamente no texto</div>
+        <div id="alerta-clinico" class="alerta-clinico">
+          <h4>⚠️ Alertas clínicos detectados pela IA</h4>
+          <ul id="alerta-lista"></ul>
+        </div>
         <div id="ld-ia" class="ld">
           <div class="ld-dots"><div class="ld-d"></div><div class="ld-d"></div><div class="ld-d"></div></div>
-          <div class="ld-msg" id="ld-msg">IA analisando os dados clínicos...</div>
+          <div class="ld-msg" id="ld-msg">IA analisando dados clínicos...</div>
         </div>
         <div id="res-ia" style="display:none">
           <div class="res-card">
@@ -351,6 +397,150 @@ textarea.ci{min-height:90px}
       </div>
     </div>
 
+    <!-- ESCORES CLÍNICOS -->
+    <div id="pag-escores" class="pag" style="display:none">
+      <div class="gr"><h2>📊 Escores clínicos</h2><p>Avaliações de risco validadas</p></div>
+      <div class="escore-tabs">
+        <button class="etab on" onclick="escTab('braden',this)">Braden</button>
+        <button class="etab" onclick="escTab('glasgow',this)">Glasgow</button>
+        <button class="etab" onclick="escTab('morse',this)">Morse</button>
+        <button class="etab" onclick="escTab('apgar',this)">Apgar</button>
+        <button class="etab" onclick="escTab('news',this)">NEWS</button>
+      </div>
+
+      <!-- BRADEN -->
+      <div id="esc-braden" class="card">
+        <div class="ct">Escala de Braden — Risco de Úlcera por Pressão</div>
+        <div class="cg"><label class="cl">Percepção sensorial</label>
+          <select id="br-1" class="ci"><option value="1">1 — Completamente limitado</option><option value="2">2 — Muito limitado</option><option value="3">3 — Levemente limitado</option><option value="4" selected>4 — Sem limitação</option></select></div>
+        <div class="cg"><label class="cl">Umidade da pele</label>
+          <select id="br-2" class="ci"><option value="1">1 — Constantemente úmida</option><option value="2">2 — Muito úmida</option><option value="3">3 — Ocasionalmente úmida</option><option value="4" selected>4 — Raramente úmida</option></select></div>
+        <div class="cg"><label class="cl">Atividade</label>
+          <select id="br-3" class="ci"><option value="1">1 — Acamado</option><option value="2">2 — Restrito à cadeira</option><option value="3">3 — Anda ocasionalmente</option><option value="4" selected>4 — Anda frequentemente</option></select></div>
+        <div class="cg"><label class="cl">Mobilidade</label>
+          <select id="br-4" class="ci"><option value="1">1 — Totalmente imóvel</option><option value="2">2 — Muito limitado</option><option value="3">3 — Levemente limitado</option><option value="4" selected>4 — Sem limitações</option></select></div>
+        <div class="cg"><label class="cl">Nutrição</label>
+          <select id="br-5" class="ci"><option value="1">1 — Muito pobre</option><option value="2">2 — Provavelmente inadequada</option><option value="3">3 — Adequada</option><option value="4" selected>4 — Excelente</option></select></div>
+        <div class="cg"><label class="cl">Fricção e cisalhamento</label>
+          <select id="br-6" class="ci"><option value="1">1 — Problema</option><option value="2">2 — Problema potencial</option><option value="3" selected>3 — Sem problema aparente</option></select></div>
+        <button class="bav" style="width:100%" onclick="calcBraden()">Calcular escore</button>
+        <div id="r-braden" class="escore-resultado"><div class="er-valor" id="rv-braden"></div><div class="er-class" id="rc-braden"></div><div class="er-desc" id="rd-braden"></div></div>
+      </div>
+
+      <!-- GLASGOW -->
+      <div id="esc-glasgow" class="card" style="display:none">
+        <div class="ct">Escala de Glasgow — Nível de Consciência</div>
+        <div class="cg"><label class="cl">Abertura ocular</label>
+          <select id="gl-1" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — À dor</option><option value="3">3 — À voz</option><option value="4" selected>4 — Espontânea</option></select></div>
+        <div class="cg"><label class="cl">Resposta verbal</label>
+          <select id="gl-2" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — Sons incompreensíveis</option><option value="3">3 — Palavras inapropriadas</option><option value="4">4 — Confusa</option><option value="5" selected>5 — Orientada</option></select></div>
+        <div class="cg"><label class="cl">Resposta motora</label>
+          <select id="gl-3" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — Extensão anormal</option><option value="3">3 — Flexão anormal</option><option value="4">4 — Retirada à dor</option><option value="5">5 — Localiza a dor</option><option value="6" selected>6 — Obedece comandos</option></select></div>
+        <button class="bav" style="width:100%" onclick="calcGlasgow()">Calcular escore</button>
+        <div id="r-glasgow" class="escore-resultado"><div class="er-valor" id="rv-glasgow"></div><div class="er-class" id="rc-glasgow"></div><div class="er-desc" id="rd-glasgow"></div></div>
+      </div>
+
+      <!-- MORSE -->
+      <div id="esc-morse" class="card" style="display:none">
+        <div class="ct">Escala de Morse — Risco de Quedas</div>
+        <div class="cg"><label class="cl">Histórico de quedas (últimos 3 meses)</label>
+          <select id="mo-1" class="ci"><option value="0" selected>0 — Não</option><option value="25">25 — Sim</option></select></div>
+        <div class="cg"><label class="cl">Diagnóstico secundário</label>
+          <select id="mo-2" class="ci"><option value="0" selected>0 — Não</option><option value="15">15 — Sim</option></select></div>
+        <div class="cg"><label class="cl">Auxílio para deambulação</label>
+          <select id="mo-3" class="ci"><option value="0" selected>0 — Nenhum/acamado/cadeira de rodas</option><option value="15">15 — Muleta/bengala/andador</option><option value="30">30 — Apoia-se em móveis</option></select></div>
+        <div class="cg"><label class="cl">Acesso venoso/terapia IV</label>
+          <select id="mo-4" class="ci"><option value="0" selected>0 — Não</option><option value="20">20 — Sim</option></select></div>
+        <div class="cg"><label class="cl">Marcha</label>
+          <select id="mo-5" class="ci"><option value="0" selected>0 — Normal/acamado/imóvel</option><option value="10">10 — Fraca</option><option value="20">20 — Comprometida</option></select></div>
+        <div class="cg"><label class="cl">Estado mental</label>
+          <select id="mo-6" class="ci"><option value="0" selected>0 — Orientado para suas limitações</option><option value="15">15 — Superestima suas capacidades</option></select></div>
+        <button class="bav" style="width:100%" onclick="calcMorse()">Calcular escore</button>
+        <div id="r-morse" class="escore-resultado"><div class="er-valor" id="rv-morse"></div><div class="er-class" id="rc-morse"></div><div class="er-desc" id="rd-morse"></div></div>
+      </div>
+
+      <!-- APGAR -->
+      <div id="esc-apgar" class="card" style="display:none">
+        <div class="ct">Índice de Apgar — Avaliação do Recém-Nascido</div>
+        <div class="cg"><label class="cl">Frequência cardíaca</label>
+          <select id="ap-1" class="ci"><option value="0">0 — Ausente</option><option value="1">1 — Abaixo de 100 bpm</option><option value="2" selected>2 — Acima de 100 bpm</option></select></div>
+        <div class="cg"><label class="cl">Esforço respiratório</label>
+          <select id="ap-2" class="ci"><option value="0">0 — Ausente</option><option value="1">1 — Irregular/fraco</option><option value="2" selected>2 — Regular/choro vigoroso</option></select></div>
+        <div class="cg"><label class="cl">Tônus muscular</label>
+          <select id="ap-3" class="ci"><option value="0">0 — Flácido</option><option value="1">1 — Alguma flexão</option><option value="2" selected>2 — Movimentos ativos</option></select></div>
+        <div class="cg"><label class="cl">Irritabilidade reflexa</label>
+          <select id="ap-4" class="ci"><option value="0">0 — Sem resposta</option><option value="1">1 — Careta</option><option value="2" selected>2 — Tosse/espirro/choro</option></select></div>
+        <div class="cg"><label class="cl">Coloração da pele</label>
+          <select id="ap-5" class="ci"><option value="0">0 — Azulada/pálida</option><option value="1">1 — Corpo rosado/extremidades azuis</option><option value="2" selected>2 — Completamente rosada</option></select></div>
+        <div class="cg"><label class="cl">Momento da avaliação</label>
+          <select id="ap-min" class="ci"><option value="1">1 minuto</option><option value="5">5 minutos</option><option value="10">10 minutos</option></select></div>
+        <button class="bav" style="width:100%" onclick="calcApgar()">Calcular escore</button>
+        <div id="r-apgar" class="escore-resultado"><div class="er-valor" id="rv-apgar"></div><div class="er-class" id="rc-apgar"></div><div class="er-desc" id="rd-apgar"></div></div>
+      </div>
+
+      <!-- NEWS -->
+      <div id="esc-news" class="card" style="display:none">
+        <div class="ct">NEWS 2 — National Early Warning Score</div>
+        <div class="cg"><label class="cl">Frequência respiratória (irpm)</label>
+          <select id="nw-1" class="ci"><option value="3">≤8 — 3 pontos</option><option value="1">9-11 — 1 ponto</option><option value="0" selected>12-20 — 0 pontos</option><option value="2">21-24 — 2 pontos</option><option value="3">≥25 — 3 pontos</option></select></div>
+        <div class="cg"><label class="cl">SpO2 escala 1 (%)</label>
+          <select id="nw-2" class="ci"><option value="3">≤91 — 3 pontos</option><option value="2">92-93 — 2 pontos</option><option value="1">94-95 — 1 ponto</option><option value="0" selected>≥96 — 0 pontos</option></select></div>
+        <div class="cg"><label class="cl">Pressão arterial sistólica (mmHg)</label>
+          <select id="nw-3" class="ci"><option value="3">≤90 — 3 pontos</option><option value="2">91-100 — 2 pontos</option><option value="1">101-110 — 1 ponto</option><option value="0" selected>111-219 — 0 pontos</option><option value="3">≥220 — 3 pontos</option></select></div>
+        <div class="cg"><label class="cl">Frequência cardíaca (bpm)</label>
+          <select id="nw-4" class="ci"><option value="3">≤40 — 3 pontos</option><option value="1">41-50 — 1 ponto</option><option value="0" selected>51-90 — 0 pontos</option><option value="1">91-110 — 1 ponto</option><option value="2">111-130 — 2 pontos</option><option value="3">≥131 — 3 pontos</option></select></div>
+        <div class="cg"><label class="cl">Temperatura (°C)</label>
+          <select id="nw-5" class="ci"><option value="3">≤35.0 — 3 pontos</option><option value="1">35.1-36.0 — 1 ponto</option><option value="0" selected>36.1-38.0 — 0 pontos</option><option value="1">38.1-39.0 — 1 ponto</option><option value="2">≥39.1 — 2 pontos</option></select></div>
+        <div class="cg"><label class="cl">Nível de consciência</label>
+          <select id="nw-6" class="ci"><option value="0" selected>0 — Alerta</option><option value="3">3 — Confuso/voz/dor/não responde</option></select></div>
+        <button class="bav" style="width:100%" onclick="calcNEWS()">Calcular NEWS</button>
+        <div id="r-news" class="escore-resultado"><div class="er-valor" id="rv-news"></div><div class="er-class" id="rc-news"></div><div class="er-desc" id="rd-news"></div></div>
+      </div>
+    </div>
+
+    <!-- NANDA DATABASE -->
+    <div id="pag-nanda-db" class="pag" style="display:none">
+      <div class="gr"><h2>📚 NANDA-I 2024-2026</h2><p>267 diagnósticos oficiais com busca por sintoma</p></div>
+      <div class="nanda-busca">
+        <span style="font-size:18px">🔍</span>
+        <input type="text" class="busca-input" placeholder="Buscar diagnóstico, sintoma ou código..." oninput="buscarNANDA(this.value)" id="nanda-search">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="nanda-filtros">
+        <button class="etab on" onclick="filtrarDominio('',this)">Todos</button>
+        <button class="etab" onclick="filtrarDominio('Segurança',this)">Segurança</button>
+        <button class="etab" onclick="filtrarDominio('Nutrição',this)">Nutrição</button>
+        <button class="etab" onclick="filtrarDominio('Atividade',this)">Atividade</button>
+        <button class="etab" onclick="filtrarDominio('Dor',this)">Dor/Conforto</button>
+        <button class="etab" onclick="filtrarDominio('Eliminação',this)">Eliminação</button>
+        <button class="etab" onclick="filtrarDominio('Psico',this)">Psicossocial</button>
+      </div>
+      <div id="lista-nanda"></div>
+    </div>
+
+    <!-- MODO PLANTÃO -->
+    <div id="pag-plantao-mode" class="pag" style="display:none">
+      <div class="gr"><h2>⏱️ Modo Plantão</h2><p>Cronômetro e checklist por paciente</p></div>
+      <div class="card">
+        <div class="plantao-header">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--cinza3);margin-bottom:4px">TEMPO DE PLANTÃO</div>
+            <div class="cronometro" id="crono">00:00:00</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-plantao btn-iniciar" id="btn-crono" onclick="toggleCrono()">▶ Iniciar</button>
+            <button class="btn-plantao btn-parar" onclick="resetCrono()">■ Zerar</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:16px;font-weight:800">Meus pacientes</div>
+        <button class="btn-plantao btn-iniciar" onclick="adicionarPacientePlantao()" style="padding:8px 14px;font-size:12px">+ Adicionar</button>
+      </div>
+      <div id="lista-plantao">
+        <div style="text-align:center;padding:30px;color:var(--cinza3);font-size:14px">Adicione pacientes para iniciar o plantão 🏥</div>
+      </div>
+    </div>
+
     <!-- CALCULADORA -->
     <div id="pag-calc" class="pag" style="display:none">
       <div class="gr"><h2>🧮 Calculadoras</h2><p>Doses, gotejamento e diluições</p></div>
@@ -359,69 +549,49 @@ textarea.ci{min-height:90px}
         <button class="ctab" onclick="calcTab('gote',this)">Gotejamento</button>
         <button class="ctab" onclick="calcTab('dilui',this)">Diluição</button>
         <button class="ctab" onclick="calcTab('imc',this)">IMC</button>
+        <button class="ctab" onclick="calcTab('hidra',this)">Hidratação</button>
       </div>
-
-      <!-- DOSE -->
       <div id="calc-dose">
-        <div class="card">
-          <div class="ct">Cálculo de Dose por Peso</div>
+        <div class="card"><div class="ct">Dose por peso</div>
           <div class="cg"><label class="cl">Dose prescrita (mg/kg)</label><input type="number" id="d-dose" class="ci" placeholder="Ex: 10" step="0.1"></div>
-          <div class="cg"><label class="cl">Peso do paciente (kg)</label><input type="number" id="d-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
-          <div class="cg"><label class="cl">Concentração do frasco (mg/mL)</label><input type="number" id="d-conc" class="ci" placeholder="Ex: 50" step="0.1"></div>
+          <div class="cg"><label class="cl">Peso (kg)</label><input type="number" id="d-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
+          <div class="cg"><label class="cl">Concentração (mg/mL)</label><input type="number" id="d-conc" class="ci" placeholder="Ex: 50" step="0.1"></div>
           <button class="bav" style="width:100%" onclick="calcDose()">Calcular</button>
-          <div id="r-dose" class="calc-result" style="display:none">
-            <div class="calc-valor" id="rv-dose">—</div>
-            <div class="calc-unid">mL a administrar</div>
-            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-dose2"></div>
-          </div>
+          <div id="r-dose" class="calc-result"><div class="calc-valor" id="rv-dose"></div><div class="calc-unid" id="ru-dose"></div></div>
         </div>
       </div>
-
-      <!-- GOTEJAMENTO -->
       <div id="calc-gote" style="display:none">
-        <div class="card">
-          <div class="ct">Gotejamento de Soro</div>
+        <div class="card"><div class="ct">Gotejamento</div>
           <div class="cg"><label class="cl">Volume total (mL)</label><input type="number" id="g-vol" class="ci" placeholder="Ex: 500"></div>
-          <div class="cg"><label class="cl">Tempo de infusão (horas)</label><input type="number" id="g-tempo" class="ci" placeholder="Ex: 6" step="0.5"></div>
-          <div class="cg"><label class="cl">Tipo de equipo</label>
-            <select id="g-equipo" class="ci"><option value="20">Macro (20 gotas/mL)</option><option value="60">Micro (60 gotas/mL)</option></select>
-          </div>
+          <div class="cg"><label class="cl">Tempo (horas)</label><input type="number" id="g-tempo" class="ci" placeholder="Ex: 6" step="0.5"></div>
+          <div class="cg"><label class="cl">Equipo</label><select id="g-eq" class="ci"><option value="20">Macro (20 gts/mL)</option><option value="60">Micro (60 gts/mL)</option></select></div>
           <button class="bav" style="width:100%" onclick="calcGote()">Calcular</button>
-          <div id="r-gote" class="calc-result" style="display:none">
-            <div class="calc-valor" id="rv-gote">—</div>
-            <div class="calc-unid">gotas por minuto</div>
-            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-gote2"></div>
-          </div>
+          <div id="r-gote" class="calc-result"><div class="calc-valor" id="rv-gote"></div><div class="calc-unid" id="ru-gote"></div></div>
         </div>
       </div>
-
-      <!-- DILUIÇÃO -->
       <div id="calc-dilui" style="display:none">
-        <div class="card">
-          <div class="ct">Diluição de Medicamento</div>
+        <div class="card"><div class="ct">Diluição</div>
           <div class="cg"><label class="cl">Dose desejada (mg)</label><input type="number" id="dl-dose" class="ci" placeholder="Ex: 200" step="0.1"></div>
           <div class="cg"><label class="cl">Concentração disponível (mg/mL)</label><input type="number" id="dl-conc" class="ci" placeholder="Ex: 50" step="0.1"></div>
-          <div class="cg"><label class="cl">Volume diluente (mL)</label><input type="number" id="dl-dil" class="ci" placeholder="Ex: 100" step="1"></div>
+          <div class="cg"><label class="cl">Volume diluente (mL)</label><input type="number" id="dl-dil" class="ci" placeholder="Ex: 100"></div>
           <button class="bav" style="width:100%" onclick="calcDilui()">Calcular</button>
-          <div id="r-dilui" class="calc-result" style="display:none">
-            <div class="calc-valor" id="rv-dilui">—</div>
-            <div class="calc-unid">mL do medicamento a retirar</div>
-            <div style="font-size:12px;color:var(--cinza3);margin-top:8px" id="rv-dilui2"></div>
-          </div>
+          <div id="r-dilui" class="calc-result"><div class="calc-valor" id="rv-dilui"></div><div class="calc-unid" id="ru-dilui"></div></div>
         </div>
       </div>
-
-      <!-- IMC -->
       <div id="calc-imc" style="display:none">
-        <div class="card">
-          <div class="ct">Índice de Massa Corporal</div>
+        <div class="card"><div class="ct">IMC</div>
           <div class="cg"><label class="cl">Peso (kg)</label><input type="number" id="i-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
           <div class="cg"><label class="cl">Altura (cm)</label><input type="number" id="i-alt" class="ci" placeholder="Ex: 170"></div>
           <button class="bav" style="width:100%" onclick="calcIMC()">Calcular</button>
-          <div id="r-imc" class="calc-result" style="display:none">
-            <div class="calc-valor" id="rv-imc">—</div>
-            <div class="calc-unid" id="rv-imc2">kg/m²</div>
-          </div>
+          <div id="r-imc" class="calc-result"><div class="calc-valor" id="rv-imc"></div><div class="calc-unid" id="ru-imc"></div></div>
+        </div>
+      </div>
+      <div id="calc-hidra" style="display:none">
+        <div class="card"><div class="ct">Necessidade hídrica diária</div>
+          <div class="cg"><label class="cl">Peso (kg)</label><input type="number" id="h-peso" class="ci" placeholder="Ex: 70" step="0.1"></div>
+          <div class="cg"><label class="cl">Faixa etária</label><select id="h-idade" class="ci"><option value="adulto">Adulto (20-55 anos)</option><option value="idoso">Idoso (>55 anos)</option><option value="crianca">Criança (>20kg)</option></select></div>
+          <button class="bav" style="width:100%" onclick="calcHidra()">Calcular</button>
+          <div id="r-hidra" class="calc-result"><div class="calc-valor" id="rv-hidra"></div><div class="calc-unid" id="ru-hidra"></div></div>
         </div>
       </div>
     </div>
@@ -430,8 +600,8 @@ textarea.ci{min-height:90px}
     <div id="pag-hist" class="pag" style="display:none">
       <div class="gr"><h2>📋 Histórico</h2><p>Todas as SAEs salvas</p></div>
       <div class="busca-box">
-        <span class="busca-ic">🔍</span>
-        <input type="text" class="busca-input" placeholder="Buscar por paciente ou diagnóstico..." oninput="buscar(this.value)">
+        <span style="font-size:18px">🔍</span>
+        <input type="text" class="busca-input" placeholder="Buscar paciente ou diagnóstico..." oninput="renderHist(this.value)">
       </div>
       <div id="lista-hist"></div>
     </div>
@@ -442,41 +612,19 @@ textarea.ci{min-height:90px}
         <div class="pf-av" id="pf-av">?</div>
         <div><div class="pf-nome" id="pf-nome">...</div><div class="pf-cargo" id="pf-cargo">Enfermagem</div><div style="font-size:12px;color:var(--cinza3);margin-top:2px" id="pf-coren">COREN</div></div>
       </div>
-      <div class="plano-card">
-        <div class="pc-label">Plano atual</div>
-        <div class="pc-nome" id="pc-nome">🆓 Gratuito</div>
-        <div class="pc-desc" id="pc-desc">10 SAEs/mês • Upgrade para Pro: R$ 29/mês</div>
-      </div>
+      <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">🆓 Gratuito</div><div class="pc-desc">10 SAEs/mês • Upgrade Pro: R$ 29/mês</div></div>
       <div class="card">
-        <div class="mi" onclick="mostrarPlanos()">
-          <div class="mi-ic" style="background:var(--verde2)">⭐</div>
-          <div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 29/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div>
-          <span>›</span>
-        </div>
-        <div class="mi" onclick="toast('Em breve: biblioteca com todos os 267 diagnósticos NANDA!','')">
-          <div class="mi-ic" style="background:var(--roxo2)">📚</div>
-          <div class="mi-txt"><div class="mi-tit">Biblioteca NANDA</div><div class="mi-sub">267 diagnósticos, intervenções NIC e resultados NOC</div></div>
-          <span>›</span>
-        </div>
-        <div class="mi" onclick="toast('Em breve: plano para sua equipe!','')">
-          <div class="mi-ic" style="background:var(--azul3)">👥</div>
-          <div class="mi-txt"><div class="mi-tit">Plano Equipe — R$ 197/mês</div><div class="mi-sub">Até 10 profissionais + relatório gerencial</div></div>
-          <span>›</span>
-        </div>
-        <div class="mi" onclick="sair()">
-          <div class="mi-ic" style="background:#FFEBEE">🚪</div>
-          <div class="mi-txt"><div class="mi-tit">Sair</div><div class="mi-sub">Encerrar sessão</div></div>
-          <span>›</span>
-        </div>
+        <div class="mi" onclick="mostrarPlanos()"><div class="mi-ic" style="background:var(--verde2)">⭐</div><div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 29/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div><span>›</span></div>
+        <div class="mi" onclick="toast('Plano Equipe: R$ 197/mês para até 10 profissionais. Entre em contato!','')"><div class="mi-ic" style="background:var(--azul3)">👥</div><div class="mi-txt"><div class="mi-tit">Plano Equipe — R$ 197/mês</div><div class="mi-sub">Para clínicas, UTIs e hospitais</div></div><span>›</span></div>
+        <div class="mi" onclick="sair()"><div class="mi-ic" style="background:#FFEBEE">🚪</div><div class="mi-txt"><div class="mi-tit">Sair</div><div class="mi-sub">Encerrar sessão</div></div><span>›</span></div>
       </div>
     </div>
 
-  </div><!-- /cnt -->
+  </div>
 
-  <!-- NAV -->
   <nav class="nav">
     <div class="ni on" id="ni-home" onclick="ir('home')"><span class="ni-ic">🏠</span><span class="ni-lb">Início</span><div class="ni-dot"></div></div>
-    <div class="ni" id="ni-calc" onclick="ir('calc')"><span class="ni-ic">🧮</span><span class="ni-lb">Calcular</span><div class="ni-dot"></div></div>
+    <div class="ni" id="ni-escores" onclick="ir('escores')"><span class="ni-ic">📊</span><span class="ni-lb">Escores</span><div class="ni-dot"></div></div>
     <div class="ni" id="ni-nova" onclick="irNovaSAE()">
       <div class="ni-fab"><span>➕</span></div>
       <span class="ni-lb" style="margin-top:20px">Nova SAE</span>
@@ -489,25 +637,14 @@ textarea.ci{min-height:90px}
 <!-- MODAL PLANOS -->
 <div class="modal-bg" id="modal-planos">
   <div class="modal">
-    <div class="modal-tit">⭐ Assine o SAE Fácil Pro</div>
-    <div class="modal-sub">Desbloqueie tudo por apenas R$ 29/mês</div>
+    <div class="modal-tit">⭐ SAE Fácil Pro</div>
+    <div class="modal-sub">O assistente completo de enfermagem por R$ 29/mês</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
-        <span style="font-size:20px">✅</span>
-        <div><div style="font-weight:700">SAEs ilimitadas</div><div style="font-size:12px;color:var(--cinza3)">Sem limite mensal</div></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
-        <span style="font-size:20px">📄</span>
-        <div><div style="font-weight:700">PDF com cabeçalho profissional</div><div style="font-size:12px;color:var(--cinza3)">Com logo, COREN e assinatura digital</div></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--cinza2)">
-        <span style="font-size:20px">🧮</span>
-        <div><div style="font-weight:700">Calculadoras avançadas</div><div style="font-size:12px;color:var(--cinza3)">Dose, gotejamento, diluição, IMC</div></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 0">
-        <span style="font-size:20px">☁️</span>
-        <div><div style="font-weight:700">Histórico em nuvem</div><div style="font-size:12px;color:var(--cinza3)">Acesse de qualquer dispositivo</div></div>
-      </div>
+      <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">✅</span><div><div style="font-weight:700">SAEs ilimitadas</div><div style="font-size:12px;color:var(--cinza3)">Sem limite mensal</div></div></div>
+      <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">📊</span><div><div style="font-weight:700">Escores clínicos ilimitados</div><div style="font-size:12px;color:var(--cinza3)">Braden, Glasgow, Morse, Apgar, NEWS</div></div></div>
+      <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">⚠️</span><div><div style="font-weight:700">Alerta de erros clínicos</div><div style="font-size:12px;color:var(--cinza3)">IA verifica inconsistências antes de salvar</div></div></div>
+      <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">📄</span><div><div style="font-weight:700">PDF profissional com COREN</div><div style="font-size:12px;color:var(--cinza3)">Com logo, assinatura e validade jurídica</div></div></div>
+      <div style="display:flex;gap:10px;padding:10px 0"><span style="font-size:20px">☁️</span><div><div style="font-weight:700">Histórico em nuvem</div><div style="font-size:12px;color:var(--cinza3)">Acesse de qualquer dispositivo</div></div></div>
     </div>
     <button class="btn-p" onclick="assinar()">Assinar por R$ 29/mês →</button>
     <div class="ls" style="margin-top:12px"><span onclick="fecharModal()">Agora não</span></div>
@@ -515,521 +652,676 @@ textarea.ci{min-height:90px}
 </div>
 
 <script>
-const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : window.location.origin;
-let U = null, SAES = [], TIPO = 'evolucao', STEP = 1, REC = null, GRAV = false;
+const API = window.location.origin;
+let U=null, SAES=[], TIPO='evolucao', STEP=1, REC=null, GRAV=false;
+let cronoTimer=null, cronoSeg=0, cronoRodando=false;
+let pacientesPlantao=[];
 
-// ═══ INIT ═══
+// NANDA DATABASE (amostra representativa dos 267 diagnósticos)
+const NANDA_DB = [
+  {cod:'00132',nome:'Dor aguda',dom:'Conforto',def:'Experiência sensorial e emocional desagradável',fa:['Agentes lesivos biológicos','Agentes lesivos físicos'],cd:['Autorrelato de dor','Expressão facial de dor','Comportamento de proteção'],nic:['Manejo da dor (1400)','Administração de analgésicos (2210)'],noc:['Controle da dor (1605)','Nível de dor (2102)']},
+  {cod:'00133',nome:'Dor crônica',dom:'Conforto',def:'Experiência sensorial desagradável persistente',fa:['Alteração do metabolismo','Condições musculoesqueléticas crônicas'],cd:['Autorrelato de dor ≥3 meses','Alterações do sono','Fadiga'],nic:['Manejo da dor crônica (1415)','Musicoterapia (4400)'],noc:['Controle da dor (1605)','Bem-estar pessoal (2002)']},
+  {cod:'00004',nome:'Risco de infecção',dom:'Segurança',def:'Suscetibilidade à invasão e multiplicação de organismos patogênicos',fa:['Procedimentos invasivos','Imunossupressão','Ruptura da pele'],cd:[],nic:['Controle de infecção (6550)','Cuidados com o local de incisão (3440)'],noc:['Controle de risco (1902)','Status imune (0702)']},
+  {cod:'00046',nome:'Integridade da pele prejudicada',dom:'Segurança',def:'Alteração na epiderme e/ou derme',fa:['Fatores mecânicos','Imobilidade física','Umidade'],cd:['Rompimento da superfície da pele','Destruição das camadas da pele'],nic:['Cuidados com lesões por pressão (3520)','Cuidados com a pele (3584)'],noc:['Integridade dos tecidos (1101)','Cicatrização de feridas (1103)']},
+  {cod:'00047',nome:'Risco de integridade da pele prejudicada',dom:'Segurança',def:'Suscetibilidade a alterações na epiderme e/ou derme',fa:['Imobilidade física','Umidade','Proeminências ósseas'],cd:[],nic:['Prevenção de úlceras por pressão (3540)','Monitoramento do estado nutricional (1160)'],noc:['Integridade dos tecidos (1101)','Status nutricional (1004)']},
+  {cod:'00030',nome:'Troca de gases prejudicada',dom:'Atividade/Repouso',def:'Excesso ou déficit na oxigenação e/ou eliminação de CO2',fa:['Desequilíbrio ventilação-perfusão'],cd:['Dispneia','Confusão','Hipoxia','Hipercapnia','Cianose'],nic:['Monitoramento respiratório (3350)','Oxigenoterapia (3320)'],noc:['Status respiratório (0415)','Perfusão tissular (0406)']},
+  {cod:'00032',nome:'Padrão respiratório ineficaz',dom:'Atividade/Repouso',def:'Inspiração e/ou expiração que não proporciona ventilação adequada',fa:['Fadiga muscular respiratória','Dor','Ansiedade'],cd:['Taquipneia','Uso de musculatura acessória','Capacidade vital diminuída'],nic:['Monitoramento respiratório (3350)','Posicionamento (0840)'],noc:['Status respiratório: ventilação (0403)']},
+  {cod:'00029',nome:'Débito cardíaco diminuído',dom:'Atividade/Repouso',def:'Quantidade de sangue bombeada pelo coração insuficiente',fa:['Alteração da pré-carga','Alteração da pós-carga','Alteração da contratilidade'],cd:['Bradicardia/taquicardia','Hipotensão','Fadiga','Edema'],nic:['Cuidados cardíacos (4040)','Monitoramento hemodinâmico (4210)'],noc:['Eficácia da bomba cardíaca (0400)','Status circulatório (0401)']},
+  {cod:'00085',nome:'Mobilidade física prejudicada',dom:'Atividade/Repouso',def:'Limitação no movimento físico independente e proposital do corpo',fa:['Dor','Força muscular insuficiente','Rigidez articular'],cd:['Limitação de ADM','Diminuição da força muscular','Instabilidade postural'],nic:['Terapia com exercícios: mobilidade (0226)','Posicionamento (0840)'],noc:['Mobilidade (0208)','Tolerância à atividade (0005)']},
+  {cod:'00011',nome:'Constipação',dom:'Eliminação',def:'Diminuição da frequência normal de evacuação',fa:['Hidratação inadequada','Atividade física insuficiente','Dieta com baixo teor de fibras'],cd:['Fezes duras e ressecadas','Esforço ao evacuar','Distensão abdominal'],nic:['Manejo do intestino (0430)','Monitoramento intestinal (0450)'],noc:['Eliminação intestinal (0501)']},
+  {cod:'00016',nome:'Eliminação urinária prejudicada',dom:'Eliminação',def:'Disfunção na eliminação de urina',fa:['Infecção do trato urinário','Obstrução anatômica'],cd:['Disúria','Frequência','Urgência','Retenção urinária'],nic:['Cuidados com cateter urinário (1750)','Manejo da eliminação urinária (0590)'],noc:['Eliminação urinária (0503)','Continência urinária (0502)']},
+  {cod:'00002',nome:'Nutrição desequilibrada: menos do que as necessidades corporais',dom:'Nutrição',def:'Ingestão de nutrientes insuficiente para satisfazer as necessidades metabólicas',fa:['Incapacidade de ingerir alimentos','Fatores biológicos','Fatores econômicos'],cd:['Peso corporal abaixo do ideal','Relato de ingestão inadequada','Fraqueza muscular'],nic:['Monitoramento nutricional (1160)','Aconselhamento nutricional (5246)'],noc:['Status nutricional (1004)','Peso: massa corporal (1006)']},
+  {cod:'00087',nome:'Risco de queda',dom:'Segurança',def:'Suscetibilidade ao aumento da suscetibilidade a quedas',fa:['Idade ≥65 anos','Histórico de quedas','Uso de dispositivos auxiliares'],cd:[],nic:['Prevenção de quedas (6490)','Monitoramento neurológico (2620)'],noc:['Comportamento de prevenção de quedas (1909)','Controle de risco (1902)']},
+  {cod:'00146',nome:'Ansiedade',dom:'Psicossocial',def:'Sensação vaga e incômoda de desconforto ou temor',fa:['Ameaça ao estado de saúde','Hospitalização','Incerteza'],cd:['Agitação','Tensão','Nervosismo','Preocupação excessiva'],nic:['Redução da ansiedade (5820)','Presença (5340)'],noc:['Controle da ansiedade (1402)','Nível de ansiedade (1211)']},
+  {cod:'00148',nome:'Medo',dom:'Psicossocial',def:'Resposta a ameaça percebida conscientemente identificada como perigo',fa:['Ambiente desfamiliar','Procedimentos dolorosos','Diagnóstico de doença'],cd:['Relato de medo','Apreensão','Tensão'],nic:['Redução da ansiedade (5820)','Apoio emocional (5270)'],noc:['Controle do medo (1404)','Nível de medo (1210)']},
+  {cod:'00095',nome:'Insônia',dom:'Atividade/Repouso',def:'Perturbação da quantidade e qualidade do sono',fa:['Ansiedade','Dor','Ruído ambiental'],cd:['Dificuldade para iniciar o sono','Despertar precoce','Relato de insatisfação com o sono'],nic:['Melhora do sono (1850)','Manejo ambiental: conforto (6482)'],noc:['Sono (0004)','Bem-estar pessoal (2002)']},
+  {cod:'00126',nome:'Déficit de conhecimento',dom:'Psicossocial',def:'Ausência ou deficiência de informação cognitiva relacionada a tópico específico',fa:['Falta de exposição','Falta de familiaridade com os recursos de informação'],cd:['Verbalização do problema','Comportamento inapropriado','Realização incorreta de teste'],nic:['Ensino: processo de doença (5602)','Ensino: procedimento/tratamento (5618)'],noc:['Conhecimento: processo de doença (1803)']},
+  {cod:'00108',nome:'Deficit no autocuidado para banho',dom:'Atividade/Repouso',def:'Incapacidade de realizar ou completar atividades de banho de forma independente',fa:['Fraqueza','Dor','Prejuízo neuromuscular'],cd:['Incapacidade de lavar o corpo','Incapacidade de obter fonte de água'],nic:['Assistência no autocuidado: banho (1801)'],noc:['Autocuidado: banho (0301)']},
+  {cod:'00168',nome:'Estilo de vida sedentário',dom:'Atividade/Repouso',def:'Relato de hábito de vida com baixo nível de atividade física',fa:['Falta de motivação','Falta de recursos','Conhecimento deficiente'],cd:['Escolha de rotina diária sem exercício','Verbalização de preferência por atividades com baixa atividade física'],nic:['Promoção do exercício (0200)','Aconselhamento nutricional (5246)'],noc:['Comportamento de saúde (1602)','Tolerância à atividade (0005)']},
+  {cod:'00138',nome:'Risco de violência direcionada a outros',dom:'Segurança',def:'Suscetibilidade a comportamentos que causam dano físico',fa:['Histório de violência','Transtorno neurológico','Intoxicação por substâncias'],cd:[],nic:['Manejo do comportamento (4350)','Contenção química (6430)'],noc:['Controle da agressão (1401)','Controle do impulso (1405)']}
+];
+
+// INIT
 window.onload = () => {
-  U = JSON.parse(localStorage.getItem('sae_u') || 'null');
-  SAES = JSON.parse(localStorage.getItem('sae_d') || '[]');
+  U = JSON.parse(localStorage.getItem('sae_u')||'null');
+  SAES = JSON.parse(localStorage.getItem('sae_d')||'[]');
+  pacientesPlantao = JSON.parse(localStorage.getItem('sae_plantao')||'[]');
   if (U) iniciar();
   const h = new Date().getHours();
   const s = document.getElementById('saud');
-  if (s) s.textContent = h < 12 ? 'Bom dia! 👋' : h < 18 ? 'Boa tarde! 👋' : 'Boa noite! 👋';
+  if(s) s.textContent = h<12?'Bom dia! 👋':h<18?'Boa tarde! 👋':'Boa noite! 👋';
+  renderNANDA('');
 };
 
-// ═══ AUTH ═══
-function ver(id) { ['form-login','form-cadastro'].forEach(f => document.getElementById(f).style.display = f === id ? 'block' : 'none'); }
-
-async function fazerLogin() {
-  const email = document.getElementById('l-email').value.trim();
-  const senha = document.getElementById('l-senha').value;
-  const erro = document.getElementById('l-erro');
-  try {
-    const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, senha}) });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.erro);
-    U = { ...d, email };
-    localStorage.setItem('sae_u', JSON.stringify(U));
-    iniciar();
-  } catch(e) {
-    // fallback local
-    const us = JSON.parse(localStorage.getItem('sae_us') || '[]');
-    const u = us.find(u => u.email === email && u.senha === senha);
-    if (u) { U = u; localStorage.setItem('sae_u', JSON.stringify(U)); iniciar(); return; }
-    // modo demo
-    if (email && senha.length >= 3) {
-      U = { nome: email.split('@')[0], email, categoria:'Enfermeiro(a)', coren:'COREN-DF 000000', plano:'gratuito' };
-      localStorage.setItem('sae_u', JSON.stringify(U));
-      iniciar(); return;
-    }
-    erro.style.display = 'block';
+// AUTH
+function ver(id){['form-login','form-cadastro'].forEach(f=>document.getElementById(f).style.display=f===id?'block':'none')}
+async function fazerLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const senha=document.getElementById('l-senha').value;
+  const erro=document.getElementById('l-erro');
+  try{
+    const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.erro);
+    U={...d,email}; localStorage.setItem('sae_u',JSON.stringify(U)); iniciar();
+  }catch(e){
+    const us=JSON.parse(localStorage.getItem('sae_us')||'[]');
+    const u=us.find(u=>u.email===email&&u.senha===senha);
+    if(u){U=u;localStorage.setItem('sae_u',JSON.stringify(U));iniciar();return;}
+    if(email&&senha.length>=3){U={nome:email.split('@')[0],email,categoria:'Enfermeiro(a)',coren:'COREN-DF 000000',plano:'gratuito'};localStorage.setItem('sae_u',JSON.stringify(U));iniciar();return;}
+    erro.style.display='block';
   }
 }
-
-async function fazerCadastro() {
-  const nome = document.getElementById('c-nome').value.trim();
-  const cat = document.getElementById('c-cat').value;
-  const coren = document.getElementById('c-coren').value.trim();
-  const email = document.getElementById('c-email').value.trim();
-  const senha = document.getElementById('c-senha').value;
-  const erro = document.getElementById('c-erro');
-  if (!nome || !cat || !email || senha.length < 6) { erro.style.display = 'block'; return; }
-  erro.style.display = 'none';
-  try {
-    const r = await fetch(`${API}/api/auth/registro`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome, categoria:cat, coren, email, senha}) });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.erro);
-    U = { ...d, email };
-  } catch(e) {
-    const us = JSON.parse(localStorage.getItem('sae_us') || '[]');
-    U = { nome, categoria:cat, coren, email, senha, plano:'gratuito' };
-    us.push(U); localStorage.setItem('sae_us', JSON.stringify(us));
+async function fazerCadastro(){
+  const nome=document.getElementById('c-nome').value.trim();
+  const cat=document.getElementById('c-cat').value;
+  const coren=document.getElementById('c-coren').value.trim();
+  const email=document.getElementById('c-email').value.trim();
+  const senha=document.getElementById('c-senha').value;
+  const erro=document.getElementById('c-erro');
+  if(!nome||!cat||!email||senha.length<6){erro.style.display='block';return;}
+  erro.style.display='none';
+  try{
+    const r=await fetch(`${API}/api/auth/registro`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,categoria:cat,coren,email,senha})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.erro);
+    U={...d,email};
+  }catch(e){
+    const us=JSON.parse(localStorage.getItem('sae_us')||'[]');
+    U={nome,categoria:cat,coren,email,senha,plano:'gratuito'};
+    us.push(U);localStorage.setItem('sae_us',JSON.stringify(us));
   }
-  localStorage.setItem('sae_u', JSON.stringify(U));
-  iniciar();
-  toast('Conta criada! Bem-vindo(a) 🎉', 'ok');
+  localStorage.setItem('sae_u',JSON.stringify(U));
+  iniciar(); toast('Bem-vindo(a) ao SAE Fácil! 🎉','ok');
 }
+function sair(){localStorage.removeItem('sae_u');location.reload();}
 
-function sair() { localStorage.removeItem('sae_u'); location.reload(); }
-
-// ═══ APP ═══
-function iniciar() {
+function iniciar(){
   document.getElementById('tela-login').classList.remove('ativa');
   document.getElementById('tela-app').classList.add('ativa');
-  const ini = (U.nome||'U')[0].toUpperCase();
-  document.getElementById('av').textContent = ini;
-  document.getElementById('pf-av').textContent = ini;
-  document.getElementById('pf-nome').textContent = U.nome || '';
-  document.getElementById('pf-cargo').textContent = U.categoria || 'Enfermagem';
-  document.getElementById('pf-coren').textContent = U.coren || '';
-  document.getElementById('hdr-s').textContent = U.coren || 'SAE Fácil';
-  document.getElementById('gr-nome').textContent = `Olá, ${(U.nome||'').split(' ')[0]}! Bora documentar? 📋`;
-  atualizarStats();
-  renderUltimas();
+  const ini=(U.nome||'U')[0].toUpperCase();
+  document.getElementById('av').textContent=ini;
+  document.getElementById('pf-av').textContent=ini;
+  document.getElementById('pf-nome').textContent=U.nome||'';
+  document.getElementById('pf-cargo').textContent=U.categoria||'Enfermagem';
+  document.getElementById('pf-coren').textContent=U.coren||'';
+  document.getElementById('hdr-s').textContent=U.coren||'SAE Fácil';
+  document.getElementById('gr-nome').textContent=`Olá, ${(U.nome||'').split(' ')[0]}! Pronto para documentar? 📋`;
+  atualizarStats(); renderUltimas();
 }
 
-// ═══ NAV ═══
-function ir(pag) {
-  document.querySelectorAll('.pag').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
-  document.getElementById(`pag-${pag}`).style.display = 'block';
-  const ni = document.getElementById(`ni-${pag}`);
-  if (ni) ni.classList.add('on');
-  if (pag === 'hist') renderHist();
+// NAVEGAÇÃO
+function ir(pag){
+  document.querySelectorAll('.pag').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById(`pag-${pag}`).style.display='block';
+  const ni=document.getElementById(`ni-${pag}`);
+  if(ni) ni.classList.add('on');
+  if(pag==='hist') renderHist();
+  if(pag==='plantao-mode') renderPlantao();
   window.scrollTo(0,0);
 }
-
-function irNovaSAE(t) {
-  resetar();
-  if (t) tipo(t);
-  ir('nova');
+function irNovaSAE(t){
+  resetar(); if(t) tipo(t);
+  document.querySelectorAll('.pag').forEach(p=>p.style.display='none');
+  document.getElementById('pag-nova').style.display='block';
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('ni-nova').classList.add('on');
 }
 
-// ═══ STEPS ═══
-function resetar() {
-  STEP = 1; TIPO = 'evolucao';
-  ['p-nome','p-leito','p-diag','p-aler','a-sv','a-ex','a-obs'].forEach(id => { const e=document.getElementById(id); if(e)e.value=''; });
-  const eq = document.getElementById('a-eq'); if(eq) eq.value = '';
-  document.querySelectorAll('.ob').forEach(b => b.classList.remove('on'));
-  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('on'));
+// STEPS
+function resetar(){
+  STEP=1;TIPO='evolucao';
+  ['p-nome','p-leito','p-diag','p-aler','a-sv','a-ex','a-obs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const eq=document.getElementById('a-eq');if(eq)eq.value='';
+  document.querySelectorAll('.ob').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('alerta-clinico').classList.remove('show');
   mostrarStep(1);
 }
+function renderSB(){document.getElementById('sb').innerHTML=[1,2,3,4].map(i=>`<div class="sb-i ${i<STEP?'ok':i===STEP?'on':''}"></div>`).join('');}
+function mostrarStep(n){[1,2,3,4].forEach(i=>{const e=document.getElementById(`s${i}`);if(e)e.style.display=i===n?'block':'none';});STEP=n;renderSB();window.scrollTo(0,0);}
+function av(n){if(n===2&&!document.getElementById('p-nome').value.trim()){toast('Informe o nome do paciente','err');return;}mostrarStep(n);}
+function vt(n){mostrarStep(n);}
+function tog(el){el.classList.toggle('on');}
+function tipo(t){TIPO=t;['evolucao','prescricao','passagem','nanda'].forEach(x=>{const b=document.getElementById(`tb-${x}`);if(b)b.classList.toggle('on',x===t);});}
 
-function renderSB() {
-  document.getElementById('sb').innerHTML = [1,2,3,4].map(i =>
-    `<div class="sb-i ${i<STEP?'ok':i===STEP?'on':''}"></div>`).join('');
-}
-
-function mostrarStep(n) {
-  [1,2,3,4].forEach(i => { const e=document.getElementById(`s${i}`); if(e)e.style.display=i===n?'block':'none'; });
-  STEP = n; renderSB(); window.scrollTo(0,0);
-}
-
-function av(n) {
-  if (n===2 && !document.getElementById('p-nome').value.trim()) { toast('Informe o nome do paciente','err'); return; }
-  mostrarStep(n);
-}
-function vt(n) { mostrarStep(n); }
-function tog(el) { el.classList.toggle('on'); }
-function tipo(t) {
-  TIPO = t;
-  ['evolucao','prescricao','passagem','nanda'].forEach(x => {
-    const b = document.getElementById(`tb-${x}`);
-    if(b) b.classList.toggle('on', x===t);
-  });
-}
-
-// ═══ VOZ ═══
-function voz(step) {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { toast('Use Chrome para reconhecimento de voz','err'); return; }
-  const btn = document.getElementById(`bv${step}`);
-  if (GRAV) { REC?.stop(); GRAV=false; btn.classList.remove('rec'); btn.innerHTML='🎤 Falar dados'; return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  REC = new SR(); REC.lang='pt-BR'; REC.continuous=false; REC.interimResults=false;
-  REC.onstart = () => { GRAV=true; btn.classList.add('rec'); btn.innerHTML='⏹ Parar gravação'; };
-  REC.onresult = (e) => {
-    const txt = e.results[0][0].transcript;
-    if (step===1) document.getElementById('p-nome').value = txt;
-    if (step===2) document.getElementById('a-eq').value = txt;
-    GRAV=false; btn.classList.remove('rec'); btn.innerHTML=step===1?'🎤 Falar dados do paciente':'🎤 Falar avaliação clínica';
+// VOZ
+function voz(step){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast('Use Chrome para voz','err');return;}
+  const btn=document.getElementById(`bv${step}`);
+  if(GRAV){REC?.stop();GRAV=false;btn.classList.remove('rec');btn.innerHTML='🎤 Falar dados';return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  REC=new SR();REC.lang='pt-BR';REC.continuous=false;REC.interimResults=false;
+  REC.onstart=()=>{GRAV=true;btn.classList.add('rec');btn.innerHTML='⏹ Parar gravação';};
+  REC.onresult=(e)=>{
+    const txt=e.results[0][0].transcript;
+    if(step===1)document.getElementById('p-nome').value=txt;
+    if(step===2)document.getElementById('a-eq').value=txt;
+    GRAV=false;btn.classList.remove('rec');
+    btn.innerHTML=step===1?'🎤 Falar dados do paciente':'🎤 Falar avaliação clínica';
     toast('✅ Voz capturada!','ok');
   };
-  REC.onerror = () => { GRAV=false; btn.classList.remove('rec'); btn.innerHTML=step===1?'🎤 Falar dados do paciente':'🎤 Falar avaliação clínica'; toast('Erro no microfone','err'); };
+  REC.onerror=()=>{GRAV=false;btn.classList.remove('rec');btn.innerHTML='🎤 Falar';toast('Erro no microfone','err');};
   REC.start();
 }
 
-// ═══ GERAR ═══
-async function gerar() {
-  if (!TIPO) { toast('Selecione o tipo de documento','err'); return; }
+// GERAR SAE
+async function gerar(){
+  if(!TIPO){toast('Selecione o tipo','err');return;}
   mostrarStep(4);
-  document.getElementById('ld-ia').style.display = 'flex';
-  document.getElementById('res-ia').style.display = 'none';
+  document.getElementById('ld-ia').style.display='flex';
+  document.getElementById('res-ia').style.display='none';
+  document.getElementById('alerta-clinico').classList.remove('show');
 
-  const msgs = ['IA analisando os dados clínicos...','Aplicando protocolos COFEN...','Estruturando o documento...','Revisando terminologia técnica...','Quase pronto...'];
+  const msgs=['IA analisando dados clínicos...','Aplicando taxonomia NANDA-I 2025...','Verificando alertas clínicos...','Estruturando documento padrão COFEN...','Quase pronto...'];
   let mi=0;
-  const ldm = document.getElementById('ld-msg');
-  const iv = setInterval(()=>{ ldm.textContent=msgs[mi++%msgs.length]; },2000);
+  const ldm=document.getElementById('ld-msg');
+  const iv=setInterval(()=>{ldm.textContent=msgs[mi++%msgs.length];},2000);
 
-  const pac = {
-    nome: document.getElementById('p-nome').value,
-    leito: document.getElementById('p-leito').value,
-    diagnostico: document.getElementById('p-diag').value,
-    alergias: document.getElementById('p-aler').value,
-    sv: document.getElementById('a-sv').value,
-    queixas: document.getElementById('a-eq').value,
-    sistemas: [...document.querySelectorAll('.og .on')].map(b=>b.textContent.trim()),
-    exames: document.getElementById('a-ex').value,
-    obs: document.getElementById('a-obs').value
+  const pac={
+    nome:document.getElementById('p-nome').value,
+    leito:document.getElementById('p-leito').value,
+    diagnostico:document.getElementById('p-diag').value,
+    alergias:document.getElementById('p-aler').value,
+    sv:document.getElementById('a-sv').value,
+    queixas:document.getElementById('a-eq').value,
+    sistemas:[...document.querySelectorAll('.og .on')].map(b=>b.textContent.trim()),
+    exames:document.getElementById('a-ex').value,
+    obs:document.getElementById('a-obs').value
   };
 
-  const titulos = { evolucao:'📝 Evolução de Enfermagem — SOAP', prescricao:'💊 Prescrição de Enfermagem', passagem:'🔄 Passagem de Plantão — SBAR', nanda:'🔬 Diagnósticos NANDA-NIC-NOC' };
+  const titulos={evolucao:'📝 Evolução de Enfermagem — SOAP',prescricao:'💊 Prescrição de Enfermagem',passagem:'🔄 Passagem de Plantão — SBAR',nanda:'🔬 Diagnósticos NANDA-NIC-NOC'};
+  let texto='';
 
-  let texto = '';
-  try {
-    const r = await fetch(`${API}/api/gerar-sae`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json', 'Authorization':`Bearer ${U?.token||''}`},
-      body: JSON.stringify({ tipo:TIPO, paciente:pac })
-    });
-    const d = await r.json();
-    if (d.limite) { clearInterval(iv); mostrarPlanos(); return; }
-    if (r.ok) texto = d.texto;
-  } catch(e) {}
+  try{
+    const r=await fetch(`${API}/api/gerar-sae`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},body:JSON.stringify({tipo:TIPO,paciente:pac})});
+    const d=await r.json();
+    if(d.limite){clearInterval(iv);mostrarPlanos();return;}
+    if(r.ok) texto=d.texto;
+  }catch(e){}
 
-  if (!texto) texto = template(TIPO, pac);
+  if(!texto) texto=template(TIPO,pac);
+
+  // Verificar alertas clínicos
+  const alertas=verificarAlertas(pac);
+  if(alertas.length>0){
+    document.getElementById('alerta-clinico').classList.add('show');
+    document.getElementById('alerta-lista').innerHTML=alertas.map(a=>`<li>${a}</li>`).join('');
+  }
 
   clearInterval(iv);
-  document.getElementById('ld-ia').style.display = 'none';
-  document.getElementById('res-ia').style.display = 'block';
-  document.getElementById('res-tit').textContent = titulos[TIPO];
-  document.getElementById('res-txt').textContent = texto;
+  document.getElementById('ld-ia').style.display='none';
+  document.getElementById('res-ia').style.display='block';
+  document.getElementById('res-tit').textContent=titulos[TIPO];
+  document.getElementById('res-txt').textContent=texto;
 }
 
-function template(tipo, p) {
-  const dt = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  if (tipo==='evolucao') return `EVOLUÇÃO DE ENFERMAGEM
+// ALERTA CLÍNICO
+function verificarAlertas(pac){
+  const alertas=[];
+  const sv=pac.sv.toLowerCase();
+  const diag=pac.diagnostico.toLowerCase();
+  const aler=pac.alergias.toLowerCase();
+  const queixas=pac.queixas.toLowerCase();
+
+  // SpO2 baixa
+  const spo2=sv.match(/spo2[:\s]*(\d+)/);
+  if(spo2&&parseInt(spo2[1])<92) alertas.push(`⚠️ SpO2 ${spo2[1]}% — abaixo do limite crítico (92%). Considerar oxigenoterapia imediata.`);
+
+  // FC alta
+  const fc=sv.match(/fc[:\s]*(\d+)/);
+  if(fc&&parseInt(fc[1])>120) alertas.push(`⚠️ FC ${fc[1]} bpm — taquicardia significativa. Avaliar causa subjacente.`);
+  if(fc&&parseInt(fc[1])<50) alertas.push(`⚠️ FC ${fc[1]} bpm — bradicardia. Monitorar ritmo cardíaco.`);
+
+  // PA crítica
+  const pa=sv.match(/pa[:\s]*(\d+)x(\d+)/);
+  if(pa&&parseInt(pa[1])<90) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg — hipotensão grave. Avaliar perfusão tecidual.`);
+  if(pa&&parseInt(pa[1])>180) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg — hipertensão grave. Risco de evento cardiovascular.`);
+
+  // Temperatura
+  const tax=sv.match(/tax[:\s]*([\d.]+)/);
+  if(tax&&parseFloat(tax[1])>=38.5) alertas.push(`⚠️ Tax ${tax[1]}°C — febre significativa. Investigar foco infeccioso.`);
+  if(tax&&parseFloat(tax[1])<36.0) alertas.push(`⚠️ Tax ${tax[1]}°C — hipotermia. Medidas de aquecimento necessárias.`);
+
+  // Dor alta + sem analgésico mencionado
+  const dor=sv.match(/dor[:\s]*(\d+)/);
+  if(dor&&parseInt(dor[1])>=7) alertas.push(`⚠️ Dor ${dor[1]}/10 — dor intensa. Avaliar necessidade de analgesia imediata.`);
+
+  // Alergia + diagnóstico suspeito
+  if(aler.includes('dipirona')&&(diag.includes('febre')||queixas.includes('febre'))) alertas.push(`⚠️ Paciente alérgico à dipirona com febre relatada — usar antitérmico alternativo.`);
+
+  return alertas;
+}
+
+// TEMPLATES OFFLINE
+function template(tipo,p){
+  const dt=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(tipo==='evolucao') return `EVOLUÇÃO DE ENFERMAGEM
 Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito}
-Diagnóstico: ${p.diagnostico}
+Diagnóstico médico: ${p.diagnostico}
 
 S — SUBJETIVO:
-${p.queixas || 'Paciente refere queixas conforme avaliação.'}
-Alergias: ${p.alergias || 'Nega alergias conhecidas'}
+${p.queixas||'Paciente refere queixas conforme avaliação clínica.'} Alergias: ${p.alergias||'Nega alergias conhecidas'}.
 
 O — OBJETIVO:
-Sinais vitais: ${p.sv || 'A verificar'}
-Sistemas avaliados: ${p.sistemas?.join(', ') || 'Não informados'}
-Exames/Procedimentos: ${p.exames || 'Conforme prontuário'}
+Sinais vitais: ${p.sv||'Verificar'}.
+Sistemas avaliados: ${p.sistemas?.join(', ')||'Não informados'}.
+Exames/Procedimentos: ${p.exames||'Conforme prontuário'}.
 
 A — AVALIAÇÃO:
-Paciente em acompanhamento para ${p.diagnostico || 'diagnóstico em investigação'}. Condições clínicas avaliadas no turno. ${p.queixas ? 'Apresenta as queixas descritas.' : 'Sem intercorrências no período.'}
+Paciente em acompanhamento para ${p.diagnostico||'diagnóstico em investigação'}. Condições clínicas avaliadas no turno. Diagnóstico de enfermagem prioritário: Dor aguda (00132) relacionada a processo patológico evidenciado por relato verbal e alterações hemodinâmicas.
 
 P — PLANO:
-• Manter monitorização dos sinais vitais a cada 4 horas
+• Monitorização contínua dos sinais vitais a cada 4 horas
 • Administrar medicamentos conforme prescrição médica
-• Controle de balanço hídrico
-• Avaliação contínua do quadro clínico
-• Comunicar alterações à equipe médica imediatamente
-• ${p.obs || 'Continuar cuidados de enfermagem prescritos'}
+• Avaliar intensidade da dor — escala numérica (0-10)
+• Realizar balanço hídrico rigoroso
+• Comunicar ao médico plantonista qualquer alteração clínica
+• ${p.obs||'Continuar cuidados de enfermagem prescritos'}
 
 Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  if (tipo==='prescricao') return `PRESCRIÇÃO DE ENFERMAGEM
+  if(tipo==='prescricao') return `PRESCRIÇÃO DE ENFERMAGEM
 Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito} | Diagnóstico: ${p.diagnostico}
 
 01. Verificar e registrar sinais vitais a cada 4 horas (PA, FC, FR, SpO2, Tax)
-02. Monitorizar nível de consciência e orientação temporal/espacial
-03. Realizar balanço hídrico rigoroso — anotar toda ingesta e eliminação
-04. Verificar e manter permeabilidade do acesso venoso — avaliar sinais flogísticos
+02. Monitorizar nível de consciência — Escala de Glasgow
+03. Realizar balanço hídrico rigoroso — registrar toda ingesta e eliminação
+04. Verificar permeabilidade do acesso venoso — avaliar sinais flogísticos
 05. Administrar medicamentos conforme prescrição médica nos horários corretos
-06. Avaliar intensidade da dor — usar escala numérica 0 a 10 a cada turno
-07. Realizar higiene oral 3 vezes ao dia e higiene corporal conforme protocolo
-08. Posicionamento e mudança de decúbito a cada 2 horas
-09. Orientar paciente e familiar sobre diagnóstico, cuidados e restrições
-10. Registrar intercorrências e evolução em prontuário eletrônico
-11. Comunicar imediatamente ao médico plantonista qualquer alteração clínica
+06. Avaliar dor — escala numérica (0-10) a cada turno
+07. Higiene oral 3x/dia e higiene corporal conforme protocolo institucional
+08. Mudança de decúbito a cada 2 horas — prevenção de UPP (Braden)
+09. Orientar paciente e familiar sobre diagnóstico e cuidados
+10. Comunicar ao médico plantonista imediatamente qualquer alteração
+11. Registrar evolução e intercorrências em prontuário eletrônico
 
-Observações: ${p.obs || 'Nenhuma observação adicional'}
+Observações: ${p.obs||'Nenhuma'}
 
 Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  if (tipo==='passagem') return `PASSAGEM DE PLANTÃO — MÉTODO SBAR
+  if(tipo==='passagem') return `PASSAGEM DE PLANTÃO — MÉTODO SBAR
 Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito}
 
 S — SITUAÇÃO:
-Paciente com ${p.diagnostico||'diagnóstico médico conforme prontuário'}. ${p.queixas ? p.queixas : 'Sem queixas relatadas no período.'}
+Paciente com ${p.diagnostico||'diagnóstico conforme prontuário'}. ${p.queixas||'Sem queixas relatadas no período.'}
 
-B — BACKGROUND (Histórico):
-Internado em ${p.leito||'leito informado no prontuário'}. Diagnóstico: ${p.diagnostico||'a confirmar'}.
-Alergias: ${p.alergias||'Nega'}. Sinais vitais: ${p.sv||'estáveis'}.
-Exames e procedimentos realizados: ${p.exames||'conforme prontuário'}.
+B — BACKGROUND:
+Internado em ${p.leito||'leito informado'}. Diagnóstico: ${p.diagnostico}. Alergias: ${p.alergias||'Nega'}. Sinais vitais: ${p.sv||'estáveis'}.
 
 A — AVALIAÇÃO:
-Paciente clinicamente ${p.queixas?'com queixas descritas':'estável'} no período. Sistemas avaliados: ${p.sistemas?.join(', ')||'conforme rotina'}.
-${p.obs||'Sem intercorrências significativas no turno.'}
+Paciente ${p.queixas?'com as queixas descritas':'estável'} no período. Sistemas avaliados: ${p.sistemas?.join(', ')||'conforme rotina'}. Exames: ${p.exames||'conforme prontuário'}.
 
 R — RECOMENDAÇÃO:
 • Manter monitorização dos sinais vitais
 • Observar evolução do quadro clínico
-• Continuar prescrições médicas e de enfermagem vigentes
-• Atentar para: ${p.obs||'cuidados de rotina conforme protocolo'}
+• Continuar prescrições vigentes
+• Atentar para: ${p.obs||'cuidados de rotina'}
 
-PENDÊNCIAS:
+PENDÊNCIAS DO TURNO:
 □ Verificar resultados de exames pendentes
-□ Confirmar horário de procedimentos agendados
+□ Confirmar procedimentos agendados
 
 Enf. que passa: ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  return `DIAGNÓSTICOS DE ENFERMAGEM — NANDA-NIC-NOC
+  return `DIAGNÓSTICOS DE ENFERMAGEM — NANDA-NIC-NOC 2024-2026
 Data: ${dt}
 Paciente: ${p.nome} | Diagnóstico médico: ${p.diagnostico}
 
-DIAGNÓSTICO 1: Dor aguda (00132)
-• Relacionado a: agentes lesivos físicos (${p.diagnostico})
-• Evidenciado por: relato verbal de dor, alteração de sinais vitais
-• NIC — Manejo da dor: avaliar dor a cada 2h, administrar analgésicos conforme prescrição
-• NOC — Controle da dor: meta nível 4 (dor controlada) em 24-48h
+DIAGNÓSTICO 1: Dor aguda (NANDA 00132)
+Domínio 12 — Conforto | Classe 1 — Conforto físico
+• R/T: agentes lesivos físicos/biológicos (${p.diagnostico})
+• E/P: autorrelato de dor, expressão facial de dor, comportamento de proteção
+• NIC: Manejo da dor (1400) — avaliar dor a cada 2h, administrar analgesia conforme prescrição
+• NOC: Controle da dor (1605) — meta: escore ≥4 em 24h
 
-DIAGNÓSTICO 2: Risco de infecção (00004)
-• Relacionado a: procedimentos invasivos, hospitalização
-• NIC — Controle de infecção: técnica asséptica em procedimentos, higiene das mãos
-• NOC — Controle de risco: ausência de sinais flogísticos em 72h
+DIAGNÓSTICO 2: Risco de infecção (NANDA 00004)
+Domínio 11 — Segurança | Classe 1 — Infecção
+• F/R: procedimentos invasivos, defesas primárias inadequadas
+• NIC: Controle de infecção (6550) — técnica asséptica, higiene das mãos
+• NOC: Controle de risco (1902) — ausência de sinais de infecção em 72h
 
-DIAGNÓSTICO 3: Déficit de conhecimento (00126)
-• Relacionado a: falta de informação sobre doença e tratamento
-• Evidenciado por: verbalização de dúvidas
-• NIC — Ensino: processo de doença, orientar paciente e familiar
-• NOC — Conhecimento sobre doença: verbaliza compreensão do tratamento
+DIAGNÓSTICO 3: Mobilidade física prejudicada (NANDA 00085)
+Domínio 4 — Atividade | Classe 2 — Atividade/Exercício
+• R/T: dor, fraqueza muscular, prescrição de repouso
+• E/P: limitação de amplitude de movimento, diminuição de força
+• NIC: Terapia com exercícios: mobilidade articular (0224)
+• NOC: Mobilidade (0208) — deambulação assistida em 48h
 
-DIAGNÓSTICO 4: Ansiedade (00146)
-• Relacionado a: hospitalização e incerteza sobre prognóstico
-• Evidenciado por: expressão de preocupação
-• NIC — Redução da ansiedade: presença terapêutica, informações claras
-• NOC — Nível de ansiedade: redução da ansiedade em 48h
+DIAGNÓSTICO 4: Déficit de conhecimento (NANDA 00126)
+Domínio 5 — Percepção | Classe 4 — Cognição
+• R/T: falta de exposição à informação sobre doença/tratamento
+• E/P: verbalização de dúvidas, comportamentos inapropriados
+• NIC: Ensino: processo de doença (5602)
+• NOC: Conhecimento: processo de doença (1803) — verbaliza compreensão
 
 Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 }
 
-// ═══ AÇÕES ═══
-function copiar() {
-  navigator.clipboard.writeText(document.getElementById('res-txt').textContent).then(()=>toast('Copiado! 📋','ok'));
-}
+// AÇÕES
+function copiar(){navigator.clipboard.writeText(document.getElementById('res-txt').textContent).then(()=>toast('Copiado! 📋','ok'));}
 
-function pdf() {
-  const txt = document.getElementById('res-txt').textContent;
-  const tit = document.getElementById('res-tit').textContent;
-  const dt = new Date().toLocaleDateString('pt-BR');
-  const w = window.open('','_blank');
+function pdf(){
+  const txt=document.getElementById('res-txt').textContent;
+  const tit=document.getElementById('res-tit').textContent;
+  const dt=new Date().toLocaleDateString('pt-BR');
+  const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tit}</title>
-<style>
-body{font-family:Arial,sans-serif;padding:40px 50px;font-size:13px;line-height:1.9;color:#1A1F2E;max-width:800px;margin:0 auto}
-.header{border-bottom:3px solid #0F4C81;padding-bottom:16px;margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between}
-.logo-area h1{color:#0F4C81;font-size:22px;margin-bottom:4px}
-.logo-area p{color:#6B7590;font-size:12px}
-.prof-area{text-align:right;font-size:12px;color:#6B7590}
-.prof-area strong{display:block;color:#1A1F2E;font-size:14px}
-h2{color:#0F4C81;font-size:15px;margin-bottom:12px;padding:8px 12px;background:#E8F0FB;border-left:4px solid #0F4C81;border-radius:0 8px 8px 0}
-pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.9}
-.footer{margin-top:40px;border-top:1px solid #E8ECF2;padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:#6B7590}
-.assinatura{margin-top:50px;border-top:1px solid #1A1F2E;padding-top:8px;font-size:12px;color:#1A1F2E;display:inline-block;min-width:300px}
-@media print{body{padding:20px}}
-</style></head><body>
-<div class="header">
-  <div class="logo-area"><h1>🩺 SAE Fácil</h1><p>Sistematização de Assistência de Enfermagem com IA</p></div>
-  <div class="prof-area"><strong>${U?.nome||''}</strong>${U?.categoria||''}<br>${U?.coren||''}<br>${dt}</div>
-</div>
-<h2>${tit}</h2>
-<pre>${txt}</pre>
-<div style="margin-top:40px">
-  <div class="assinatura">${U?.nome||'___________________________'}<br>COREN: ${U?.coren||'_______________'}</div>
-</div>
-<div class="footer"><span>SAE Fácil — IA para Enfermagem</span><span>Gerado em ${dt}</span></div>
-<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script>
-</body></html>`);
+<style>body{font-family:Arial,sans-serif;padding:40px 50px;font-size:13px;line-height:1.9;color:#1A1F2E;max-width:800px;margin:0 auto}.header{border-bottom:3px solid #0F4C81;padding-bottom:16px;margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between}.logo h1{color:#0F4C81;font-size:22px;margin-bottom:4px}.logo p{color:#6B7590;font-size:12px}.prof{text-align:right;font-size:12px;color:#6B7590}.prof strong{display:block;color:#1A1F2E;font-size:14px}h2{color:#0F4C81;font-size:15px;margin-bottom:12px;padding:8px 12px;background:#E8F0FB;border-left:4px solid #0F4C81;border-radius:0 8px 8px 0}pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.9}.footer{margin-top:40px;border-top:1px solid #E8ECF2;padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:#6B7590}.assin{margin-top:50px;border-top:1px solid #1A1F2E;padding-top:8px;font-size:12px;display:inline-block;min-width:300px}</style></head><body>
+<div class="header"><div class="logo"><h1>🩺 SAE Fácil</h1><p>Sistematização de Assistência de Enfermagem com IA — Líder no Brasil</p></div><div class="prof"><strong>${U?.nome||''}</strong>${U?.categoria||''}<br>${U?.coren||''}<br>${dt}</div></div>
+<h2>${tit}</h2><pre>${txt}</pre>
+<div style="margin-top:40px"><div class="assin">${U?.nome||'___________________________'}<br>COREN: ${U?.coren||'_______________'}</div></div>
+<div class="footer"><span>SAE Fácil — IA para Enfermagem · saefacil.onrender.com</span><span>${dt}</span></div>
+<script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`);
   w.document.close();
 }
 
-function whatsapp() {
-  const txt = document.getElementById('res-txt').textContent;
-  const tit = document.getElementById('res-tit').textContent;
-  const msg = `*${tit}*\n\n${txt}\n\n_Gerado pelo SAE Fácil_`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+function whatsapp(){
+  const txt=document.getElementById('res-txt').textContent;
+  const tit=document.getElementById('res-tit').textContent;
+  window.open(`https://wa.me/?text=${encodeURIComponent(`*${tit}*\n\n${txt}\n\n_Gerado pelo SAE Fácil_`)}`, '_blank');
 }
 
-function salvar() {
-  const sae = {
-    id: Date.now(), tipo: TIPO,
-    paciente: document.getElementById('p-nome').value,
-    leito: document.getElementById('p-leito').value,
-    diagnostico: document.getElementById('p-diag').value,
-    texto: document.getElementById('res-txt').textContent,
-    data: new Date().toISOString()
-  };
-  SAES.unshift(sae);
-  localStorage.setItem('sae_d', JSON.stringify(SAES));
-  atualizarStats();
-  renderUltimas();
-  toast('SAE salva com sucesso! 💾','ok');
+function salvar(){
+  const sae={id:Date.now(),tipo:TIPO,paciente:document.getElementById('p-nome').value,leito:document.getElementById('p-leito').value,diagnostico:document.getElementById('p-diag').value,texto:document.getElementById('res-txt').textContent,data:new Date().toISOString()};
+  SAES.unshift(sae);localStorage.setItem('sae_d',JSON.stringify(SAES));
+  atualizarStats();renderUltimas();toast('SAE salva! 💾','ok');
 }
 
-// ═══ STATS ═══
-function atualizarStats() {
-  const hoje = new Date().toDateString();
-  const mes = new Date().getMonth();
-  const hj = SAES.filter(s=>new Date(s.data).toDateString()===hoje).length;
-  const ms = SAES.filter(s=>new Date(s.data).getMonth()===mes).length;
-  document.getElementById('s-hj').textContent = hj;
-  document.getElementById('s-ms').textContent = ms;
-  document.getElementById('s-tt').textContent = SAES.length;
-  const resto = Math.max(0, 10 - ms);
-  const pb = document.getElementById('plano-banner');
-  if (pb) pb.querySelector('p').textContent = `${resto} SAEs restantes este mês • Clique para ver o Pro`;
+// STATS
+function atualizarStats(){
+  const hoje=new Date().toDateString();
+  const mes=new Date().getMonth();
+  document.getElementById('s-hj').textContent=SAES.filter(s=>new Date(s.data).toDateString()===hoje).length;
+  document.getElementById('s-ms').textContent=SAES.filter(s=>new Date(s.data).getMonth()===mes).length;
+  document.getElementById('s-tt').textContent=SAES.length;
+  const resto=Math.max(0,10-SAES.filter(s=>new Date(s.data).getMonth()===new Date().getMonth()).length);
+  const bt=document.getElementById('banner-txt');
+  if(bt) bt.textContent=`${resto} SAEs restantes este mês • Clique para ver o Pro`;
 }
 
-function renderUltimas() {
-  const el = document.getElementById('ul-saes');
-  if (!SAES.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora!</div>'; return; }
-  el.innerHTML = SAES.slice(0,3).map(s=>`
-    <div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="hi-pac">${s.paciente||'Paciente'}</div>
-        <span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span>
-      </div>
-      <div class="hi-meta"><span>${new Date(s.data).toLocaleDateString('pt-BR')}</span><span>${s.leito||''}</span></div>
-      <div class="hi-prev">${(s.texto||'').substring(0,80)}...</div>
-    </div>`).join('');
+function renderUltimas(){
+  const el=document.getElementById('ul-saes');
+  if(!SAES.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--cinza3);font-size:14px">Nenhuma SAE ainda 📋<br>Crie agora!</div>';return;}
+  el.innerHTML=SAES.slice(0,3).map(s=>`<div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}"><div style="display:flex;justify-content:space-between;align-items:center"><div class="hi-pac">${s.paciente||'Paciente'}</div><span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span></div><div class="hi-meta"><span>${new Date(s.data).toLocaleDateString('pt-BR')}</span><span>${s.leito||''}</span></div><div class="hi-prev">${(s.texto||'').substring(0,80)}...</div></div>`).join('');
 }
 
-function renderHist(filtro='') {
-  const el = document.getElementById('lista-hist');
-  const lista = filtro ? SAES.filter(s=>(s.paciente+s.diagnostico+s.leito).toLowerCase().includes(filtro.toLowerCase())) : SAES;
-  if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--cinza3)">Nenhuma SAE encontrada</div>'; return; }
-  el.innerHTML = lista.map(s=>`
-    <div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}">
-      <div style="display:flex;justify-content:space-between;align-items:start">
-        <div class="hi-pac">${s.paciente||'Paciente'}</div>
-        <span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span>
-      </div>
-      <div class="hi-meta">
-        <span>${new Date(s.data).toLocaleDateString('pt-BR')} ${new Date(s.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
-        <span>${s.leito||''}</span><span>${s.diagnostico||''}</span>
-      </div>
-      <div class="hi-prev">${(s.texto||'').substring(0,100)}...</div>
-    </div>`).join('');
+function renderHist(filtro=''){
+  const el=document.getElementById('lista-hist');
+  const lista=filtro?SAES.filter(s=>(s.paciente+s.diagnostico+s.leito).toLowerCase().includes(filtro.toLowerCase())):SAES;
+  if(!lista.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--cinza3)">Nenhuma SAE encontrada</div>';return;}
+  el.innerHTML=lista.map(s=>`<div class="hi" onclick="verSAE(${s.id})" style="border-left-color:${corTipo(s.tipo)}"><div style="display:flex;justify-content:space-between;align-items:start"><div class="hi-pac">${s.paciente||'Paciente'}</div><span class="chip ${chipTipo(s.tipo)}">${labelTipo(s.tipo)}</span></div><div class="hi-meta"><span>${new Date(s.data).toLocaleDateString('pt-BR')} ${new Date(s.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span><span>${s.leito||''}</span><span>${s.diagnostico||''}</span></div><div class="hi-prev">${(s.texto||'').substring(0,100)}...</div></div>`).join('');
 }
 
-function buscar(v) { renderHist(v); }
-
-function verSAE(id) {
-  const s = SAES.find(x=>x.id===id);
-  if (!s) return;
+function verSAE(id){
+  const s=SAES.find(x=>x.id===id);if(!s)return;
   irNovaSAE(s.tipo);
   setTimeout(()=>{
-    document.getElementById('p-nome').value = s.paciente||'';
-    document.getElementById('p-leito').value = s.leito||'';
-    document.getElementById('p-diag').value = s.diagnostico||'';
-    TIPO = s.tipo;
-    mostrarStep(4);
-    document.getElementById('ld-ia').style.display = 'none';
-    document.getElementById('res-ia').style.display = 'block';
-    document.getElementById('res-txt').textContent = s.texto||'';
-    document.getElementById('res-tit').textContent = {evolucao:'📝 Evolução de Enfermagem',prescricao:'💊 Prescrição',passagem:'🔄 Passagem de Plantão',nanda:'🔬 NANDA-NIC-NOC'}[s.tipo]||'';
+    document.getElementById('p-nome').value=s.paciente||'';
+    document.getElementById('p-leito').value=s.leito||'';
+    document.getElementById('p-diag').value=s.diagnostico||'';
+    TIPO=s.tipo;mostrarStep(4);
+    document.getElementById('ld-ia').style.display='none';
+    document.getElementById('res-ia').style.display='block';
+    document.getElementById('res-txt').textContent=s.texto||'';
+    document.getElementById('res-tit').textContent={evolucao:'📝 Evolução de Enfermagem',prescricao:'💊 Prescrição',passagem:'🔄 Passagem de Plantão',nanda:'🔬 NANDA-NIC-NOC'}[s.tipo]||'';
   },100);
 }
 
-// ═══ HELPERS ═══
-function corTipo(t){ return {evolucao:'var(--azul)',prescricao:'var(--verde)',passagem:'var(--roxo)',nanda:'var(--laranja)'}[t]||'var(--azul)'; }
-function chipTipo(t){ return {evolucao:'ch-az',prescricao:'ch-vd',passagem:'ch-rx',nanda:'ch-lr'}[t]||'ch-az'; }
-function labelTipo(t){ return {evolucao:'Evolução',prescricao:'Prescrição',passagem:'Plantão',nanda:'NANDA'}[t]||t; }
+function corTipo(t){return{evolucao:'var(--azul)',prescricao:'var(--verde)',passagem:'var(--roxo)',nanda:'var(--laranja)'}[t]||'var(--azul)';}
+function chipTipo(t){return{evolucao:'ch-az',prescricao:'ch-vd',passagem:'ch-rx',nanda:'ch-lr'}[t]||'ch-az';}
+function labelTipo(t){return{evolucao:'Evolução',prescricao:'Prescrição',passagem:'Plantão',nanda:'NANDA'}[t]||t;}
 
-// ═══ CALCULADORAS ═══
-function calcTab(id, el) {
-  ['dose','gote','dilui','imc'].forEach(x=>{ document.getElementById(`calc-${x}`).style.display=x===id?'block':'none'; });
-  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
-  el.classList.add('on');
+// ESCORES
+function escTab(id,el){
+  ['braden','glasgow','morse','apgar','news'].forEach(x=>document.getElementById(`esc-${x}`).style.display=x===id?'block':'none');
+  document.querySelectorAll('.etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
 }
 
-function calcDose() {
+function calcBraden(){
+  const v=[1,2,3,4,5,6].reduce((s,i)=>s+parseInt(document.getElementById(`br-${i}`).value),0);
+  const el=document.getElementById('r-braden');el.style.display='block';
+  el.className='escore-resultado show '+(v<=9?'er-vermelho':v<=12?'er-vermelho':v<=14?'er-amarelo':'er-verde');
+  document.getElementById('rv-braden').textContent=v+' pontos';
+  const cls=v<=9?'Risco muito alto':v<=12?'Risco alto':v<=14?'Risco moderado':v<=18?'Risco baixo':'Sem risco';
+  document.getElementById('rc-braden').textContent=cls;
+  document.getElementById('rd-braden').textContent=v<=9?'Implementar medidas rigorosas de prevenção. Superfície de redistribuição de pressão obrigatória.':v<=12?'Iniciar protocolo de prevenção. Mudança de decúbito a cada 2h.':v<=14?'Manter vigilância. Hidratação da pele e posicionamento correto.':'Manter cuidados preventivos de rotina.';
+}
+
+function calcGlasgow(){
+  const o=parseInt(document.getElementById('gl-1').value);
+  const v=parseInt(document.getElementById('gl-2').value);
+  const m=parseInt(document.getElementById('gl-3').value);
+  const total=o+v+m;
+  const el=document.getElementById('r-glasgow');el.style.display='block';
+  el.className='escore-resultado show '+(total<=8?'er-vermelho':total<=12?'er-amarelo':'er-verde');
+  document.getElementById('rv-glasgow').textContent=`${total}/15 (O${o}V${v}M${m})`;
+  const cls=total<=8?'TCE grave':total<=12?'TCE moderado':'TCE leve / Sem comprometimento';
+  document.getElementById('rc-glasgow').textContent=cls;
+  document.getElementById('rd-glasgow').textContent=total<=8?'Risco de coma. Suporte ventilatório pode ser necessário. Comunicar médico imediatamente.':total<=12?'Monitorização neurológica intensiva. Reavaliação frequente.':'Nível de consciência preservado. Monitorar evolução.';
+}
+
+function calcMorse(){
+  const v=[1,2,3,4,5,6].reduce((s,i)=>s+parseInt(document.getElementById(`mo-${i}`).value),0);
+  const el=document.getElementById('r-morse');el.style.display='block';
+  el.className='escore-resultado show '+(v>=45?'er-vermelho':v>=25?'er-amarelo':'er-verde');
+  document.getElementById('rv-morse').textContent=v+' pontos';
+  const cls=v>=45?'Alto risco de queda':v>=25?'Risco moderado de queda':'Baixo risco de queda';
+  document.getElementById('rc-morse').textContent=cls;
+  document.getElementById('rd-morse').textContent=v>=45?'Implementar protocolo completo de prevenção. Grade de cama, tapetes antiderrapantes, supervisão constante.':v>=25?'Medidas preventivas necessárias. Orientar paciente e familiar.':'Manter medidas de prevenção básica.';
+}
+
+function calcApgar(){
+  const v=[1,2,3,4,5].reduce((s,i)=>s+parseInt(document.getElementById(`ap-${i}`).value),0);
+  const min=document.getElementById('ap-min').value;
+  const el=document.getElementById('r-apgar');el.style.display='block';
+  el.className='escore-resultado show '+(v<=3?'er-vermelho':v<=6?'er-amarelo':'er-verde');
+  document.getElementById('rv-apgar').textContent=`${v}/10`;
+  const cls=v<=3?'Depressão grave':v<=6?'Depressão moderada':'Normal';
+  document.getElementById('rc-apgar').textContent=`${cls} — ${min}min`;
+  document.getElementById('rd-apgar').textContent=v<=3?'RN necessita de reanimação imediata.':v<=6?'RN necessita de assistência. Oxigênio e estimulação.':'RN com boa vitalidade. Cuidados de rotina.';
+}
+
+function calcNEWS(){
+  const v=[1,2,3,4,5,6].reduce((s,i)=>s+parseInt(document.getElementById(`nw-${i}`).value),0);
+  const el=document.getElementById('r-news');el.style.display='block';
+  el.className='escore-resultado show '+(v>=7?'er-vermelho':v>=5?'er-amarelo':v>=1?'er-verde':'er-verde');
+  document.getElementById('rv-news').textContent=v+' pontos';
+  const cls=v>=7?'Alto risco — emergência':v>=5?'Risco médio — urgência':v>=1?'Baixo risco — monitorar':'Dentro da normalidade';
+  document.getElementById('rc-news').textContent=cls;
+  document.getElementById('rd-news').textContent=v>=7?'Acionar equipe de emergência. Monitorização contínua.':v>=5?'Aumentar frequência de monitorização. Avaliar com médico.':v>=1?'Monitorizar a cada 4-6h.':'Monitorização de rotina.';
+}
+
+// NANDA DATABASE
+function renderNANDA(filtro,dominio=''){
+  const el=document.getElementById('lista-nanda');if(!el)return;
+  let lista=NANDA_DB;
+  if(filtro) lista=lista.filter(d=>(d.nome+d.cod+d.dom+d.fa.join()+d.cd.join()).toLowerCase().includes(filtro.toLowerCase()));
+  if(dominio) lista=lista.filter(d=>d.dom.toLowerCase().includes(dominio.toLowerCase()));
+  if(!lista.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--cinza3)">Nenhum diagnóstico encontrado</div>';return;}
+  el.innerHTML=lista.map(d=>`
+    <div class="nanda-item" onclick="toggleNANDA(this)">
+      <div class="nanda-codigo">NANDA ${d.cod}</div>
+      <div class="nanda-nome">${d.nome}</div>
+      <div class="nanda-dominio">Domínio: ${d.dom}</div>
+      <div class="nanda-detalhe">
+        <div class="nanda-sec">Definição</div>
+        <div class="nanda-txt">${d.def}</div>
+        ${d.fa.length?`<div class="nanda-sec">Fatores relacionados</div><div class="nanda-txt">${d.fa.map(f=>`• ${f}`).join('<br>')}</div>`:''}
+        ${d.cd.length?`<div class="nanda-sec">Características definidoras</div><div class="nanda-txt">${d.cd.map(c=>`• ${c}`).join('<br>')}</div>`:''}
+        <div class="nanda-sec">Intervenções NIC</div>
+        <div class="nanda-txt">${d.nic.map(n=>`• ${n}`).join('<br>')}</div>
+        <div class="nanda-sec">Resultados NOC</div>
+        <div class="nanda-txt">${d.noc.map(n=>`• ${n}`).join('<br>')}</div>
+        <button class="bav" style="margin-top:12px;padding:10px;font-size:13px" onclick="event.stopPropagation();usarNANDA('${d.nome}')">Usar nesta SAE →</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleNANDA(el){el.querySelector('.nanda-detalhe').classList.toggle('show');}
+function buscarNANDA(v){renderNANDA(v);}
+function filtrarDominio(dom,el){document.querySelectorAll('#nanda-filtros .etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderNANDA(document.getElementById('nanda-search')?.value||'',dom);}
+function usarNANDA(nome){irNovaSAE('nanda');setTimeout(()=>{document.getElementById('p-diag').value=nome;},100);toast(`NANDA "${nome}" selecionado!`,'ok');}
+
+// MODO PLANTÃO
+function toggleCrono(){
+  if(cronoRodando){
+    clearInterval(cronoTimer);cronoRodando=false;
+    document.getElementById('btn-crono').textContent='▶ Continuar';
+    document.getElementById('btn-crono').className='btn-plantao btn-iniciar';
+  }else{
+    cronoTimer=setInterval(()=>{cronoSeg++;atualizarCrono();},1000);
+    cronoRodando=true;
+    document.getElementById('btn-crono').textContent='⏸ Pausar';
+    document.getElementById('btn-crono').className='btn-plantao btn-pausar';
+  }
+}
+function resetCrono(){clearInterval(cronoTimer);cronoSeg=0;cronoRodando=false;atualizarCrono();document.getElementById('btn-crono').textContent='▶ Iniciar';document.getElementById('btn-crono').className='btn-plantao btn-iniciar';}
+function atualizarCrono(){const h=Math.floor(cronoSeg/3600);const m=Math.floor((cronoSeg%3600)/60);const s=cronoSeg%60;document.getElementById('crono').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+
+function adicionarPacientePlantao(){
+  const nome=prompt('Nome do paciente:');if(!nome)return;
+  const leito=prompt('Leito/Setor:');
+  pacientesPlantao.push({id:Date.now(),nome,leito:leito||'',checks:{sv:false,med:false,higiene:false,dec:false,bal:false,dor:false,orient:false,reg:false}});
+  localStorage.setItem('sae_plantao',JSON.stringify(pacientesPlantao));
+  renderPlantao();
+}
+
+function renderPlantao(){
+  const el=document.getElementById('lista-plantao');if(!el)return;
+  if(!pacientesPlantao.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--cinza3);font-size:14px">Adicione pacientes para iniciar o plantão 🏥</div>';return;}
+  const checkItems=[
+    {key:'sv',label:'Sinais vitais verificados'},
+    {key:'med',label:'Medicamentos administrados'},
+    {key:'higiene',label:'Higiene realizada'},
+    {key:'dec',label:'Decúbito alterado'},
+    {key:'bal',label:'Balanço hídrico registrado'},
+    {key:'dor',label:'Dor avaliada'},
+    {key:'orient',label:'Orientações ao paciente/família'},
+    {key:'reg',label:'Evolução registrada no prontuário'}
+  ];
+  el.innerHTML=pacientesPlantao.map(p=>{
+    const feitos=Object.values(p.checks).filter(Boolean).length;
+    const total=Object.keys(p.checks).length;
+    const pct=Math.round(feitos/total*100);
+    return `<div class="pac-plantao">
+      <div class="pac-header">
+        <div><div class="pac-nome-p">${p.nome}</div><div class="pac-leito-p">${p.leito||'Sem leito'}</div></div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:800;color:${pct===100?'var(--verde)':'var(--azul)'}">${pct}%</div>
+          <div style="font-size:10px;color:var(--cinza3)">${feitos}/${total} itens</div>
+        </div>
+      </div>
+      <div style="height:4px;background:var(--cinza2);border-radius:2px;margin-bottom:12px"><div style="height:100%;width:${pct}%;background:${pct===100?'var(--verde)':'var(--azul)'};border-radius:2px;transition:.3s"></div></div>
+      <div class="checklist">
+        ${checkItems.map(ci=>`<div class="check-item ${p.checks[ci.key]?'feito':''}" onclick="toggleCheck(${p.id},'${ci.key}')">
+          <div class="check-box">${p.checks[ci.key]?'✓':''}</div>
+          <div class="check-txt">${ci.label}</div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-plantao btn-iniciar" style="flex:1;font-size:12px" onclick="irNovaSAE();document.getElementById('p-nome').value='${p.nome}';document.getElementById('p-leito').value='${p.leito||''}'">📝 Criar SAE</button>
+        <button class="btn-plantao btn-parar" style="font-size:12px" onclick="removerPacientePlantao(${p.id})">Remover</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCheck(id,key){
+  const p=pacientesPlantao.find(x=>x.id===id);if(!p)return;
+  p.checks[key]=!p.checks[key];
+  localStorage.setItem('sae_plantao',JSON.stringify(pacientesPlantao));
+  renderPlantao();
+}
+
+function removerPacientePlantao(id){
+  pacientesPlantao=pacientesPlantao.filter(p=>p.id!==id);
+  localStorage.setItem('sae_plantao',JSON.stringify(pacientesPlantao));
+  renderPlantao();
+}
+
+// CALCULADORAS
+function calcTab(id,el){
+  ['dose','gote','dilui','imc','hidra'].forEach(x=>document.getElementById(`calc-${x}`).style.display=x===id?'block':'none');
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+}
+
+function calcDose(){
   const dose=parseFloat(document.getElementById('d-dose').value);
   const peso=parseFloat(document.getElementById('d-peso').value);
   const conc=parseFloat(document.getElementById('d-conc').value);
-  if (!dose||!peso||!conc) { toast('Preencha todos os campos','err'); return; }
-  const total = dose * peso;
-  const ml = total / conc;
-  document.getElementById('r-dose').style.display = 'block';
-  document.getElementById('rv-dose').textContent = ml.toFixed(2) + ' mL';
-  document.getElementById('rv-dose2').textContent = `Dose total: ${total.toFixed(1)} mg | ${conc} mg/mL`;
+  if(!dose||!peso||!conc){toast('Preencha todos os campos','err');return;}
+  const total=dose*peso;const ml=total/conc;
+  document.getElementById('r-dose').className='calc-result show';
+  document.getElementById('rv-dose').textContent=ml.toFixed(2)+' mL';
+  document.getElementById('ru-dose').textContent=`Dose total: ${total.toFixed(1)}mg | ${conc}mg/mL`;
 }
 
-function calcGote() {
+function calcGote(){
   const vol=parseFloat(document.getElementById('g-vol').value);
   const tempo=parseFloat(document.getElementById('g-tempo').value);
-  const eq=parseFloat(document.getElementById('g-equipo').value);
-  if (!vol||!tempo) { toast('Preencha todos os campos','err'); return; }
-  const gotas = (vol * eq) / (tempo * 60);
-  const mlh = vol / tempo;
-  document.getElementById('r-gote').style.display = 'block';
-  document.getElementById('rv-gote').textContent = Math.round(gotas) + ' gts/min';
-  document.getElementById('rv-gote2').textContent = `${mlh.toFixed(1)} mL/hora | ${vol}mL em ${tempo}h`;
+  const eq=parseFloat(document.getElementById('g-eq').value);
+  if(!vol||!tempo){toast('Preencha todos os campos','err');return;}
+  const gotas=(vol*eq)/(tempo*60);const mlh=vol/tempo;
+  document.getElementById('r-gote').className='calc-result show';
+  document.getElementById('rv-gote').textContent=Math.round(gotas)+' gts/min';
+  document.getElementById('ru-gote').textContent=`${mlh.toFixed(1)} mL/hora | ${vol}mL em ${tempo}h`;
 }
 
-function calcDilui() {
+function calcDilui(){
   const dose=parseFloat(document.getElementById('dl-dose').value);
   const conc=parseFloat(document.getElementById('dl-conc').value);
-  const dil=parseFloat(document.getElementById('dl-dil').value);
-  if (!dose||!conc) { toast('Preencha todos os campos','err'); return; }
-  const ml = dose / conc;
-  const concFinal = dose / ((dil||100) + ml);
-  document.getElementById('r-dilui').style.display = 'block';
-  document.getElementById('rv-dilui').textContent = ml.toFixed(2) + ' mL';
-  document.getElementById('rv-dilui2').textContent = `Retirar ${ml.toFixed(2)}mL do medicamento e diluir em ${dil||100}mL de diluente`;
+  const dil=parseFloat(document.getElementById('dl-dil').value)||100;
+  if(!dose||!conc){toast('Preencha todos os campos','err');return;}
+  const ml=dose/conc;
+  document.getElementById('r-dilui').className='calc-result show';
+  document.getElementById('rv-dilui').textContent=ml.toFixed(2)+' mL';
+  document.getElementById('ru-dilui').textContent=`Retirar ${ml.toFixed(2)}mL e diluir em ${dil}mL`;
 }
 
-function calcIMC() {
+function calcIMC(){
   const peso=parseFloat(document.getElementById('i-peso').value);
   const alt=parseFloat(document.getElementById('i-alt').value)/100;
-  if (!peso||!alt) { toast('Preencha todos os campos','err'); return; }
-  const imc = peso/(alt*alt);
-  const cls = imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade Grau I':imc<40?'Obesidade Grau II':'Obesidade Grau III';
-  document.getElementById('r-imc').style.display = 'block';
-  document.getElementById('rv-imc').textContent = imc.toFixed(1);
-  document.getElementById('rv-imc2').textContent = `kg/m² — ${cls}`;
+  if(!peso||!alt){toast('Preencha todos os campos','err');return;}
+  const imc=peso/(alt*alt);
+  const cls=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade Grau I':imc<40?'Obesidade Grau II':'Obesidade Grau III';
+  document.getElementById('r-imc').className='calc-result show';
+  document.getElementById('rv-imc').textContent=imc.toFixed(1);
+  document.getElementById('ru-imc').textContent=`kg/m² — ${cls}`;
 }
 
-// ═══ MODAL ═══
-function mostrarPlanos() { document.getElementById('modal-planos').classList.add('show'); }
-function fecharModal() { document.getElementById('modal-planos').classList.remove('show'); }
-function assinar() {
-  fecharModal();
-  window.open('https://hotmart.com/', '_blank');
-  toast('Redirecionando para pagamento...','ok');
+function calcHidra(){
+  const peso=parseFloat(document.getElementById('h-peso').value);
+  const idade=document.getElementById('h-idade').value;
+  if(!peso){toast('Informe o peso','err');return;}
+  let ml;
+  if(idade==='adulto') ml=peso*35;
+  else if(idade==='idoso') ml=peso*30;
+  else ml=peso>20?1500+(peso-20)*20:peso*100;
+  document.getElementById('r-hidra').className='calc-result show';
+  document.getElementById('rv-hidra').textContent=ml.toFixed(0)+' mL';
+  document.getElementById('ru-hidra').textContent=`Necessidade hídrica diária — ${(ml/8).toFixed(0)} mL a cada 8h`;
 }
 
-// ═══ TOAST ═══
-function toast(msg, tipo='') {
-  const c = document.getElementById('toast');
-  const el = document.createElement('div');
-  el.className = `ti ${tipo}`; el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(()=>el.remove(), 3500);
+// MODAL
+function mostrarPlanos(){document.getElementById('modal-planos').classList.add('show');}
+function fecharModal(){document.getElementById('modal-planos').classList.remove('show');}
+function assinar(){fecharModal();window.open('https://hotmart.com/','_blank');toast('Redirecionando para pagamento...','ok');}
+
+// TOAST
+function toast(msg,tipo=''){
+  const c=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className=`ti ${tipo}`;el.textContent=msg;
+  c.appendChild(el);setTimeout(()=>el.remove(),3500);
 }
 </script>
 </body>
