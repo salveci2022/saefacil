@@ -1,0 +1,19 @@
+{
+  "name": "SAE Fácil — IA para Enfermagem",
+  "short_name": "SAE Fácil",
+  "description": "Sistematização de Enfermagem com IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F4C81",
+  "theme_color": "#0F4C81",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health", "productivity"]
+}

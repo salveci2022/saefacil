@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0A2F5C"/>
+      <stop offset="100%" stop-color="#0A5C3A"/>
+    </linearGradient>
+    <linearGradient id="cross" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="100%" stop-color="#26C6A0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  <rect x="220" y="80" width="72" height="352" rx="24" fill="url(#cross)"/>
+  <rect x="80" y="220" width="352" height="72" rx="24" fill="url(#cross)"/>
+  <circle cx="390" cy="122" r="72" fill="#0A2F5C"/>
+  <circle cx="390" cy="122" r="52" fill="#FFD54F"/>
+  <text x="390" y="140" text-anchor="middle" fill="#0A2F5C" font-size="44" font-weight="800" font-family="system-ui">IA</text>
+</svg>
