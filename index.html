@@ -348,7 +348,7 @@ textarea.ci{min-height:90px}
         <div class="ac" onclick="irNovaSAE('evolucao')"><div class="ac-ic">📝</div><div class="ac-t">Evolução</div><div class="ac-s">SOAP com IA</div></div>
         <div class="ac" onclick="irNovaSAE('prescricao')"><div class="ac-ic">💊</div><div class="ac-t">Prescrição</div><div class="ac-s">Enfermagem</div></div>
         <div class="ac" onclick="irNovaSAE('passagem')"><div class="ac-ic">🔄</div><div class="ac-t">Plantão</div><div class="ac-s">SBAR</div></div>
-        <div class="ac" onclick="irNovaSAE('nanda')"><div class="ac-ic">🔬</div><div class="ac-t">NANDA</div><div class="ac-s">NIC-NOC</div></div>
+        <div class="ac" onclick="irNovaSAE('nanda')"><div class="ac-ic">🔬</div><div class="ac-t">NANDA</div><div class="ac-s">Diagnosticos</div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
         <div class="ac" onclick="ir('escores')"><div class="ac-ic">📊</div><div class="ac-t">Escores</div><div class="ac-s">Braden·Glasgow·Morse</div></div>
@@ -402,7 +402,7 @@ textarea.ci{min-height:90px}
         <button class="tipo-btn" id="tb-evolucao" onclick="tipo('evolucao')"><strong>📝 Evolução de Enfermagem</strong><span>Formato SOAP — terminologia NANDA-I 2025</span></button>
         <button class="tipo-btn" id="tb-prescricao" onclick="tipo('prescricao')"><strong>💊 Prescrição de Enfermagem</strong><span>Cuidados numerados padrão COFEN</span></button>
         <button class="tipo-btn" id="tb-passagem" onclick="tipo('passagem')"><strong>🔄 Passagem de Plantão</strong><span>Método SBAR — para o próximo turno</span></button>
-        <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico NANDA-NIC-NOC</strong><span>Taxonomia oficial NANDA-I 2024-2026</span></button>
+        <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico de Enfermagem NANDA</strong><span>Taxonomia oficial NANDA-I 2024-2026</span></button>
         <div class="cg" style="margin-top:14px"><label class="cl">Observações adicionais</label><textarea id="a-obs" class="ci" placeholder="Informações extras para a IA considerar..."></textarea></div>
         <div class="bnav"><button class="bvolt" onclick="vt(2)">← Voltar</button><button class="bav" onclick="gerar()">✨ Gerar com IA</button></div>
       </div>
@@ -1052,38 +1052,30 @@ PENDÊNCIAS DO TURNO:
 Enf. que passa: ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  return `DIAGNÓSTICOS DE ENFERMAGEM - NANDA-NIC-NOC 2024-2026
+  return `DIAGNOSTICOS DE ENFERMAGEM - NANDA-I 2024-2026
 Data: ${dt}
-Paciente: ${p.nome} | Diagnóstico médico: ${p.diagnostico}
+Paciente: ${p.nome} | Diagnostico medico: ${p.diagnostico}
 
-DIAGNÓSTICO 1: Dor aguda (NANDA 00132)
-Domínio 12 - Conforto | Classe 1 - Conforto físico
-• R/T: agentes lesivos físicos/biológicos (${p.diagnostico})
-• E/P: autorrelato de dor, expressão facial de dor, comportamento de proteção
-• NIC: Manejo da dor (1400) - avaliar dor a cada 2h, administrar analgesia conforme prescrição
-• NOC: Controle da dor (1605) - meta: escore ≥4 em 24h
+DIAGNOSTICO 1: Dor aguda (NANDA 00132)
+Dominio 12 - Conforto | Classe 1 - Conforto fisico
+Relacionado a: agentes lesivos fisicos/biologicos
+Evidenciado por: autorrelato de dor, expressao facial, comportamento de protecao
 
-DIAGNÓSTICO 2: Risco de infecção (NANDA 00004)
-Domínio 11 - Segurança | Classe 1 - Infecção
-• F/R: procedimentos invasivos, defesas primárias inadequadas
-• NIC: Controle de infecção (6550) - técnica asséptica, higiene das mãos
-• NOC: Controle de risco (1902) - ausência de sinais de infecção em 72h
+DIAGNOSTICO 2: Risco de infeccao (NANDA 00004)
+Dominio 11 - Seguranca | Classe 1 - Infeccao
+Fator de risco: procedimentos invasivos, defesas primarias inadequadas
 
-DIAGNÓSTICO 3: Mobilidade física prejudicada (NANDA 00085)
-Domínio 4 - Atividade | Classe 2 - Atividade/Exercício
-• R/T: dor, fraqueza muscular, prescrição de repouso
-• E/P: limitação de amplitude de movimento, diminuição de força
-• NIC: Terapia com exercícios: mobilidade articular (0224)
-• NOC: Mobilidade (0208) - deambulação assistida em 48h
+DIAGNOSTICO 3: Mobilidade fisica prejudicada (NANDA 00085)
+Dominio 4 - Atividade | Classe 2 - Atividade/Exercicio
+Relacionado a: dor, fraqueza muscular
+Evidenciado por: limitacao de amplitude de movimento
 
-DIAGNÓSTICO 4: Déficit de conhecimento (NANDA 00126)
-Domínio 5 - Percepção | Classe 4 - Cognição
-• R/T: falta de exposição à informação sobre doença/tratamento
-• E/P: verbalização de dúvidas, comportamentos inapropriados
-• NIC: Ensino: processo de doença (5602)
-• NOC: Conhecimento: processo de doença (1803) - verbaliza compreensão
+DIAGNOSTICO 4: Deficit de conhecimento (NANDA 00126)
+Dominio 5 - Percepcao | Classe 4 - Cognicao
+Relacionado a: falta de exposicao a informacao
+Evidenciado por: verbalizacao de duvidas sobre o processo de doenca
 
-Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
+Enfermeiro(a): \${U?.nome||'_______________'} | COREN: \${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 }
 
@@ -1260,10 +1252,7 @@ function renderNANDA(filtro,dominio=''){
         <div class="nanda-txt">${d.def}</div>
         ${d.fa.length?`<div class="nanda-sec">Fatores relacionados</div><div class="nanda-txt">${d.fa.map(f=>`• ${f}`).join('<br>')}</div>`:''}
         ${d.cd.length?`<div class="nanda-sec">Características definidoras</div><div class="nanda-txt">${d.cd.map(c=>`• ${c}`).join('<br>')}</div>`:''}
-        <div class="nanda-sec">Intervenções NIC</div>
-        <div class="nanda-txt">${d.nic.map(n=>`• ${n}`).join('<br>')}</div>
-        <div class="nanda-sec">Resultados NOC</div>
-        <div class="nanda-txt">${d.noc.map(n=>`• ${n}`).join('<br>')}</div>
+
         <button class="bav" style="margin-top:12px;padding:10px;font-size:13px" onclick="event.stopPropagation();usarNANDA('${d.nome}')">Usar nesta SAE →</button>
       </div>
     </div>`).join('');
@@ -1469,8 +1458,7 @@ function inserirNANDA(idx){
     linha('Dominio', d.dom) +
     linha('Relacionado a', d.fa[0] || 'conforme avaliacao clinica') +
     linha('Evidenciado por', d.cd[0] || 'caracteristicas clinicas identificadas') +
-    linha('Intervencao NIC', d.nic[0] || 'conforme protocolo') +
-    linha('Resultado NOC', d.noc[0] || 'melhora do quadro') + '\n' +
+
     'Enfermeiro(a): ' + (U && U.nome ? U.nome : '___') + ' | COREN: ' + (U && U.coren ? U.coren : '___');
   txtEl.textContent = txtEl.textContent + bloco;
   fecharModalNANDA();
