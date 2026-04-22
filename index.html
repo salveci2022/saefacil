@@ -392,7 +392,8 @@ textarea.ci{min-height:90px}
             <button class="ba ba-zap" onclick="whatsapp()">📲 WhatsApp</button>
             <button class="ba ba-sal" onclick="salvar()">💾 Salvar</button>
           </div>
-          <button class="ba ba-nov" style="width:100%;margin-top:8px" onclick="irNovaSAE()">🔄 Nova SAE</button>
+          <button id="btn-add-nanda" class="ba" style="width:100%;margin-top:8px;background:#EEE9FA;color:#5B3FA6;border:1.5px solid #5B3FA6" onclick="adicionarDiagnosticoNANDA()">&#128302; Acrescentar diagn&#243;stico de enfermagem</button>
+          <button class="ba ba-nov" style="width:100%;margin-top:8px" onclick="irNovaSAE()">&#128260; Nova SAE</button>
         </div>
       </div>
     </div>
@@ -427,16 +428,60 @@ textarea.ci{min-height:90px}
         <div id="r-braden" class="escore-resultado"><div class="er-valor" id="rv-braden"></div><div class="er-class" id="rc-braden"></div><div class="er-desc" id="rd-braden"></div></div>
       </div>
 
-      <!-- GLASGOW -->
+      <!-- GLASGOW-PUPILAS GCS-P -->
       <div id="esc-glasgow" class="card" style="display:none">
-        <div class="ct">Escala de Glasgow — Nível de Consciência</div>
-        <div class="cg"><label class="cl">Abertura ocular</label>
-          <select id="gl-1" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — À dor</option><option value="3">3 — À voz</option><option value="4" selected>4 — Espontânea</option></select></div>
-        <div class="cg"><label class="cl">Resposta verbal</label>
-          <select id="gl-2" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — Sons incompreensíveis</option><option value="3">3 — Palavras inapropriadas</option><option value="4">4 — Confusa</option><option value="5" selected>5 — Orientada</option></select></div>
-        <div class="cg"><label class="cl">Resposta motora</label>
-          <select id="gl-3" class="ci"><option value="1">1 — Nenhuma</option><option value="2">2 — Extensão anormal</option><option value="3">3 — Flexão anormal</option><option value="4">4 — Retirada à dor</option><option value="5">5 — Localiza a dor</option><option value="6" selected>6 — Obedece comandos</option></select></div>
-        <button class="bav" style="width:100%" onclick="calcGlasgow()">Calcular escore</button>
+        <div class="ct">Escala de Coma de Glasgow com Pupilas (GCS-P)</div>
+        <div style="background:var(--azul3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--azul)">
+          GCS-P = GCS &#8722; PRS (Pupil Reactivity Score). Padr&#227;o atual em UTI e emerg&#234;ncia.
+        </div>
+        <div class="cg"><label class="cl">Abertura ocular (E)</label>
+          <select id="gl-1" class="ci">
+            <option value="1">1 &#8212; Nenhuma</option>
+            <option value="2">2 &#8212; &#192; dor/press&#227;o</option>
+            <option value="3">3 &#8212; &#192; voz</option>
+            <option value="4" selected>4 &#8212; Espont&#226;nea</option>
+          </select></div>
+        <div class="cg"><label class="cl">Resposta verbal (V)</label>
+          <select id="gl-2" class="ci">
+            <option value="1">1 &#8212; Nenhuma</option>
+            <option value="2">2 &#8212; Sons incompreens&#237;veis</option>
+            <option value="3">3 &#8212; Palavras inapropriadas</option>
+            <option value="4">4 &#8212; Confusa/desorientada</option>
+            <option value="5" selected>5 &#8212; Orientada e coerente</option>
+            <option value="0">T &#8212; Intubado/traqueostomizado</option>
+          </select></div>
+        <div class="cg"><label class="cl">Resposta motora (M)</label>
+          <select id="gl-3" class="ci">
+            <option value="1">1 &#8212; Nenhuma</option>
+            <option value="2">2 &#8212; Extens&#227;o anormal (descerebra&#231;&#227;o)</option>
+            <option value="3">3 &#8212; Flex&#227;o anormal (decortica&#231;&#227;o)</option>
+            <option value="4">4 &#8212; Retirada &#224; dor</option>
+            <option value="5">5 &#8212; Localiza a dor</option>
+            <option value="6" selected>6 &#8212; Obedece comandos</option>
+          </select></div>
+        <div style="border-top:1px solid var(--cinza2);margin:14px 0;padding-top:14px">
+          <div style="font-size:12px;font-weight:800;color:var(--cinza3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Avalia&#231;&#227;o Pupilar (PRS)</div>
+          <div class="cg"><label class="cl">Pupila direita</label>
+            <select id="gl-pd" class="ci">
+              <option value="0" selected>+ Reativa</option>
+              <option value="0">~ Lenta (sluggish)</option>
+              <option value="1">&#8722; N&#227;o reativa</option>
+            </select></div>
+          <div class="cg"><label class="cl">Pupila esquerda</label>
+            <select id="gl-pe" class="ci">
+              <option value="0" selected>+ Reativa</option>
+              <option value="0">~ Lenta (sluggish)</option>
+              <option value="1">&#8722; N&#227;o reativa</option>
+            </select></div>
+          <div class="cg"><label class="cl">Tamanho / simetria</label>
+            <select id="gl-tam" class="ci">
+              <option value="isocoricas" selected>Isoc&#243;ricas e sim&#233;tricas</option>
+              <option value="anisocoricas">Anisoc&#243;ricas (&gt;1mm diferen&#231;a)</option>
+              <option value="mioticas">Miose bilateral (&lt;2mm)</option>
+              <option value="midriaticas">Midri&#225;se bilateral (&gt;5mm)</option>
+            </select></div>
+        </div>
+        <button class="bav" style="width:100%" onclick="calcGlasgow()">Calcular GCS-P</button>
         <div id="r-glasgow" class="escore-resultado"><div class="er-valor" id="rv-glasgow"></div><div class="er-class" id="rc-glasgow"></div><div class="er-desc" id="rd-glasgow"></div></div>
       </div>
 
@@ -831,7 +876,7 @@ async function gerar(){
     obs:document.getElementById('a-obs').value
   };
 
-  const titulos={evolucao:'📝 Evolução de Enfermagem — SOAP',prescricao:'💊 Prescrição de Enfermagem',passagem:'🔄 Passagem de Plantão — SBAR',nanda:'🔬 Diagnósticos NANDA-NIC-NOC'};
+  const titulos={evolucao:'📝 Evolução de Enfermagem - SOAP',prescricao:'💊 Prescrição de Enfermagem',passagem:'🔄 Passagem de Plantão - SBAR',nanda:'🔬 Diagnósticos NANDA-NIC-NOC'};
   let texto='';
 
   try{
@@ -867,29 +912,29 @@ function verificarAlertas(pac){
 
   // SpO2 baixa
   const spo2=sv.match(/spo2[:\s]*(\d+)/);
-  if(spo2&&parseInt(spo2[1])<92) alertas.push(`⚠️ SpO2 ${spo2[1]}% — abaixo do limite crítico (92%). Considerar oxigenoterapia imediata.`);
+  if(spo2&&parseInt(spo2[1])<92) alertas.push(`⚠️ SpO2 ${spo2[1]}% - abaixo do limite crítico (92%). Considerar oxigenoterapia imediata.`);
 
   // FC alta
   const fc=sv.match(/fc[:\s]*(\d+)/);
-  if(fc&&parseInt(fc[1])>120) alertas.push(`⚠️ FC ${fc[1]} bpm — taquicardia significativa. Avaliar causa subjacente.`);
-  if(fc&&parseInt(fc[1])<50) alertas.push(`⚠️ FC ${fc[1]} bpm — bradicardia. Monitorar ritmo cardíaco.`);
+  if(fc&&parseInt(fc[1])>120) alertas.push(`⚠️ FC ${fc[1]} bpm - taquicardia significativa. Avaliar causa subjacente.`);
+  if(fc&&parseInt(fc[1])<50) alertas.push(`⚠️ FC ${fc[1]} bpm - bradicardia. Monitorar ritmo cardíaco.`);
 
   // PA crítica
   const pa=sv.match(/pa[:\s]*(\d+)x(\d+)/);
-  if(pa&&parseInt(pa[1])<90) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg — hipotensão grave. Avaliar perfusão tecidual.`);
-  if(pa&&parseInt(pa[1])>180) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg — hipertensão grave. Risco de evento cardiovascular.`);
+  if(pa&&parseInt(pa[1])<90) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg - hipotensão grave. Avaliar perfusão tecidual.`);
+  if(pa&&parseInt(pa[1])>180) alertas.push(`⚠️ PA ${pa[1]}x${pa[2]} mmHg - hipertensão grave. Risco de evento cardiovascular.`);
 
   // Temperatura
   const tax=sv.match(/tax[:\s]*([\d.]+)/);
-  if(tax&&parseFloat(tax[1])>=38.5) alertas.push(`⚠️ Tax ${tax[1]}°C — febre significativa. Investigar foco infeccioso.`);
-  if(tax&&parseFloat(tax[1])<36.0) alertas.push(`⚠️ Tax ${tax[1]}°C — hipotermia. Medidas de aquecimento necessárias.`);
+  if(tax&&parseFloat(tax[1])>=38.5) alertas.push(`⚠️ Tax ${tax[1]}°C - febre significativa. Investigar foco infeccioso.`);
+  if(tax&&parseFloat(tax[1])<36.0) alertas.push(`⚠️ Tax ${tax[1]}°C - hipotermia. Medidas de aquecimento necessárias.`);
 
   // Dor alta + sem analgésico mencionado
   const dor=sv.match(/dor[:\s]*(\d+)/);
-  if(dor&&parseInt(dor[1])>=7) alertas.push(`⚠️ Dor ${dor[1]}/10 — dor intensa. Avaliar necessidade de analgesia imediata.`);
+  if(dor&&parseInt(dor[1])>=7) alertas.push(`⚠️ Dor ${dor[1]}/10 - dor intensa. Avaliar necessidade de analgesia imediata.`);
 
   // Alergia + diagnóstico suspeito
-  if(aler.includes('dipirona')&&(diag.includes('febre')||queixas.includes('febre'))) alertas.push(`⚠️ Paciente alérgico à dipirona com febre relatada — usar antitérmico alternativo.`);
+  if(aler.includes('dipirona')&&(diag.includes('febre')||queixas.includes('febre'))) alertas.push(`⚠️ Paciente alérgico à dipirona com febre relatada - usar antitérmico alternativo.`);
 
   return alertas;
 }
@@ -902,21 +947,21 @@ Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito}
 Diagnóstico médico: ${p.diagnostico}
 
-S — SUBJETIVO:
+S - SUBJETIVO:
 ${p.queixas||'Paciente refere queixas conforme avaliação clínica.'} Alergias: ${p.alergias||'Nega alergias conhecidas'}.
 
-O — OBJETIVO:
+O - OBJETIVO:
 Sinais vitais: ${p.sv||'Verificar'}.
 Sistemas avaliados: ${p.sistemas?.join(', ')||'Não informados'}.
 Exames/Procedimentos: ${p.exames||'Conforme prontuário'}.
 
-A — AVALIAÇÃO:
+A - AVALIAÇÃO:
 Paciente em acompanhamento para ${p.diagnostico||'diagnóstico em investigação'}. Condições clínicas avaliadas no turno. Diagnóstico de enfermagem prioritário: Dor aguda (00132) relacionada a processo patológico evidenciado por relato verbal e alterações hemodinâmicas.
 
-P — PLANO:
+P - PLANO:
 • Monitorização contínua dos sinais vitais a cada 4 horas
 • Administrar medicamentos conforme prescrição médica
-• Avaliar intensidade da dor — escala numérica (0-10)
+• Avaliar intensidade da dor - escala numérica (0-10)
 • Realizar balanço hídrico rigoroso
 • Comunicar ao médico plantonista qualquer alteração clínica
 • ${p.obs||'Continuar cuidados de enfermagem prescritos'}
@@ -929,13 +974,13 @@ Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito} | Diagnóstico: ${p.diagnostico}
 
 01. Verificar e registrar sinais vitais a cada 4 horas (PA, FC, FR, SpO2, Tax)
-02. Monitorizar nível de consciência — Escala de Glasgow
-03. Realizar balanço hídrico rigoroso — registrar toda ingesta e eliminação
-04. Verificar permeabilidade do acesso venoso — avaliar sinais flogísticos
+02. Monitorizar nível de consciência - Escala de Glasgow
+03. Realizar balanço hídrico rigoroso - registrar toda ingesta e eliminação
+04. Verificar permeabilidade do acesso venoso - avaliar sinais flogísticos
 05. Administrar medicamentos conforme prescrição médica nos horários corretos
-06. Avaliar dor — escala numérica (0-10) a cada turno
+06. Avaliar dor - escala numérica (0-10) a cada turno
 07. Higiene oral 3x/dia e higiene corporal conforme protocolo institucional
-08. Mudança de decúbito a cada 2 horas — prevenção de UPP (Braden)
+08. Mudança de decúbito a cada 2 horas - prevenção de UPP (Braden)
 09. Orientar paciente e familiar sobre diagnóstico e cuidados
 10. Comunicar ao médico plantonista imediatamente qualquer alteração
 11. Registrar evolução e intercorrências em prontuário eletrônico
@@ -945,20 +990,20 @@ Observações: ${p.obs||'Nenhuma'}
 Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  if(tipo==='passagem') return `PASSAGEM DE PLANTÃO — MÉTODO SBAR
+  if(tipo==='passagem') return `PASSAGEM DE PLANTÃO - MÉTODO SBAR
 Data/Hora: ${dt}
 Paciente: ${p.nome} | Leito: ${p.leito}
 
-S — SITUAÇÃO:
+S - SITUAÇÃO:
 Paciente com ${p.diagnostico||'diagnóstico conforme prontuário'}. ${p.queixas||'Sem queixas relatadas no período.'}
 
-B — BACKGROUND:
+B - BACKGROUND:
 Internado em ${p.leito||'leito informado'}. Diagnóstico: ${p.diagnostico}. Alergias: ${p.alergias||'Nega'}. Sinais vitais: ${p.sv||'estáveis'}.
 
-A — AVALIAÇÃO:
+A - AVALIAÇÃO:
 Paciente ${p.queixas?'com as queixas descritas':'estável'} no período. Sistemas avaliados: ${p.sistemas?.join(', ')||'conforme rotina'}. Exames: ${p.exames||'conforme prontuário'}.
 
-R — RECOMENDAÇÃO:
+R - RECOMENDAÇÃO:
 • Manter monitorização dos sinais vitais
 • Observar evolução do quadro clínico
 • Continuar prescrições vigentes
@@ -971,36 +1016,36 @@ PENDÊNCIAS DO TURNO:
 Enf. que passa: ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
 
-  return `DIAGNÓSTICOS DE ENFERMAGEM — NANDA-NIC-NOC 2024-2026
+  return `DIAGNÓSTICOS DE ENFERMAGEM - NANDA-NIC-NOC 2024-2026
 Data: ${dt}
 Paciente: ${p.nome} | Diagnóstico médico: ${p.diagnostico}
 
 DIAGNÓSTICO 1: Dor aguda (NANDA 00132)
-Domínio 12 — Conforto | Classe 1 — Conforto físico
+Domínio 12 - Conforto | Classe 1 - Conforto físico
 • R/T: agentes lesivos físicos/biológicos (${p.diagnostico})
 • E/P: autorrelato de dor, expressão facial de dor, comportamento de proteção
-• NIC: Manejo da dor (1400) — avaliar dor a cada 2h, administrar analgesia conforme prescrição
-• NOC: Controle da dor (1605) — meta: escore ≥4 em 24h
+• NIC: Manejo da dor (1400) - avaliar dor a cada 2h, administrar analgesia conforme prescrição
+• NOC: Controle da dor (1605) - meta: escore ≥4 em 24h
 
 DIAGNÓSTICO 2: Risco de infecção (NANDA 00004)
-Domínio 11 — Segurança | Classe 1 — Infecção
+Domínio 11 - Segurança | Classe 1 - Infecção
 • F/R: procedimentos invasivos, defesas primárias inadequadas
-• NIC: Controle de infecção (6550) — técnica asséptica, higiene das mãos
-• NOC: Controle de risco (1902) — ausência de sinais de infecção em 72h
+• NIC: Controle de infecção (6550) - técnica asséptica, higiene das mãos
+• NOC: Controle de risco (1902) - ausência de sinais de infecção em 72h
 
 DIAGNÓSTICO 3: Mobilidade física prejudicada (NANDA 00085)
-Domínio 4 — Atividade | Classe 2 — Atividade/Exercício
+Domínio 4 - Atividade | Classe 2 - Atividade/Exercício
 • R/T: dor, fraqueza muscular, prescrição de repouso
 • E/P: limitação de amplitude de movimento, diminuição de força
 • NIC: Terapia com exercícios: mobilidade articular (0224)
-• NOC: Mobilidade (0208) — deambulação assistida em 48h
+• NOC: Mobilidade (0208) - deambulação assistida em 48h
 
 DIAGNÓSTICO 4: Déficit de conhecimento (NANDA 00126)
-Domínio 5 — Percepção | Classe 4 — Cognição
+Domínio 5 - Percepção | Classe 4 - Cognição
 • R/T: falta de exposição à informação sobre doença/tratamento
 • E/P: verbalização de dúvidas, comportamentos inapropriados
 • NIC: Ensino: processo de doença (5602)
-• NOC: Conhecimento: processo de doença (1803) — verbaliza compreensão
+• NOC: Conhecimento: processo de doença (1803) - verbaliza compreensão
 
 Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
 Assinatura: _______________________________`;
@@ -1016,10 +1061,10 @@ function pdf(){
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${tit}</title>
 <style>body{font-family:Arial,sans-serif;padding:40px 50px;font-size:13px;line-height:1.9;color:#1A1F2E;max-width:800px;margin:0 auto}.header{border-bottom:3px solid #0F4C81;padding-bottom:16px;margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between}.logo h1{color:#0F4C81;font-size:22px;margin-bottom:4px}.logo p{color:#6B7590;font-size:12px}.prof{text-align:right;font-size:12px;color:#6B7590}.prof strong{display:block;color:#1A1F2E;font-size:14px}h2{color:#0F4C81;font-size:15px;margin-bottom:12px;padding:8px 12px;background:#E8F0FB;border-left:4px solid #0F4C81;border-radius:0 8px 8px 0}pre{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.9}.footer{margin-top:40px;border-top:1px solid #E8ECF2;padding-top:16px;display:flex;justify-content:space-between;font-size:11px;color:#6B7590}.assin{margin-top:50px;border-top:1px solid #1A1F2E;padding-top:8px;font-size:12px;display:inline-block;min-width:300px}</style></head><body>
-<div class="header"><div class="logo"><h1>🩺 SAE Fácil</h1><p>Sistematização de Assistência de Enfermagem com IA — Líder no Brasil</p></div><div class="prof"><strong>${U?.nome||''}</strong>${U?.categoria||''}<br>${U?.coren||''}<br>${dt}</div></div>
+<div class="header"><div class="logo"><h1>🩺 SAE Fácil</h1><p>Sistematização de Assistência de Enfermagem com IA - Líder no Brasil</p></div><div class="prof"><strong>${U?.nome||''}</strong>${U?.categoria||''}<br>${U?.coren||''}<br>${dt}</div></div>
 <h2>${tit}</h2><pre>${txt}</pre>
 <div style="margin-top:40px"><div class="assin">${U?.nome||'___________________________'}<br>COREN: ${U?.coren||'_______________'}</div></div>
-<div class="footer"><span>SAE Fácil — IA para Enfermagem · saefacil.onrender.com</span><span>${dt}</span></div>
+<div class="footer"><span>SAE Fácil - IA para Enfermagem · saefacil.onrender.com</span><span>${dt}</span></div>
 <script>window.onload=()=>setTimeout(()=>window.print(),500)<\/script></body></html>`);
   w.document.close();
 }
@@ -1097,16 +1142,38 @@ function calcBraden(){
 }
 
 function calcGlasgow(){
-  const o=parseInt(document.getElementById('gl-1').value);
-  const v=parseInt(document.getElementById('gl-2').value);
-  const m=parseInt(document.getElementById('gl-3').value);
-  const total=o+v+m;
-  const el=document.getElementById('r-glasgow');el.style.display='block';
-  el.className='escore-resultado show '+(total<=8?'er-vermelho':total<=12?'er-amarelo':'er-verde');
-  document.getElementById('rv-glasgow').textContent=`${total}/15 (O${o}V${v}M${m})`;
-  const cls=total<=8?'TCE grave':total<=12?'TCE moderado':'TCE leve / Sem comprometimento';
-  document.getElementById('rc-glasgow').textContent=cls;
-  document.getElementById('rd-glasgow').textContent=total<=8?'Risco de coma. Suporte ventilatório pode ser necessário. Comunicar médico imediatamente.':total<=12?'Monitorização neurológica intensiva. Reavaliação frequente.':'Nível de consciência preservado. Monitorar evolução.';
+  var e1 = document.getElementById('gl-1');
+  var e2 = document.getElementById('gl-2');
+  var e3 = document.getElementById('gl-3');
+  var epd = document.getElementById('gl-pd');
+  var epe = document.getElementById('gl-pe');
+  var etam = document.getElementById('gl-tam');
+  var o = parseInt(e1.value) || 1;
+  var vVal = e2.value;
+  var v = (vVal === '0') ? 0 : (parseInt(vVal) || 1);
+  var intubado = (vVal === '0');
+  var m = parseInt(e3.value) || 1;
+  var gcs = o + (intubado ? 0 : v) + m;
+  var prs = parseInt(epd.value) + parseInt(epe.value);
+  var gcsp = gcs - prs;
+  var tam = etam.value;
+  var el = document.getElementById('r-glasgow');
+  el.style.display = 'block';
+  el.className = 'escore-resultado show ' + (gcsp <= 6 ? 'er-vermelho' : gcs <= 8 ? 'er-vermelho' : gcs <= 12 ? 'er-amarelo' : 'er-verde');
+  var vLabel = intubado ? 'VT' : 'V' + v;
+  document.getElementById('rv-glasgow').textContent = 'GCS ' + gcs + (intubado ? 'T' : '') + '/15  GCS-P ' + gcsp + '  PRS:' + prs;
+  var classeGCS = gcs <= 8 ? 'Coma grave (GCS <= 8)' : gcs <= 12 ? 'TCE moderado' : 'Consciencia preservada';
+  document.getElementById('rc-glasgow').textContent = classeGCS + ' | E' + o + ' ' + vLabel + ' M' + m;
+  var alertas = [];
+  if (prs >= 1) alertas.push('ATENCAO: Pupila(s) nao reativa(s) - PRS ' + prs + ' - sinal de herniacao cerebral');
+  if (tam === 'midriaticas') alertas.push('Midraise bilateral - lesao NC III ou intoxicacao');
+  if (tam === 'mioticas') alertas.push('Miose bilateral - lesao pontina ou opioides');
+  if (tam === 'anisocoricas') alertas.push('Anisocoria - diferenca > 1mm - herniacao uncal?');
+  if (gcsp <= 6) alertas.push('GCS-P <= 6 - risco critico - acionar emergencia');
+  else if (gcs <= 8) alertas.push('GCS <= 8 - avaliar via aerea e suporte ventilatorio');
+  var desc = intubado ? 'Paciente intubado - resposta verbal nao avaliavel (VT). ' : '';
+  desc += alertas.length > 0 ? alertas.join(' | ') : 'Pupilas sem alteracoes criticas detectadas.';
+  document.getElementById('rd-glasgow').textContent = desc;
 }
 
 function calcMorse(){
@@ -1126,7 +1193,7 @@ function calcApgar(){
   el.className='escore-resultado show '+(v<=3?'er-vermelho':v<=6?'er-amarelo':'er-verde');
   document.getElementById('rv-apgar').textContent=`${v}/10`;
   const cls=v<=3?'Depressão grave':v<=6?'Depressão moderada':'Normal';
-  document.getElementById('rc-apgar').textContent=`${cls} — ${min}min`;
+  document.getElementById('rc-apgar').textContent=`${cls} - ${min}min`;
   document.getElementById('rd-apgar').textContent=v<=3?'RN necessita de reanimação imediata.':v<=6?'RN necessita de assistência. Oxigênio e estimulação.':'RN com boa vitalidade. Cuidados de rotina.';
 }
 
@@ -1135,7 +1202,7 @@ function calcNEWS(){
   const el=document.getElementById('r-news');el.style.display='block';
   el.className='escore-resultado show '+(v>=7?'er-vermelho':v>=5?'er-amarelo':v>=1?'er-verde':'er-verde');
   document.getElementById('rv-news').textContent=v+' pontos';
-  const cls=v>=7?'Alto risco — emergência':v>=5?'Risco médio — urgência':v>=1?'Baixo risco — monitorar':'Dentro da normalidade';
+  const cls=v>=7?'Alto risco - emergência':v>=5?'Risco médio - urgência':v>=1?'Baixo risco - monitorar':'Dentro da normalidade';
   document.getElementById('rc-news').textContent=cls;
   document.getElementById('rd-news').textContent=v>=7?'Acionar equipe de emergência. Monitorização contínua.':v>=5?'Aumentar frequência de monitorização. Avaliar com médico.':v>=1?'Monitorizar a cada 4-6h.':'Monitorização de rotina.';
 }
@@ -1295,7 +1362,7 @@ function calcIMC(){
   const cls=imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade Grau I':imc<40?'Obesidade Grau II':'Obesidade Grau III';
   document.getElementById('r-imc').className='calc-result show';
   document.getElementById('rv-imc').textContent=imc.toFixed(1);
-  document.getElementById('ru-imc').textContent=`kg/m² — ${cls}`;
+  document.getElementById('ru-imc').textContent=`kg/m² - ${cls}`;
 }
 
 function calcHidra(){
@@ -1308,7 +1375,70 @@ function calcHidra(){
   else ml=peso>20?1500+(peso-20)*20:peso*100;
   document.getElementById('r-hidra').className='calc-result show';
   document.getElementById('rv-hidra').textContent=ml.toFixed(0)+' mL';
-  document.getElementById('ru-hidra').textContent=`Necessidade hídrica diária — ${(ml/8).toFixed(0)} mL a cada 8h`;
+  document.getElementById('ru-hidra').textContent=`Necessidade hídrica diária - ${(ml/8).toFixed(0)} mL a cada 8h`;
+}
+
+
+function fecharModalNANDA(){ var m=document.getElementById("modal-nanda-add"); if(m) m.remove(); }
+
+function adicionarDiagnosticoNANDA(){
+  var existing = document.getElementById('modal-nanda-add');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.className = 'modal-bg show';
+  modal.id = 'modal-nanda-add';
+  var html = '<div class="modal">';
+  html += '<div class="modal-tit">Acrescentar diagnostico de enfermagem</div>';
+  html += '<div class="modal-sub">Selecione para incluir no relatorio</div>';
+  html += '<div class="nanda-busca" style="margin-bottom:12px"><span style="font-size:18px">&#128269;</span>';
+  html += '<input type="text" class="busca-input" placeholder="Buscar NANDA..." oninput="filtrarNANDAModal(this.value)" id="nanda-modal-search"></div>';
+  html += '<div id="nanda-modal-lista" style="max-height:340px;overflow-y:auto"></div>';
+  html += '<button class="btn-p" style="background:var(--cinza2);color:var(--texto);margin-top:14px" onclick="fecharModalNANDA()">Fechar</button>';
+  html += '</div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+  renderNANDAModal('');
+}
+
+function filtrarNANDAModal(v){ renderNANDAModal(v); }
+
+function renderNANDAModal(filtro){
+  var el = document.getElementById('nanda-modal-lista');
+  if (!el) return;
+  var lista = NANDA_DB.filter(function(d){
+    if (!filtro) return true;
+    return (d.nome + d.cod + d.dom).toLowerCase().indexOf(filtro.toLowerCase()) >= 0;
+  });
+  var html = '';
+  for (var i = 0; i < lista.length; i++) {
+    var d = lista[i];
+    var idx = NANDA_DB.indexOf(d);
+    html += '<div class="nanda-item" onclick="inserirNANDA(' + idx + ')" style="cursor:pointer">';
+    html += '<div class="nanda-codigo">NANDA ' + d.cod + '</div>';
+    html += '<div class="nanda-nome">' + d.nome + '</div>';
+    html += '<div class="nanda-dominio">Dominio: ' + d.dom + ' &bull; Toque para adicionar</div>';
+    html += '</div>';
+  }
+  el.innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--cinza3)">Nenhum diagnostico encontrado</div>';
+}
+
+function inserirNANDA(idx){
+  var d = NANDA_DB[idx];
+  if (!d) return;
+  var txtEl = document.getElementById('res-txt');
+  var sep = '\n\n================================\n';
+  var linha = function(k,v){ return k + ': ' + v + '\n'; };
+  var bloco = sep + 'DIAGNOSTICO DE ENFERMAGEM NANDA-I\n================================\n' +
+    linha('Diagnostico', d.nome + ' (NANDA ' + d.cod + ')') +
+    linha('Dominio', d.dom) +
+    linha('Relacionado a', d.fa[0] || 'conforme avaliacao clinica') +
+    linha('Evidenciado por', d.cd[0] || 'caracteristicas clinicas identificadas') +
+    linha('Intervencao NIC', d.nic[0] || 'conforme protocolo') +
+    linha('Resultado NOC', d.noc[0] || 'melhora do quadro') + '\n' +
+    'Enfermeiro(a): ' + (U && U.nome ? U.nome : '___') + ' | COREN: ' + (U && U.coren ? U.coren : '___');
+  txtEl.textContent = txtEl.textContent + bloco;
+  fecharModalNANDA();
+  toast('Diagnostico adicionado!', 'ok');
 }
 
 // MODAL
