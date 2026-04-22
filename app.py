@@ -9,7 +9,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 import os, hashlib, requests
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'saefacil-2026')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', 'saefacil-jwt-2026')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
@@ -143,10 +143,34 @@ Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico: {p.get('diag
 Sinais: {p.get('sv')} | Situação: {p.get('queixas')} | Exames: {p.get('exames')}
 Estruture S-B-A-R completo, objetivo e claro. Linha de assinatura ao final.""",
 
-        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA. Gere 4-5 DIAGNÓSTICOS NANDA-NIC-NOC para:
-Paciente: {p.get('nome')} | Diagnóstico médico: {p.get('diagnostico')}
-Sinais: {p.get('sv')} | Queixas: {p.get('queixas')}
-Formato: diagnóstico NANDA (problema r/t evidenciado por) + NIC + NOC com prazo. Linha de assinatura."""
+        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA-I 2024-2026. Analise CUIDADOSAMENTE os dados clínicos abaixo e gere 4 DIAGNÓSTICOS DE ENFERMAGEM baseados EXCLUSIVAMENTE no quadro real do paciente.
+
+DADOS DO PACIENTE:
+- Nome/Idade: {p.get('nome')}
+- Leito/Setor: {p.get('leito')}
+- Diagnóstico médico: {p.get('diagnostico')}
+- Sinais vitais: {p.get('sv')}
+- Avaliação clínica: {p.get('queixas')}
+- Sistemas avaliados: {', '.join(p.get('sistemas',[]))}
+- Exames/Procedimentos: {p.get('exames')}
+- Alergias/Comorbidades: {p.get('alergias')}
+- Observações: {p.get('obs')}
+
+REGRAS OBRIGATÓRIAS:
+1. Os diagnósticos DEVEM ser compatíveis com o quadro clínico real descrito acima
+2. NÃO gere diagnósticos genéricos que não condizem com os dados informados
+3. Se o paciente estiver sedado/intubado, NÃO coloque "dor aguda" como prioritário
+4. Analise: nível de consciência, via aérea, hemodinâmica, dispositivos invasivos, pele, eliminações
+5. Use APENAS o formato NANDA sem NIC e sem NOC
+6. Para cada diagnóstico inclua SOMENTE: nome + código NANDA + domínio + relacionado a + evidenciado por (ou fator de risco se for diagnóstico de risco)
+
+FORMATO DE CADA DIAGNÓSTICO:
+DIAGNÓSTICO [N]: [Nome do diagnóstico] (NANDA [código])
+Domínio [X] - [Nome] | Classe [X] - [Nome]
+Relacionado a: [fator causal baseado nos dados do paciente]
+Evidenciado por: [características definidoras observadas nos dados]
+
+Gere exatamente 4 diagnósticos ordenados por prioridade clínica. Linha de assinatura ao final."""
     }
     try:
         r = requests.post(
