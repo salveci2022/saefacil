@@ -125,26 +125,134 @@ def _gerar_ia(tipo, p):
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
         return None
+    # Detectar contexto clínico crítico para guiar a IA
+    sedado = any(x in p.get('queixas','').upper() for x in ['SEDADO','SEDADA','RASS','IOT','INTUBADO','INTUBADA','VM ','VENTILAÇÃO MECÂNICA','INCONSCIENTE','GLASGOW'])
+    contexto_critico = f"""
+ATENÇÃO CLÍNICA — LEIA ANTES DE GERAR:
+- Paciente {'em sedação/intubado(a) — NÃO use diagnósticos que exijam relato verbal (ex: Dor aguda com evidência de relato verbal). Use diagnósticos de risco ou baseados em dados objetivos.' if sedado else 'consciente — avalie queixas subjetivas normalmente.'}
+- NUNCA gere plano genérico. Cada item do plano deve ser coerente com o quadro real descrito.
+- Se houver dispositivos invasivos (CVC, SVD, IOT, drenos), inclua cuidados específicos para eles.
+- Diagnóstico prioritário deve refletir a condição mais grave/instável do momento.
+""" if sedado else ""
+
     prompts = {
-        'evolucao': f"""Você é enfermeiro especialista. Gere EVOLUÇÃO DE ENFERMAGEM formato SOAP para:
-Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico: {p.get('diagnostico')}
-Sinais vitais: {p.get('sv')} | Queixas: {p.get('queixas')}
-Sistemas avaliados: {', '.join(p.get('sistemas',[]))} | Exames: {p.get('exames')}
+        'evolucao': f"""Você é enfermeiro especialista em SAE com domínio avançado em NANDA-I 2024-2026, NIC e NOC. Gere EVOLUÇÃO DE ENFERMAGEM formato SOAP com integração completa NANDA+NIC+NOC.
+{contexto_critico}
+DADOS DO PACIENTE:
+Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico médico: {p.get('diagnostico')}
+Sinais vitais: {p.get('sv')}
+Avaliação/Queixas: {p.get('queixas')}
+Sistemas avaliados: {', '.join(p.get('sistemas',[]))}
+Exames/Procedimentos/Dispositivos: {p.get('exames')}
+Alergias/Comorbidades: {p.get('alergias','')}
 Observações: {p.get('obs')}
-Gere SOAP completo e profissional padrão COFEN. Inclua data/hora como [DATA] [HORA]. Linha de assinatura ao final.""",
 
-        'prescricao': f"""Você é enfermeiro especialista. Gere PRESCRIÇÃO DE ENFERMAGEM para:
+ESTRUTURA OBRIGATÓRIA:
+
+EVOLUÇÃO DE ENFERMAGEM
+Data/Hora: [DATA] [HORA]
+Paciente: [nome] | Leito: [leito]
+Diagnóstico médico: [diagnóstico]
+
+S — SUBJETIVO:
+{'Paciente sem condições de comunicação verbal (sedação/rebaixamento de consciência). Dados obtidos por observação direta e monitorização.' if sedado else '[Queixas relatadas pelo paciente em suas próprias palavras. Inclua intensidade, localização, fatores de melhora/piora.]'}
+
+O — OBJETIVO:
+Sinais vitais: [todos os valores informados]
+Sistemas avaliados: [achados objetivos de cada sistema, incluindo dispositivos invasivos e seus aspectos]
+
+A — AVALIAÇÃO (NANDA-I 2024-2026):
+Diagnóstico prioritário: [Nome NANDA] (NANDA [código])
+Relacionado a: [fator causal específico e real do caso]
+Evidenciado por: [características definidoras objetivas observadas]
+
+P — PLANO (NIC + NOC integrados):
+INTERVENÇÕES NIC:
+• [NIC código] [Nome da intervenção]: [atividade específica 1]
+• [NIC código] [Nome da intervenção]: [atividade específica 2]
+[mínimo 6 intervenções NIC específicas ao caso, com atividades detalhadas]
+
+RESULTADOS ESPERADOS NOC:
+• [NOC código] [Nome do resultado]: Meta — [descrição mensurável do resultado esperado]
+• [NOC código] [Nome do resultado]: Meta — [descrição mensurável]
+[mínimo 3 resultados NOC]
+
+REGRAS ABSOLUTAS:
+1. Diagnóstico COMPATÍVEL com quadro real. {'Paciente sedado: PROIBIDO diagnóstico com relato verbal.' if sedado else ''}
+2. Intervenções NIC com códigos reais e atividades específicas ao caso
+3. Resultados NOC mensuráveis e alcançáveis para o quadro
+4. Terminologia técnica padrão COFEN
+5. Linha de assinatura ao final""",
+
+        'prescricao': f"""Você é enfermeiro especialista em SAE com domínio em NANDA-I 2024-2026, NIC e NOC. Gere PRESCRIÇÃO DE ENFERMAGEM baseada em intervenções NIC para o quadro clínico abaixo.
+{contexto_critico}
+DADOS DO PACIENTE:
 Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico: {p.get('diagnostico')}
-Sinais: {p.get('sv')} | Queixas: {p.get('queixas')} | Obs: {p.get('obs')}
-Liste cuidados numerados (01, 02...) padrão COFEN. Linha de assinatura ao final.""",
+Sinais vitais: {p.get('sv')} | Avaliação: {p.get('queixas')}
+Dispositivos/Procedimentos: {p.get('exames')} | Comorbidades: {p.get('alergias','')} | Obs: {p.get('obs')}
 
-        'passagem': f"""Você é enfermeiro especialista. Gere PASSAGEM DE PLANTÃO método SBAR para:
+ESTRUTURA OBRIGATÓRIA:
+
+PRESCRIÇÃO DE ENFERMAGEM
+Data: [DATA] | Turno: [manhã/tarde/noite]
+Paciente: [nome] | Leito: [leito]
+
+DIAGNÓSTICO DE ENFERMAGEM PRIORITÁRIO (NANDA):
+[Nome] (NANDA [código]) — R/A [fator] E/P [evidência]
+
+INTERVENÇÕES DE ENFERMAGEM (baseadas em NIC):
+01. [Cuidado específico ao quadro — com horário se aplicável]
+02. [Cuidado específico]
+03. [Cuidado específico]
+[mínimo 12 itens numerados, específicos ao caso real]
+
+{'CUIDADOS ESPECIAIS COM DISPOSITIVOS INVASIVOS: detalhe todos os cuidados com IOT, CVC, SVD e outros dispositivos presentes' if any(x in p.get('queixas','').upper() for x in ['IOT','CVC','SVD','CATETER','DRENO','SNE']) else ''}
+
+RESULTADOS ESPERADOS (NOC):
+• [NOC código] [Nome]: [meta mensurável]
+• [NOC código] [Nome]: [meta mensurável]
+
+Padrão COFEN. Linha de assinatura ao final.""",
+
+        'passagem': f"""Você é enfermeiro especialista em SAE. Gere PASSAGEM DE PLANTÃO método SBAR com integração NANDA+NIC.
+{contexto_critico}
+DADOS:
 Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico: {p.get('diagnostico')}
-Sinais: {p.get('sv')} | Situação: {p.get('queixas')} | Exames: {p.get('exames')}
-Estruture S-B-A-R completo, objetivo e claro. Linha de assinatura ao final.""",
+Sinais vitais: {p.get('sv')} | Situação atual: {p.get('queixas')}
+Dispositivos/Exames: {p.get('exames')} | Comorbidades: {p.get('alergias','')} | Obs: {p.get('obs')}
 
-        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA-I 2024-2026. Analise CUIDADOSAMENTE os dados clínicos abaixo e gere 4 DIAGNÓSTICOS DE ENFERMAGEM baseados EXCLUSIVAMENTE no quadro real do paciente.
+ESTRUTURA SBAR OBRIGATÓRIA:
 
+PASSAGEM DE PLANTÃO — SBAR
+Data/Hora: [DATA] [HORA] | Leito: [leito]
+
+S — SITUAÇÃO:
+Paciente [nome], [idade se disponível], internado(a) em [leito] com diagnóstico de [diagnóstico]. Situação atual: [resumo objetivo do estado no momento]
+
+B — BACKGROUND (Histórico):
+Comorbidades: [lista] | Alergias: [lista]
+Dispositivos invasivos em uso: [lista com localização e data de inserção se disponível]
+Medicações vasoativas/sedação/analgesia em curso: [se aplicável]
+Intercorrências no turno: [eventos relevantes]
+
+A — AVALIAÇÃO CLÍNICA:
+Diagnóstico de enfermagem ativo: [Nome NANDA] (NANDA [código])
+Condição hemodinâmica: [estável/instável — justificativa com valores reais]
+Sistemas em alerta: [sistemas com alteração]
+Exames/resultados pendentes: [lista]
+
+R — RECOMENDAÇÃO:
+Prioridades para o próximo turno:
+• [ação prioritária 1]
+• [ação prioritária 2]
+• [ação prioritária 3]
+Alertas: [sinais de deterioração a monitorar]
+Pendências médicas: [condutas aguardadas]
+
+Objetivo e claro. Linha de assinatura ao final.""",
+
+        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA-I 2024-2026 com domínio clínico avançado em NIC (Nursing Interventions Classification) e NOC (Nursing Outcomes Classification). Gere 4 DIAGNÓSTICOS DE ENFERMAGEM com integração completa NANDA+NIC+NOC.
+{contexto_critico}
 DADOS DO PACIENTE:
 - Nome/Idade: {p.get('nome')}
 - Leito/Setor: {p.get('leito')}
@@ -152,32 +260,48 @@ DADOS DO PACIENTE:
 - Sinais vitais: {p.get('sv')}
 - Avaliação clínica: {p.get('queixas')}
 - Sistemas avaliados: {', '.join(p.get('sistemas',[]))}
-- Exames/Procedimentos: {p.get('exames')}
-- Alergias/Comorbidades: {p.get('alergias')}
+- Dispositivos/Exames: {p.get('exames')}
+- Alergias/Comorbidades: {p.get('alergias','')}
 - Observações: {p.get('obs')}
 
-REGRAS OBRIGATÓRIAS:
-1. Os diagnósticos DEVEM ser compatíveis com o quadro clínico real descrito acima
-2. NÃO gere diagnósticos genéricos que não condizem com os dados informados
-3. Se o paciente estiver sedado/intubado, NÃO coloque "dor aguda" como prioritário
-4. Analise: nível de consciência, via aérea, hemodinâmica, dispositivos invasivos, pele, eliminações
-5. Use APENAS o formato NANDA sem NIC e sem NOC
-6. Para cada diagnóstico inclua SOMENTE: nome + código NANDA + domínio + relacionado a + evidenciado por (ou fator de risco se for diagnóstico de risco)
+REGRAS ABSOLUTAS:
+1. Diagnósticos EXCLUSIVAMENTE compatíveis com os dados reais acima
+2. {'PACIENTE SEDADO/INCONSCIENTE: PROIBIDO usar características definidoras de relato verbal. Use dados objetivos e diagnósticos de risco.' if sedado else 'Avalie dados subjetivos e objetivos.'}
+3. Hierarquia de prioridade: via aérea > ventilação > hemodinâmica > neurológico > infeccioso > integridade cutânea > conforto
+4. Para cada diagnóstico: inclua NIC com atividades específicas E NOC com pontuação alvo
+5. Códigos NANDA, NIC e NOC devem ser reais e precisos
 
-FORMATO DE CADA DIAGNÓSTICO:
-DIAGNÓSTICO [N]: [Nome do diagnóstico] (NANDA [código])
-Domínio [X] - [Nome] | Classe [X] - [Nome]
-Relacionado a: [fator causal baseado nos dados do paciente]
-Evidenciado por: [características definidoras observadas nos dados]
+FORMATO OBRIGATÓRIO PARA CADA DIAGNÓSTICO:
 
-Gere exatamente 4 diagnósticos ordenados por prioridade clínica. Linha de assinatura ao final."""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DIAGNÓSTICO [N] — NANDA-I 2024-2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 [Nome exato do diagnóstico] (NANDA [código])
+Domínio [X] — [Nome do domínio] | Classe [X] — [Nome da classe]
+Relacionado a: [fator etiológico específico do caso]
+Evidenciado por: [características definidoras objetivas observadas] OU Fator de risco: [se diagnóstico de risco]
+
+🎯 INTERVENÇÕES NIC:
+• [Código NIC] [Nome da intervenção NIC]
+  - [Atividade específica 1 para este paciente]
+  - [Atividade específica 2 para este paciente]
+• [Código NIC] [Nome da intervenção NIC]
+  - [Atividade específica]
+
+📊 RESULTADOS NOC:
+• [Código NOC] [Nome do resultado NOC]
+  Meta: [pontuação alvo 1-5] — [descrição do resultado esperado]
+• [Código NOC] [Nome do resultado NOC]
+  Meta: [pontuação alvo] — [descrição]
+
+Gere os 4 diagnósticos ordenados por prioridade clínica real. Linha de assinatura ao final."""
     }
     try:
         r = requests.post(
             'https://api.anthropic.com/v1/messages',
             headers={'x-api-key': api_key, 'anthropic-version': '2023-06-01',
                      'content-type': 'application/json'},
-            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 2000,
+            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 3000,
                   'messages': [{'role': 'user', 'content': prompts.get(tipo, prompts['evolucao'])}]},
             timeout=30
         )
