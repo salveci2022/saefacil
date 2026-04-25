@@ -398,11 +398,12 @@ textarea.ci{min-height:90px}
       </div>
       <div id="s3" style="display:none">
         <div class="st-tit">📄 Tipo de documento</div>
-        <div class="st-sub">Selecione o que a IA vai gerar</div>
+        <div class="st-sub">Selecione um ou mais documentos para gerar</div>
         <button class="tipo-btn" id="tb-evolucao" onclick="tipo('evolucao')"><strong>📝 Evolução de Enfermagem</strong><span>Formato SOAP — terminologia NANDA-I 2025</span></button>
         <button class="tipo-btn" id="tb-prescricao" onclick="tipo('prescricao')"><strong>💊 Prescrição de Enfermagem</strong><span>Cuidados numerados padrão COFEN</span></button>
         <button class="tipo-btn" id="tb-passagem" onclick="tipo('passagem')"><strong>🔄 Passagem de Plantão</strong><span>Método SBAR — para o próximo turno</span></button>
         <button class="tipo-btn" id="tb-nanda" onclick="tipo('nanda')"><strong>🔬 Diagnóstico de Enfermagem NANDA</strong><span>Taxonomia oficial NANDA-I 2024-2026</span></button>
+        <button id="btn-sel-todos" onclick="selecionarTodos()" style="width:100%;padding:12px;border:2px dashed var(--azul2);border-radius:var(--r2);background:var(--azul3);color:var(--azul);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px;margin-top:4px">⚡ Selecionar todos (gerar 4 documentos)</button>
         <div class="cg" style="margin-top:14px"><label class="cl">Observações adicionais</label><textarea id="a-obs" class="ci" placeholder="Informações extras para a IA considerar..."></textarea></div>
         <div class="bnav"><button class="bvolt" onclick="vt(2)">← Voltar</button><button class="bav" onclick="gerar()">✨ Gerar com IA</button></div>
       </div>
@@ -734,7 +735,7 @@ textarea.ci{min-height:90px}
 
 <script>
 const API = window.location.origin;
-let U=null, SAES=[], TIPO='evolucao', STEP=1, REC=null, GRAV=false;
+let U=null, SAES=[], TIPO='evolucao', TIPOS=[], STEP=1, REC=null, GRAV=false;
 let cronoTimer=null, cronoSeg=0, cronoRodando=false;
 let pacientesPlantao=[];
 
@@ -852,7 +853,7 @@ function irNovaSAE(t){
 
 // STEPS
 function resetar(){
-  STEP=1;TIPO='evolucao';
+  STEP=1;TIPO='evolucao';TIPOS=[];
   ['p-nome','p-leito','p-diag','p-aler','a-sv','a-ex','a-obs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const eq=document.getElementById('a-eq');if(eq)eq.value='';
   document.querySelectorAll('.ob').forEach(b=>b.classList.remove('on'));
@@ -865,7 +866,33 @@ function mostrarStep(n){[1,2,3,4].forEach(i=>{const e=document.getElementById(`s
 function av(n){if(n===2&&!document.getElementById('p-nome').value.trim()){toast('Informe o nome do paciente','err');return;}mostrarStep(n);}
 function vt(n){mostrarStep(n);}
 function tog(el){el.classList.toggle('on');}
-function tipo(t){TIPO=t;['evolucao','prescricao','passagem','nanda'].forEach(x=>{const b=document.getElementById(`tb-${x}`);if(b)b.classList.toggle('on',x===t);});}
+function tipo(t){
+  if(!TIPOS)TIPOS=[];
+  const idx=TIPOS.indexOf(t);
+  if(idx>=0){TIPOS.splice(idx,1);}else{TIPOS.push(t);}
+  TIPO=TIPOS[0]||'';
+  ['evolucao','prescricao','passagem','nanda'].forEach(x=>{
+    const b=document.getElementById(`tb-${x}`);
+    if(b)b.classList.toggle('on',TIPOS.includes(x));
+  });
+  const btnTodos=document.getElementById('btn-sel-todos');
+  if(btnTodos){
+    const todosSel=['evolucao','prescricao','passagem','nanda'].every(x=>TIPOS.includes(x));
+    btnTodos.textContent=todosSel?'✓ Todos selecionados':'⚡ Selecionar todos (gerar 4 documentos)';
+  }
+}
+function selecionarTodos(){
+  const todos=['evolucao','prescricao','passagem','nanda'];
+  const todosSel=todos.every(x=>TIPOS.includes(x));
+  if(todosSel){TIPOS=[];}else{TIPOS=[...todos];}
+  TIPO=TIPOS[0]||'';
+  ['evolucao','prescricao','passagem','nanda'].forEach(x=>{
+    const b=document.getElementById(`tb-${x}`);
+    if(b)b.classList.toggle('on',TIPOS.includes(x));
+  });
+  const btnTodos=document.getElementById('btn-sel-todos');
+  if(btnTodos)btnTodos.textContent=TIPOS.length===4?'✓ Todos selecionados':'⚡ Selecionar todos (gerar 4 documentos)';
+}
 
 // VOZ
 function voz(step){
@@ -889,16 +916,20 @@ function voz(step){
 
 // GERAR SAE
 async function gerar(){
-  if(!TIPO){toast('Selecione o tipo','err');return;}
+  // Suporte a múltipla seleção: usa TIPOS (array) se disponível, senão TIPO (legado)
+  const tiposParaGerar = (TIPOS && TIPOS.length > 0) ? TIPOS : (TIPO ? [TIPO] : []);
+  if(tiposParaGerar.length === 0){toast('Selecione pelo menos um tipo de documento','err');return;}
+
   mostrarStep(4);
   document.getElementById('ld-ia').style.display='flex';
   document.getElementById('res-ia').style.display='none';
   document.getElementById('alerta-clinico').classList.remove('show');
 
-  const msgs=['IA analisando dados clínicos...','Aplicando taxonomia NANDA-I 2025...','Verificando alertas clínicos...','Estruturando documento padrão COFEN...','Quase pronto...'];
+  const titulos={evolucao:'📝 Evolução de Enfermagem - SOAP',prescricao:'💊 Prescrição de Enfermagem',passagem:'🔄 Passagem de Plantão - SBAR',nanda:'🔬 Diagnósticos NANDA-NIC-NOC'};
+  const msgsBase=['IA analisando dados clínicos...','Aplicando taxonomia NANDA-I 2025...','Verificando alertas clínicos...','Estruturando documento padrão COFEN...','Quase pronto...'];
   let mi=0;
   const ldm=document.getElementById('ld-msg');
-  const iv=setInterval(()=>{ldm.textContent=msgs[mi++%msgs.length];},2000);
+  const iv=setInterval(()=>{ldm.textContent=msgsBase[mi++%msgsBase.length];},2000);
 
   const pac={
     nome:document.getElementById('p-nome').value,
@@ -912,17 +943,32 @@ async function gerar(){
     obs:document.getElementById('a-obs').value
   };
 
-  const titulos={evolucao:'📝 Evolução de Enfermagem - SOAP',prescricao:'💊 Prescrição de Enfermagem',passagem:'🔄 Passagem de Plantão - SBAR',nanda:'🔬 Diagnósticos NANDA-NIC-NOC'};
-  let texto='';
+  // Gerar cada documento selecionado em sequência
+  const separador = '\n\n' + '═'.repeat(60) + '\n\n';
+  let textosGerados = [];
 
-  try{
-    const r=await fetch(`${API}/api/gerar-sae`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},body:JSON.stringify({tipo:TIPO,paciente:pac})});
-    const d=await r.json();
-    if(d.limite){clearInterval(iv);mostrarPlanos();return;}
-    if(r.ok) texto=d.texto;
-  }catch(e){}
+  for(let i = 0; i < tiposParaGerar.length; i++){
+    const t = tiposParaGerar[i];
+    ldm.textContent = `Gerando ${i+1}/${tiposParaGerar.length}: ${titulos[t].replace(/^../,'')}...`;
+    let texto = '';
+    try{
+      const r=await fetch(`${API}/api/gerar-sae`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},
+        body:JSON.stringify({tipo:t,paciente:pac})
+      });
+      const d=await r.json();
+      if(d.limite){clearInterval(iv);mostrarPlanos();return;}
+      if(r.ok) texto=d.texto;
+    }catch(e){}
+    if(!texto) texto=template(t,pac);
+    textosGerados.push(texto);
+  }
 
-  if(!texto) texto=template(TIPO,pac);
+  const textoFinal = textosGerados.join(separador);
+  const tituloFinal = tiposParaGerar.length === 1
+    ? titulos[tiposParaGerar[0]]
+    : `✨ ${tiposParaGerar.length} documentos gerados`;
 
   // Verificar alertas clínicos
   const alertas=verificarAlertas(pac);
@@ -934,8 +980,8 @@ async function gerar(){
   clearInterval(iv);
   document.getElementById('ld-ia').style.display='none';
   document.getElementById('res-ia').style.display='block';
-  document.getElementById('res-tit').textContent=titulos[TIPO];
-  document.getElementById('res-txt').textContent=texto;
+  document.getElementById('res-tit').textContent=tituloFinal;
+  document.getElementById('res-txt').textContent=textoFinal;
 }
 
 // ALERTA CLÍNICO
