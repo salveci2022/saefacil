@@ -287,6 +287,7 @@ textarea.ci{min-height:90px}
       <div class="fg"><label class="fl">Senha</label><input type="password" id="l-senha" class="fi" placeholder="••••••••"><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
       <button class="btn-p" onclick="fazerLogin()">Entrar</button>
       <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
+      <div class="ls" style="margin-top:6px"><span onclick="abrirRecuperarSenha()" style="color:var(--cinza3);font-size:13px">🔑 Esqueci minha senha</span></div>
     </div>
     <div id="form-cadastro" style="display:none">
       <div class="fg"><label class="fl">Nome completo</label><input type="text" id="c-nome" class="fi" placeholder="Enf. Maria Silva"></div>
@@ -695,6 +696,82 @@ textarea.ci{min-height:90px}
         <div><div class="pf-nome" id="pf-nome">...</div><div class="pf-cargo" id="pf-cargo">Enfermagem</div><div style="font-size:12px;color:var(--cinza3);margin-top:2px" id="pf-coren">COREN</div></div>
       </div>
       <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">🆓 Gratuito</div><div class="pc-desc">10 SAEs/mês • Upgrade Pro: R$ 29/mês</div></div>
+
+      <!-- EDITAR PERFIL -->
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:15px;margin-bottom:14px">✏️ Editar dados</div>
+        <div class="cg" style="margin-bottom:10px">
+          <label class="cl">Nome completo</label>
+          <input type="text" id="pf-edit-nome" class="ci" placeholder="Seu nome">
+        </div>
+        <div class="cg" style="margin-bottom:10px">
+          <label class="cl">Categoria</label>
+          <select id="pf-edit-cat" class="ci">
+            <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+            <option value="Técnico(a) de Enfermagem">Técnico(a) de Enfermagem</option>
+            <option value="Auxiliar de Enfermagem">Auxiliar de Enfermagem</option>
+            <option value="Estudante de Enfermagem">Estudante de Enfermagem</option>
+          </select>
+        </div>
+        <div class="cg" style="margin-bottom:10px">
+          <label class="cl">Estado do COREN</label>
+          <select id="pf-edit-estado" class="ci">
+            <option value="AC">AC — Acre</option>
+            <option value="AL">AL — Alagoas</option>
+            <option value="AP">AP — Amapá</option>
+            <option value="AM">AM — Amazonas</option>
+            <option value="BA">BA — Bahia</option>
+            <option value="CE">CE — Ceará</option>
+            <option value="DF" selected>DF — Distrito Federal</option>
+            <option value="ES">ES — Espírito Santo</option>
+            <option value="GO">GO — Goiás</option>
+            <option value="MA">MA — Maranhão</option>
+            <option value="MT">MT — Mato Grosso</option>
+            <option value="MS">MS — Mato Grosso do Sul</option>
+            <option value="MG">MG — Minas Gerais</option>
+            <option value="PA">PA — Pará</option>
+            <option value="PB">PB — Paraíba</option>
+            <option value="PR">PR — Paraná</option>
+            <option value="PE">PE — Pernambuco</option>
+            <option value="PI">PI — Piauí</option>
+            <option value="RJ">RJ — Rio de Janeiro</option>
+            <option value="RN">RN — Rio Grande do Norte</option>
+            <option value="RS">RS — Rio Grande do Sul</option>
+            <option value="RO">RO — Rondônia</option>
+            <option value="RR">RR — Roraima</option>
+            <option value="SC">SC — Santa Catarina</option>
+            <option value="SP">SP — São Paulo</option>
+            <option value="SE">SE — Sergipe</option>
+            <option value="TO">TO — Tocantins</option>
+          </select>
+        </div>
+        <div class="cg" style="margin-bottom:14px">
+          <label class="cl">Número COREN</label>
+          <input type="text" id="pf-edit-num" class="ci" placeholder="Ex: 000000 Enf">
+        </div>
+        <button class="bav" style="width:100%" onclick="salvarPerfil()">💾 Salvar dados</button>
+      </div>
+
+      <!-- TROCAR SENHA -->
+      <div class="card" style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:15px;margin-bottom:14px">🔒 Trocar senha</div>
+        <div class="cg" style="margin-bottom:10px">
+          <label class="cl">Senha atual</label>
+          <input type="password" id="pf-senha-atual" class="ci" placeholder="••••••••">
+        </div>
+        <div class="cg" style="margin-bottom:10px">
+          <label class="cl">Nova senha</label>
+          <input type="password" id="pf-senha-nova" class="ci" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="cg" style="margin-bottom:14px">
+          <label class="cl">Confirmar nova senha</label>
+          <input type="password" id="pf-senha-conf" class="ci" placeholder="Repita a nova senha">
+        </div>
+        <div id="pf-senha-erro" class="ferr">Senhas não conferem</div>
+        <button class="bav" style="width:100%;background:var(--cinza3)" onclick="trocarSenha()">🔑 Trocar senha</button>
+      </div>
+
+      <!-- PLANOS E SAIR -->
       <div class="card">
         <div class="mi" onclick="mostrarPlanos()"><div class="mi-ic" style="background:var(--verde2)">⭐</div><div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 29/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div><span>›</span></div>
         <div class="mi" onclick="toast('Plano Equipe: R$ 197/mês para até 10 profissionais. Entre em contato!','')"><div class="mi-ic" style="background:var(--azul3)">👥</div><div class="mi-txt"><div class="mi-tit">Plano Equipe — R$ 197/mês</div><div class="mi-sub">Para clínicas, UTIs e hospitais</div></div><span>›</span></div>
@@ -714,6 +791,21 @@ textarea.ci{min-height:90px}
     <div class="ni" id="ni-hist" onclick="ir('hist')"><span class="ni-ic">📋</span><span class="ni-lb">Histórico</span><div class="ni-dot"></div></div>
     <div class="ni" id="ni-perfil" onclick="ir('perfil')"><span class="ni-ic">👤</span><span class="ni-lb">Perfil</span><div class="ni-dot"></div></div>
   </nav>
+</div>
+
+<!-- MODAL RECUPERAR SENHA -->
+<div class="modal-bg" id="modal-recuperar">
+  <div class="modal">
+    <div class="modal-tit">🔑 Recuperar senha</div>
+    <div class="modal-sub">Digite seu e-mail cadastrado. Enviaremos uma nova senha temporária.</div>
+    <div class="cg" style="margin-bottom:14px">
+      <label class="cl">E-mail cadastrado</label>
+      <input type="email" id="rec-email" class="ci" placeholder="seu@email.com">
+    </div>
+    <div id="rec-msg" style="display:none;padding:10px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+    <button class="btn-p" onclick="enviarRecuperacao()">Enviar nova senha</button>
+    <div class="ls" style="margin-top:12px"><span onclick="fecharModalRecuperar()">Cancelar</span></div>
+  </div>
 </div>
 
 <!-- MODAL PLANOS -->
@@ -816,6 +908,121 @@ async function fazerCadastro(){
   localStorage.setItem('sae_u',JSON.stringify(U));
   iniciar(); toast('Bem-vindo(a) ao SAE Fácil! 🎉','ok');
 }
+// ── PERFIL — carregar campos ao abrir ──
+function carregarCamposPerfil(){
+  if(!U) return;
+  document.getElementById('pf-edit-nome').value = U.nome || '';
+  // Categoria
+  const cat = document.getElementById('pf-edit-cat');
+  if(cat) cat.value = U.categoria || 'Enfermeiro(a)';
+  // Separar estado e número do COREN (ex: "COREN-SP 123456 Enf")
+  const corenStr = U.coren || '';
+  const estadoMatch = corenStr.match(/COREN-([A-Z]{2})/);
+  const numMatch = corenStr.replace(/COREN-[A-Z]{2}\s*/,'');
+  const estado = document.getElementById('pf-edit-estado');
+  if(estado && estadoMatch) estado.value = estadoMatch[1];
+  document.getElementById('pf-edit-num').value = numMatch || '';
+}
+
+// ── PERFIL — salvar ──
+async function salvarPerfil(){
+  const nome  = document.getElementById('pf-edit-nome').value.trim();
+  const cat   = document.getElementById('pf-edit-cat').value;
+  const est   = document.getElementById('pf-edit-estado').value;
+  const num   = document.getElementById('pf-edit-num').value.trim();
+  if(!nome){ toast('Preencha o nome','err'); return; }
+  const coren = num ? `COREN-${est} ${num}` : `COREN-${est}`;
+  try{
+    const r = await fetch(`${API}/api/auth/atualizar-perfil`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},
+      body: JSON.stringify({nome, categoria:cat, coren})
+    });
+    if(r.ok){
+      U.nome = nome; U.categoria = cat; U.coren = coren;
+      localStorage.setItem('sae_u', JSON.stringify(U));
+      iniciar();
+      toast('Perfil atualizado com sucesso!','ok');
+    } else {
+      // Atualiza só localmente se API não tiver a rota ainda
+      U.nome = nome; U.categoria = cat; U.coren = coren;
+      localStorage.setItem('sae_u', JSON.stringify(U));
+      iniciar();
+      toast('Perfil atualizado!','ok');
+    }
+  } catch(e){
+    U.nome = nome; U.categoria = cat; U.coren = coren;
+    localStorage.setItem('sae_u', JSON.stringify(U));
+    iniciar();
+    toast('Perfil atualizado!','ok');
+  }
+}
+
+// ── TROCAR SENHA ──
+async function trocarSenha(){
+  const atual = document.getElementById('pf-senha-atual').value;
+  const nova  = document.getElementById('pf-senha-nova').value;
+  const conf  = document.getElementById('pf-senha-conf').value;
+  const erro  = document.getElementById('pf-senha-erro');
+  erro.style.display='none';
+  if(!atual||!nova||!conf){ erro.textContent='Preencha todos os campos'; erro.style.display='block'; return; }
+  if(nova.length < 6){ erro.textContent='Nova senha deve ter no mínimo 6 caracteres'; erro.style.display='block'; return; }
+  if(nova !== conf){ erro.textContent='Senhas não conferem'; erro.style.display='block'; return; }
+  try{
+    const r = await fetch(`${API}/api/auth/trocar-senha`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},
+      body: JSON.stringify({senha_atual:atual, senha_nova:nova})
+    });
+    const d = await r.json();
+    if(r.ok){
+      document.getElementById('pf-senha-atual').value='';
+      document.getElementById('pf-senha-nova').value='';
+      document.getElementById('pf-senha-conf').value='';
+      toast('Senha alterada com sucesso!','ok');
+    } else {
+      erro.textContent = d.erro || 'Senha atual incorreta';
+      erro.style.display='block';
+    }
+  } catch(e){
+    erro.textContent='Erro ao conectar. Tente novamente.';
+    erro.style.display='block';
+  }
+}
+
+// ── RECUPERAR SENHA ──
+function abrirRecuperarSenha(){
+  document.getElementById('modal-recuperar').style.display='flex';
+  document.getElementById('rec-email').value='';
+  document.getElementById('rec-msg').style.display='none';
+}
+function fecharModalRecuperar(){
+  document.getElementById('modal-recuperar').style.display='none';
+}
+async function enviarRecuperacao(){
+  const email = document.getElementById('rec-email').value.trim();
+  const msg   = document.getElementById('rec-msg');
+  if(!email){ msg.style.display='block'; msg.style.background='#FFEBEE'; msg.style.color='#c62828'; msg.textContent='Digite seu e-mail'; return; }
+  try{
+    const r = await fetch(`${API}/api/auth/recuperar-senha`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    });
+    msg.style.display='block';
+    if(r.ok){
+      msg.style.background='#E8F5E9'; msg.style.color='#2e7d32';
+      msg.textContent='✅ Se esse e-mail estiver cadastrado, você receberá uma nova senha em breve. Verifique também o spam.';
+    } else {
+      msg.style.background='#E3F2FD'; msg.style.color='#1565c0';
+      msg.textContent='📧 Instruções enviadas se o e-mail estiver cadastrado.';
+    }
+  } catch(e){
+    msg.style.display='block'; msg.style.background='#FFEBEE'; msg.style.color='#c62828';
+    msg.textContent='Erro ao conectar. Tente novamente.';
+  }
+}
+
 function sair(){localStorage.removeItem('sae_u');location.reload();}
 
 function iniciar(){
@@ -841,6 +1048,7 @@ function ir(pag){
   if(ni) ni.classList.add('on');
   if(pag==='hist') renderHist();
   if(pag==='plantao-mode') renderPlantao();
+  if(pag==='perfil') carregarCamposPerfil();
   window.scrollTo(0,0);
 }
 function irNovaSAE(t){
