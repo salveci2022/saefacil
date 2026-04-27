@@ -32,8 +32,8 @@ class Usuario(db.Model):
     categoria = db.Column(db.String(50))
     coren = db.Column(db.String(50))
     plano = db.Column(db.String(20), default='gratuito')
-    hotmart_id = db.Column(db.String(100))          # ID da assinatura Hotmart
-    plano_expira = db.Column(db.DateTime)            # Data de expiração do plano Pro
+    hotmart_id = db.Column(db.String(100))
+    plano_expira = db.Column(db.DateTime)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
     saes = db.relationship('SAE', backref='autor', lazy=True)
 
@@ -45,11 +45,9 @@ class Usuario(db.Model):
         return SAE.query.filter(SAE.usuario_id == self.id, SAE.criado_em >= inicio).count()
 
     def plano_ativo(self):
-        """Verifica se o plano Pro ainda está ativo"""
         if self.plano == 'gratuito':
             return False
         if self.plano_expira and datetime.utcnow() > self.plano_expira:
-            # Plano expirado — rebaixa automaticamente
             self.plano = 'gratuito'
             self.hotmart_id = None
             db.session.commit()
@@ -67,7 +65,6 @@ class SAE(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
 
 class WebhookLog(db.Model):
-    """Registra todos os webhooks recebidos do Hotmart para auditoria"""
     id = db.Column(db.Integer, primary_key=True)
     evento = db.Column(db.String(100))
     email = db.Column(db.String(120))
@@ -75,6 +72,38 @@ class WebhookLog(db.Model):
     payload = db.Column(db.Text)
     processado = db.Column(db.Boolean, default=False)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ─────────────────────────────────────────
+# MIGRAÇÃO AUTOMÁTICA
+# ─────────────────────────────────────────
+
+def migrar_banco():
+    """Adiciona colunas novas se não existirem — seguro para rodar múltiplas vezes"""
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("""
+                ALTER TABLE usuario
+                ADD COLUMN IF NOT EXISTS hotmart_id VARCHAR(100);
+            """))
+            conn.execute(db.text("""
+                ALTER TABLE usuario
+                ADD COLUMN IF NOT EXISTS plano_expira TIMESTAMP;
+            """))
+            conn.execute(db.text("""
+                CREATE TABLE IF NOT EXISTS webhook_log (
+                    id SERIAL PRIMARY KEY,
+                    evento VARCHAR(100),
+                    email VARCHAR(120),
+                    hotmart_id VARCHAR(100),
+                    payload TEXT,
+                    processado BOOLEAN DEFAULT FALSE,
+                    criado_em TIMESTAMP DEFAULT NOW()
+                );
+            """))
+            conn.commit()
+        print('[MIGRAÇÃO] ✅ Banco atualizado com sucesso!')
+    except Exception as e:
+        print(f'[MIGRAÇÃO] Aviso: {e}')
 
 # ─────────────────────────────────────────
 # AUTENTICAÇÃO
@@ -105,7 +134,6 @@ def login():
     if not u or not u.verificar_senha(data.get('senha','')):
         return jsonify({'erro': 'Credenciais inválidas'}), 401
     token = create_access_token(identity=str(u.id))
-    # Verifica automaticamente se plano expirou
     u.plano_ativo()
     return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano,
                     'categoria': u.categoria, 'coren': u.coren})
@@ -118,7 +146,6 @@ def login():
 @jwt_required()
 def gerar_sae():
     u = Usuario.query.get(int(get_jwt_identity()))
-    # Verifica plano (considera expiração automática)
     if u.plano == 'gratuito' and u.saes_mes() >= 10:
         return jsonify({'erro': 'Limite atingido', 'limite': True}), 403
     data = request.json
@@ -152,7 +179,7 @@ def stats():
     u = Usuario.query.get(uid)
     hoje = datetime.utcnow().date()
     inicio_mes = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0)
-    u.plano_ativo()  # Verifica expiração
+    u.plano_ativo()
     return jsonify({
         'hoje': SAE.query.filter(SAE.usuario_id==uid, db.func.date(SAE.criado_em)==hoje).count(),
         'mes': SAE.query.filter(SAE.usuario_id==uid, SAE.criado_em>=inicio_mes).count(),
@@ -167,19 +194,10 @@ def stats():
 
 @app.route('/api/webhook/hotmart', methods=['POST'])
 def webhook_hotmart():
-    """
-    Recebe notificações automáticas do Hotmart.
-    Configure no Hotmart > Ferramentas > Webhooks:
-    URL: https://saefacil.onrender.com/api/webhook/hotmart
-    Eventos: PURCHASE_APPROVED, PURCHASE_CANCELED, PURCHASE_REFUNDED,
-             SUBSCRIPTION_CANCELLATION
-    """
     HOTMART_TOKEN = os.environ.get('HOTMART_WEBHOOK_TOKEN', '')
-
-    # ── Validação do token do Hotmart ──
     hottok = request.headers.get('X-Hotmart-Webhook-Token', '')
     if HOTMART_TOKEN and hottok != HOTMART_TOKEN:
-        print(f'[WEBHOOK] Token inválido recebido: {hottok}')
+        print(f'[WEBHOOK] Token inválido: {hottok}')
         return jsonify({'erro': 'Token inválido'}), 401
 
     try:
@@ -187,9 +205,9 @@ def webhook_hotmart():
     except Exception:
         return jsonify({'erro': 'Payload inválido'}), 400
 
-    evento = data.get('event', '')
-    buyer  = data.get('data', {}).get('buyer', {})
-    subs   = data.get('data', {}).get('subscription', {})
+    evento   = data.get('event', '')
+    buyer    = data.get('data', {}).get('buyer', {})
+    subs     = data.get('data', {}).get('subscription', {})
     purchase = data.get('data', {}).get('purchase', {})
 
     email      = buyer.get('email', '').lower().strip()
@@ -197,34 +215,26 @@ def webhook_hotmart():
 
     print(f'[WEBHOOK] Evento: {evento} | Email: {email} | ID: {hotmart_id}')
 
-    # Salva log para auditoria
     log = WebhookLog(
-        evento=evento,
-        email=email,
-        hotmart_id=hotmart_id,
+        evento=evento, email=email, hotmart_id=hotmart_id,
         payload=json.dumps(data, ensure_ascii=False)[:2000]
     )
     db.session.add(log)
 
-    # ── Processar evento ──
     usuario = Usuario.query.filter_by(email=email).first()
 
     if evento in ('PURCHASE_APPROVED', 'PURCHASE_COMPLETE'):
-        # ✅ Compra aprovada → ativa plano Pro
         if usuario:
             usuario.plano = 'pro'
             usuario.hotmart_id = hotmart_id
-            # Plano válido por 35 dias (30 + 5 de margem)
             usuario.plano_expira = datetime.utcnow() + timedelta(days=35)
             log.processado = True
             print(f'[WEBHOOK] ✅ Plano PRO ativado para {email}')
         else:
-            # Usuário ainda não tem conta — salva pendência no log
-            print(f'[WEBHOOK] ⚠️ Usuário {email} não encontrado — compra registrada em log')
+            print(f'[WEBHOOK] ⚠️ Usuário {email} não encontrado')
 
     elif evento in ('PURCHASE_CANCELED', 'PURCHASE_REFUNDED',
                     'SUBSCRIPTION_CANCELLATION', 'PURCHASE_CHARGEBACK'):
-        # ❌ Cancelamento/reembolso → volta para gratuito
         if usuario:
             usuario.plano = 'gratuito'
             usuario.hotmart_id = None
@@ -233,7 +243,6 @@ def webhook_hotmart():
             print(f'[WEBHOOK] ❌ Plano revertido para GRATUITO: {email}')
 
     elif evento == 'PURCHASE_DELAYED':
-        # ⏳ Pagamento pendente — não altera plano ainda
         print(f'[WEBHOOK] ⏳ Pagamento pendente para {email}')
 
     db.session.commit()
@@ -243,13 +252,7 @@ def webhook_hotmart():
 @app.route('/api/webhook/ativar-manual', methods=['POST'])
 @jwt_required()
 def ativar_manual():
-    """
-    Ativa plano Pro manualmente por e-mail.
-    Use quando o cliente pagar mas o webhook não processar.
-    Apenas você (admin) deve usar essa rota.
-    Protegida por JWT + senha admin.
-    """
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'salveci2018@gmail.com')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'salvecidossantos454@gmail.com')
     uid = int(get_jwt_identity())
     admin = Usuario.query.get(uid)
     if admin.email != ADMIN_EMAIL:
@@ -267,7 +270,7 @@ def ativar_manual():
     u.plano_expira = datetime.utcnow() + timedelta(days=dias)
     u.hotmart_id = data.get('hotmart_id', 'manual')
     db.session.commit()
-    print(f'[MANUAL] ✅ Plano PRO ativado manualmente para {email_alvo} por {dias} dias')
+    print(f'[MANUAL] ✅ PRO ativado manualmente para {email_alvo} por {dias} dias')
     return jsonify({'ok': True, 'email': email_alvo, 'plano': 'pro',
                     'expira': u.plano_expira.isoformat()})
 
@@ -275,8 +278,7 @@ def ativar_manual():
 @app.route('/api/webhook/logs', methods=['GET'])
 @jwt_required()
 def webhook_logs():
-    """Lista os últimos webhooks recebidos — só admin"""
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'salveci2018@gmail.com')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'salvecidossantos454@gmail.com')
     uid = int(get_jwt_identity())
     admin = Usuario.query.get(uid)
     if admin.email != ADMIN_EMAIL:
@@ -289,7 +291,7 @@ def webhook_logs():
     } for l in logs])
 
 # ─────────────────────────────────────────
-# IA — GERAÇÃO DE TEXTO
+# PERFIL E SENHA
 # ─────────────────────────────────────────
 
 @app.route('/api/auth/atualizar-perfil', methods=['PUT'])
@@ -321,29 +323,25 @@ def trocar_senha():
 
 @app.route('/api/auth/recuperar-senha', methods=['POST'])
 def recuperar_senha():
-    """Envia e-mail com nova senha temporária"""
     import secrets, string
     data = request.json
     email = data.get('email','').lower().strip()
     u = Usuario.query.filter_by(email=email).first()
-    # Sempre retorna 200 para não revelar se e-mail existe
     if u:
         nova_senha = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
         u.senha_hash = hashlib.sha256(nova_senha.encode()).hexdigest()
         db.session.commit()
-        # Envia e-mail via SMTP se configurado
         _enviar_email_recuperacao(email, u.nome, nova_senha)
         print(f'[SENHA] Nova senha temporária para {email}: {nova_senha}')
     return jsonify({'ok': True})
 
 def _enviar_email_recuperacao(email, nome, nova_senha):
-    """Envia e-mail com senha temporária via SMTP"""
     import smtplib
     from email.mime.text import MIMEText
-    SMTP_HOST  = os.environ.get('SMTP_HOST', '')
-    SMTP_PORT  = int(os.environ.get('SMTP_PORT', 587))
-    SMTP_USER  = os.environ.get('SMTP_USER', '')
-    SMTP_PASS  = os.environ.get('SMTP_PASS', '')
+    SMTP_HOST = os.environ.get('SMTP_HOST', '')
+    SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+    SMTP_USER = os.environ.get('SMTP_USER', '')
+    SMTP_PASS = os.environ.get('SMTP_PASS', '')
     if not SMTP_HOST or not SMTP_USER:
         print(f'[EMAIL] SMTP não configurado. Senha para {email}: {nova_senha}')
         return
@@ -372,7 +370,11 @@ https://saefacil.onrender.com
     except Exception as e:
         print(f'[EMAIL] Erro ao enviar: {e}')
 
+# ─────────────────────────────────────────
+# IA — GERAÇÃO DE TEXTO
+# ─────────────────────────────────────────
 
+def _gerar_ia(tipo, p):
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
         return None
@@ -382,10 +384,10 @@ https://saefacil.onrender.com
         'VM ','VENTILAÇÃO MECÂNICA','INCONSCIENTE','GLASGOW'
     ])
     contexto_critico = f"""
-ATENÇÃO CLÍNICA — LEIA ANTES DE GERAR:
-- Paciente {'em sedação/intubado(a) — NÃO use diagnósticos que exijam relato verbal (ex: Dor aguda com evidência de relato verbal). Use diagnósticos de risco ou baseados em dados objetivos.' if sedado else 'consciente — avalie queixas subjetivas normalmente.'}
-- NUNCA gere plano genérico. Cada item do plano deve ser coerente com o quadro real descrito.
-- Se houver dispositivos invasivos (CVC, SVD, IOT, drenos), inclua cuidados específicos para eles.
+ATENÇÃO CLÍNICA:
+- Paciente {'em sedação/intubado(a) — NÃO use diagnósticos que exijam relato verbal. Use diagnósticos de risco ou baseados em dados objetivos.' if sedado else 'consciente — avalie queixas subjetivas normalmente.'}
+- NUNCA gere plano genérico. Cada item deve ser coerente com o quadro real descrito.
+- Se houver dispositivos invasivos (CVC, SVD, IOT, drenos), inclua cuidados específicos.
 - Diagnóstico prioritário deve refletir a condição mais grave/instável do momento.
 """ if sedado else ""
 
@@ -413,7 +415,7 @@ S — SUBJETIVO:
 
 O — OBJETIVO:
 Sinais vitais: [todos os valores informados]
-Sistemas avaliados: [achados objetivos de cada sistema, incluindo dispositivos invasivos e seus aspectos]
+Sistemas avaliados: [achados objetivos de cada sistema, incluindo dispositivos invasivos]
 
 A — AVALIAÇÃO (NANDA-I 2024-2026):
 Diagnóstico prioritário: [Nome NANDA] (NANDA [código])
@@ -424,21 +426,21 @@ P — PLANO (NIC + NOC integrados):
 INTERVENÇÕES NIC:
 • [NIC código] [Nome da intervenção]: [atividade específica 1]
 • [NIC código] [Nome da intervenção]: [atividade específica 2]
-[mínimo 6 intervenções NIC específicas ao caso, com atividades detalhadas]
+[mínimo 6 intervenções NIC específicas ao caso]
 
 RESULTADOS ESPERADOS NOC:
-• [NOC código] [Nome do resultado]: Meta — [descrição mensurável do resultado esperado]
+• [NOC código] [Nome do resultado]: Meta — [descrição mensurável]
 • [NOC código] [Nome do resultado]: Meta — [descrição mensurável]
 [mínimo 3 resultados NOC]
 
-REGRAS ABSOLUTAS:
-1. Diagnóstico COMPATÍVEL com quadro real. {'Paciente sedado: PROIBIDO diagnóstico com relato verbal.' if sedado else ''}
-2. Intervenções NIC com códigos reais e atividades específicas ao caso
-3. Resultados NOC mensuráveis e alcançáveis para o quadro
+REGRAS:
+1. Diagnóstico COMPATÍVEL com quadro real.
+2. Intervenções NIC com códigos reais e atividades específicas
+3. Resultados NOC mensuráveis e alcançáveis
 4. Terminologia técnica padrão COFEN
 5. Linha de assinatura ao final""",
 
-        'prescricao': f"""Você é enfermeiro especialista em SAE com domínio em NANDA-I 2024-2026, NIC e NOC. Gere PRESCRIÇÃO DE ENFERMAGEM baseada em intervenções NIC para o quadro clínico abaixo.
+        'prescricao': f"""Você é enfermeiro especialista em SAE com domínio em NANDA-I 2024-2026, NIC e NOC. Gere PRESCRIÇÃO DE ENFERMAGEM baseada em intervenções NIC.
 {contexto_critico}
 DADOS DO PACIENTE:
 Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico: {p.get('diagnostico')}
@@ -457,10 +459,7 @@ DIAGNÓSTICO DE ENFERMAGEM PRIORITÁRIO (NANDA):
 INTERVENÇÕES DE ENFERMAGEM (baseadas em NIC):
 01. [Cuidado específico ao quadro — com horário se aplicável]
 02. [Cuidado específico]
-03. [Cuidado específico]
 [mínimo 12 itens numerados, específicos ao caso real]
-
-{'CUIDADOS ESPECIAIS COM DISPOSITIVOS INVASIVOS: detalhe todos os cuidados com IOT, CVC, SVD e outros dispositivos presentes' if any(x in p.get('queixas','').upper() for x in ['IOT','CVC','SVD','CATETER','DRENO','SNE']) else ''}
 
 RESULTADOS ESPERADOS (NOC):
 • [NOC código] [Nome]: [meta mensurável]
@@ -481,19 +480,19 @@ PASSAGEM DE PLANTÃO — SBAR
 Data/Hora: [DATA] [HORA] | Leito: [leito]
 
 S — SITUAÇÃO:
-Paciente [nome], [idade se disponível], internado(a) em [leito] com diagnóstico de [diagnóstico]. Situação atual: [resumo objetivo do estado no momento]
+Paciente [nome], internado(a) em [leito] com diagnóstico de [diagnóstico]. Situação atual: [resumo objetivo]
 
-B — BACKGROUND (Histórico):
+B — BACKGROUND:
 Comorbidades: [lista] | Alergias: [lista]
-Dispositivos invasivos em uso: [lista com localização e data de inserção se disponível]
-Medicações vasoativas/sedação/analgesia em curso: [se aplicável]
+Dispositivos invasivos: [lista]
+Medicações em curso: [se aplicável]
 Intercorrências no turno: [eventos relevantes]
 
 A — AVALIAÇÃO CLÍNICA:
 Diagnóstico de enfermagem ativo: [Nome NANDA] (NANDA [código])
-Condição hemodinâmica: [estável/instável — justificativa com valores reais]
+Condição hemodinâmica: [estável/instável — justificativa]
 Sistemas em alerta: [sistemas com alteração]
-Exames/resultados pendentes: [lista]
+Exames pendentes: [lista]
 
 R — RECOMENDAÇÃO:
 Prioridades para o próximo turno:
@@ -503,52 +502,48 @@ Prioridades para o próximo turno:
 Alertas: [sinais de deterioração a monitorar]
 Pendências médicas: [condutas aguardadas]
 
-Objetivo e claro. Linha de assinatura ao final.""",
+Linha de assinatura ao final.""",
 
-        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA-I 2024-2026 com domínio clínico avançado em NIC (Nursing Interventions Classification) e NOC (Nursing Outcomes Classification). Gere 4 DIAGNÓSTICOS DE ENFERMAGEM com integração completa NANDA+NIC+NOC.
+        'nanda': f"""Você é enfermeiro especialista em taxonomia NANDA-I 2024-2026 com domínio em NIC e NOC. Gere 4 DIAGNÓSTICOS DE ENFERMAGEM com integração completa NANDA+NIC+NOC.
 {contexto_critico}
 DADOS DO PACIENTE:
-- Nome/Idade: {p.get('nome')}
-- Leito/Setor: {p.get('leito')}
-- Diagnóstico médico: {p.get('diagnostico')}
-- Sinais vitais: {p.get('sv')}
-- Avaliação clínica: {p.get('queixas')}
-- Sistemas avaliados: {', '.join(p.get('sistemas',[]))}
-- Dispositivos/Exames: {p.get('exames')}
-- Alergias/Comorbidades: {p.get('alergias','')}
-- Observações: {p.get('obs')}
+Nome/Idade: {p.get('nome')}
+Leito/Setor: {p.get('leito')}
+Diagnóstico médico: {p.get('diagnostico')}
+Sinais vitais: {p.get('sv')}
+Avaliação clínica: {p.get('queixas')}
+Sistemas avaliados: {', '.join(p.get('sistemas',[]))}
+Dispositivos/Exames: {p.get('exames')}
+Alergias/Comorbidades: {p.get('alergias','')}
+Observações: {p.get('obs')}
 
-REGRAS ABSOLUTAS:
-1. Diagnósticos EXCLUSIVAMENTE compatíveis com os dados reais acima
-2. {'PACIENTE SEDADO/INCONSCIENTE: PROIBIDO usar características definidoras de relato verbal. Use dados objetivos e diagnósticos de risco.' if sedado else 'Avalie dados subjetivos e objetivos.'}
-3. Hierarquia de prioridade: via aérea > ventilação > hemodinâmica > neurológico > infeccioso > integridade cutânea > conforto
-4. Para cada diagnóstico: inclua NIC com atividades específicas E NOC com pontuação alvo
-5. Códigos NANDA, NIC e NOC devem ser reais e precisos
+REGRAS:
+1. Diagnósticos EXCLUSIVAMENTE compatíveis com os dados reais
+2. {'PACIENTE SEDADO: PROIBIDO usar características definidoras de relato verbal.' if sedado else 'Avalie dados subjetivos e objetivos.'}
+3. Hierarquia: via aérea > ventilação > hemodinâmica > neurológico > infeccioso > pele > conforto
+4. Para cada diagnóstico: NIC com atividades específicas E NOC com pontuação alvo
+5. Códigos NANDA, NIC e NOC reais e precisos
 
-FORMATO OBRIGATÓRIO PARA CADA DIAGNÓSTICO:
+FORMATO PARA CADA DIAGNÓSTICO:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DIAGNÓSTICO [N] — NANDA-I 2024-2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 [Nome exato do diagnóstico] (NANDA [código])
-Domínio [X] — [Nome do domínio] | Classe [X] — [Nome da classe]
-Relacionado a: [fator etiológico específico do caso]
-Evidenciado por: [características definidoras objetivas observadas] OU Fator de risco: [se diagnóstico de risco]
+📋 [Nome exato] (NANDA [código])
+Domínio [X] — [Nome] | Classe [X] — [Nome]
+Relacionado a: [fator etiológico específico]
+Evidenciado por: [características definidoras objetivas] OU Fator de risco: [se diagnóstico de risco]
 
 🎯 INTERVENÇÕES NIC:
-• [Código NIC] [Nome da intervenção NIC]
-  - [Atividade específica 1 para este paciente]
-  - [Atividade específica 2 para este paciente]
-• [Código NIC] [Nome da intervenção NIC]
-  - [Atividade específica]
+• [Código NIC] [Nome]
+  - [Atividade específica 1]
+  - [Atividade específica 2]
 
 📊 RESULTADOS NOC:
-• [Código NOC] [Nome do resultado NOC]
-  Meta: [pontuação alvo 1-5] — [descrição do resultado esperado]
-• [Código NOC] [Nome do resultado NOC]
-  Meta: [pontuação alvo] — [descrição]
+• [Código NOC] [Nome]
+  Meta: [pontuação 1-5] — [descrição do resultado esperado]
 
-Gere os 4 diagnósticos ordenados por prioridade clínica real. Linha de assinatura ao final."""
+Gere os 4 diagnósticos por prioridade clínica. Linha de assinatura ao final."""
     }
 
     try:
@@ -585,8 +580,6 @@ def not_found(e):
 # INICIALIZAÇÃO
 # ─────────────────────────────────────────
 
-with app.app_context():
-    db.create_all()
 @app.route('/api/admin/ativar-pro/<secret>/<email>')
 def ativar_pro_url(secret, email):
     if secret != 'spynet2026admin':
@@ -599,5 +592,39 @@ def ativar_pro_url(secret, email):
     u.hotmart_id = 'manual'
     db.session.commit()
     return f'✅ PRO ativado para {email}!'
+
+@app.route('/api/admin/excluir-usuario/<secret>/<email>')
+def excluir_usuario(secret, email):
+    if secret != 'spynet2026admin':
+        return 'Sem permissão', 403
+    u = Usuario.query.filter_by(email=email).first()
+    if not u:
+        return f'Usuário {email} não encontrado', 404
+    SAE.query.filter_by(usuario_id=u.id).delete()
+    db.session.delete(u)
+    db.session.commit()
+    return f'✅ Usuário {email} excluído!'
+
+@app.route('/api/admin/listar-usuarios/<secret>')
+def listar_usuarios(secret):
+    if secret != 'spynet2026admin':
+        return 'Sem permissão', 403
+    users = Usuario.query.all()
+    return jsonify([{
+        'id': u.id,
+        'nome': u.nome,
+        'email': u.email,
+        'plano': u.plano,
+        'saes_mes': u.saes_mes()
+    } for u in users])
+
+# ─────────────────────────────────────────
+# INICIALIZAÇÃO
+# ─────────────────────────────────────────
+
+with app.app_context():
+    db.create_all()
+    migrar_banco()
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
