@@ -587,6 +587,17 @@ def not_found(e):
 
 with app.app_context():
     db.create_all()
-
+@app.route('/api/admin/ativar-pro/<secret>/<email>')
+def ativar_pro_url(secret, email):
+    if secret != 'spynet2026admin':
+        return 'Sem permissão', 403
+    u = Usuario.query.filter_by(email=email).first()
+    if not u:
+        return f'Usuário {email} não encontrado', 404
+    u.plano = 'pro'
+    u.plano_expira = datetime.utcnow() + timedelta(days=35)
+    u.hotmart_id = 'manual'
+    db.session.commit()
+    return f'✅ PRO ativado para {email}!'
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
