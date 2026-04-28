@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAE Fácil — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0A2F5C;min-height:100vh}
+.login{max-width:400px;margin:80px auto;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.login h2{color:#0A2F5C;text-align:center;margin-bottom:6px;font-size:22px}
+.login p{color:#888;text-align:center;font-size:13px;margin-bottom:1.5rem}
+input{width:100%;padding:11px 14px;border:1.5px solid #ddd;border-radius:8px;margin-bottom:1rem;font-size:15px;outline:none}
+input:focus{border-color:#0A2F5C}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;color:#fff;font-weight:700}
+.full{width:100%;padding:13px;font-size:15px}
+.blue{background:#0A2F5C}.green{background:#1b5e20}.red{background:#c62828}.orange{background:#e65100}.gray{background:#607d8b}
+.sm{padding:5px 12px;font-size:12px;margin:2px}
+.panel{max-width:1100px;margin:0 auto;padding:1rem}
+.hdr{background:#0A2F5C;color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.hdr h1{font-size:18px}
+.card{background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card h3{color:#0A2F5C;margin-bottom:1rem;border-bottom:2px solid #4FC3F7;padding-bottom:8px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0A2F5C;color:#fff;padding:9px 10px;text-align:left;font-size:12px}
+td{padding:9px 10px;border-bottom:1px solid #eee;vertical-align:middle}
+tr:hover td{background:#f5f8ff}
+.badge{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:800;display:inline-block}
+.b-pro{background:#FFD54F;color:#0A2F5C}
+.b-trial{background:#E3F2FD;color:#1565C0}
+.b-free{background:#eee;color:#555}
+.b-bloq{background:#c62828;color:#fff}
+.alert{padding:10px 16px;border-radius:8px;margin-bottom:1rem;font-size:13px}
+.aok{background:#e8f5e9;color:#1b5e20}
+.aerr{background:#ffebee;color:#c62828}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.mbox{background:#fff;border-radius:12px;padding:2rem;max-width:400px;width:90%}
+.mbox h3{margin-bottom:.5rem;color:#0A2F5C}
+.mbox p{color:#555;font-size:13px;margin-bottom:1rem}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input{margin:0;flex:1}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1rem}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
+.stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.stat-n{font-size:28px;font-weight:900;color:#0A2F5C}
+.stat-l{font-size:11px;color:#888;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="lp">
+  <div class="login">
+    <h2>⚕️ SAE Fácil</h2>
+    <p>Painel Administrativo</p>
+    <input type="password" id="pw" placeholder="Senha admin" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn blue full" onclick="login()">Entrar</button>
+    <div id="lerr" style="color:red;text-align:center;margin-top:10px;font-size:13px"></div>
+  </div>
+</div>
+
+<div id="ap" style="display:none">
+  <div class="hdr">
+    <h1>⚕️ SAE Fácil — Painel Admin</h1>
+    <button class="btn gray sm" onclick="sair()">Sair</button>
+  </div>
+  <div class="panel">
+    <div id="ab"></div>
+
+    <div class="stats-row" id="stats-row"></div>
+
+    <div class="card">
+      <h3>👥 Usuários Cadastrados <span id="tot" style="font-size:12px;color:#888;font-weight:400"></span></h3>
+      <div class="row" style="margin-bottom:1rem">
+        <input type="text" id="bq" placeholder="🔍 Buscar nome ou email..." oninput="filtrar()" style="margin:0">
+        <button class="btn blue sm" onclick="reload()">🔄 Atualizar</button>
+        <button class="btn green sm" onclick="abrirAtivarPro()">✅ Ativar Pro</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>Nome</th><th>Email</th><th>Plano</th><th>SAEs/mês</th><th>Cadastro</th><th>Último acesso</th><th>Ações</th></tr></thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🔑 Resetar Senha de Usuário</h3>
+      <div class="row">
+        <input type="text" id="er" placeholder="Email do usuário">
+        <input type="text" id="ns" placeholder="Nova senha">
+        <button class="btn orange sm" onclick="resetSenha()">Resetar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📋 Logs de Acesso (últimos 100)</h3>
+      <button class="btn blue sm" onclick="loadLogs()" style="margin-bottom:1rem">Carregar logs</button>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Email</th><th>IP</th><th>Status</th><th>Data</th></tr></thead>
+          <tbody id="ltb"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="mbox">
+    <h3 id="mt"></h3>
+    <p id="mp"></p>
+    <div class="row">
+      <button class="btn green" id="mc">Confirmar</button>
+      <button class="btn red" onclick="closeM()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-pro" class="modal">
+  <div class="mbox">
+    <h3>✅ Ativar Plano Pro</h3>
+    <p style="margin-bottom:1rem">Digite o email do usuário para ativar o Pro manualmente:</p>
+    <input type="email" id="pro-email" placeholder="email@exemplo.com" style="margin-bottom:1rem">
+    <div class="row">
+      <button class="btn green" onclick="confirmarAtivarPro()">Ativar Pro</button>
+      <button class="btn red" onclick="fecharModalPro()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='https://saefacil.onrender.com';
+let S='',us=[];
+
+function login(){
+  S=document.getElementById('pw').value;
+  fetch(`${API}/api/admin/listar-usuarios/${S}`)
+    .then(r=>{if(!r.ok)throw 0;return r.json()})
+    .then(d=>{
+      us=d;
+      document.getElementById('lp').style.display='none';
+      document.getElementById('ap').style.display='block';
+      render(d);
+      renderStats(d);
+    })
+    .catch(()=>{document.getElementById('lerr').textContent='Senha incorreta!';});
+}
+
+function sair(){
+  S='';
+  document.getElementById('lp').style.display='block';
+  document.getElementById('ap').style.display='none';
+  document.getElementById('pw').value='';
+}
+
+function renderStats(d){
+  const pro=d.filter(u=>u.plano==='pro').length;
+  const trial=d.filter(u=>u.plano==='trial').length;
+  const free=d.filter(u=>u.plano==='gratuito').length;
+  const bloq=d.filter(u=>u.bloqueado).length;
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat-box"><div class="stat-n" style="color:#1b5e20">${pro}</div><div class="stat-l">⭐ Plano Pro</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:#1565C0">${trial}</div><div class="stat-l">⏳ Em Trial</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:#888">${free}</div><div class="stat-l">🆓 Gratuito</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:#c62828">${bloq}</div><div class="stat-l">🔒 Bloqueados</div></div>`;
+}
+
+function filtrar(){
+  const q=document.getElementById('bq').value.toLowerCase();
+  render(us.filter(u=>u.nome.toLowerCase().includes(q)||u.email.toLowerCase().includes(q)));
+}
+
+function render(d){
+  document.getElementById('tot').textContent=`(${d.length} usuários)`;
+  document.getElementById('tb').innerHTML=d.map((u,i)=>`<tr>
+    <td style="color:#888;font-size:11px">${u.id}</td>
+    <td><strong>${u.nome}</strong></td>
+    <td style="font-size:12px;color:#555">${u.email}</td>
+    <td>
+      <span class="badge ${u.bloqueado?'b-bloq':u.plano==='pro'?'b-pro':u.plano==='trial'?'b-trial':'b-free'}">
+        ${u.bloqueado?'🔒 BLOQUEADO':u.plano==='pro'?'⭐ PRO':u.plano==='trial'?'⏳ TRIAL':'Gratuito'}
+      </span>
+      ${u.plano_expira?`<br><small style="color:#888;font-size:10px">exp: ${u.plano_expira.substring(0,10)}</small>`:''}
+    </td>
+    <td style="text-align:center">${u.saes_mes}</td>
+    <td style="font-size:11px;color:#888">${u.criado_em?u.criado_em.substring(0,10):'—'}</td>
+    <td style="font-size:11px;color:#888">${u.ultimo_acesso?u.ultimo_acesso.replace('T',' ').substring(0,16):'—'}</td>
+    <td style="white-space:nowrap">
+      ${!u.bloqueado&&u.plano!=='pro'?`<button class="btn green sm" onclick="acao('ativar-pro','${u.email}','Ativar PRO para ${u.nome}?')">✅ Pro</button>`:''}
+      ${u.plano==='pro'?`<button class="btn orange sm" onclick="acao('desativar-pro','${u.email}','Remover PRO de ${u.nome}?')">⬇️</button>`:''}
+      ${!u.bloqueado?`<button class="btn red sm" onclick="acao('bloquear','${u.email}','Bloquear ${u.nome}?')">🔒</button>`:`<button class="btn green sm" onclick="acao('desbloquear','${u.email}','Desbloquear ${u.nome}?')">🔓</button>`}
+      <button class="btn red sm" onclick="acao('excluir-usuario','${u.email}','EXCLUIR ${u.nome}? Isso é irreversível!')">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+
+function acao(tipo,email,msg){
+  document.getElementById('mt').textContent=msg;
+  document.getElementById('mp').textContent='Email: '+email;
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('mc').onclick=()=>{
+    fetch(`${API}/api/admin/${tipo}/${S}/${encodeURIComponent(email)}`)
+      .then(r=>r.text())
+      .then(t=>{closeM();alerta(t,'ok');reload();});
+  };
+}
+
+function abrirAtivarPro(){
+  document.getElementById('pro-email').value='';
+  document.getElementById('modal-pro').classList.add('show');
+}
+function fecharModalPro(){document.getElementById('modal-pro').classList.remove('show');}
+function confirmarAtivarPro(){
+  const email=document.getElementById('pro-email').value.trim();
+  if(!email){alert('Digite o email');return;}
+  fetch(`${API}/api/admin/ativar-pro/${S}/${encodeURIComponent(email)}`)
+    .then(r=>r.text())
+    .then(t=>{fecharModalPro();alerta(t,'ok');reload();});
+}
+
+function resetSenha(){
+  const e=document.getElementById('er').value.trim();
+  const s=document.getElementById('ns').value.trim();
+  if(!e||!s||s.length<6){alerta('Preencha email e senha (mín. 6 caracteres)!','err');return;}
+  fetch(`${API}/api/admin/resetar-senha/${S}/${encodeURIComponent(e)}/${encodeURIComponent(s)}`)
+    .then(r=>r.text())
+    .then(t=>{alerta(t,'ok');document.getElementById('er').value='';document.getElementById('ns').value='';});
+}
+
+function loadLogs(){
+  fetch(`${API}/api/admin/logs-acesso/${S}`).then(r=>r.json()).then(ls=>{
+    document.getElementById('ltb').innerHTML=ls.map(l=>`<tr>
+      <td>${l.email}</td>
+      <td style="font-size:11px">${l.ip}</td>
+      <td><span class="badge ${l.sucesso?'b-pro':'b-bloq'}">${l.sucesso?'✅ OK':'❌ Falha'}</span></td>
+      <td style="font-size:11px">${l.data.replace('T',' ').substring(0,16)}</td>
+    </tr>`).join('');
+  });
+}
+
+function closeM(){document.getElementById('modal').classList.remove('show');}
+function alerta(m,t){
+  const b=document.getElementById('ab');
+  b.innerHTML=`<div class="alert a${t}">${m}</div>`;
+  setTimeout(()=>b.innerHTML='',5000);
+}
+function reload(){
+  fetch(`${API}/api/admin/listar-usuarios/${S}`).then(r=>r.json()).then(d=>{us=d;filtrar();renderStats(d);});
+}
+setInterval(reload,30000);
+</script>
+</body>
+</html>
