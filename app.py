@@ -31,9 +31,10 @@ class Usuario(db.Model):
     senha_hash       = db.Column(db.String(256), nullable=False)
     categoria        = db.Column(db.String(50))
     coren            = db.Column(db.String(50))
-    plano            = db.Column(db.String(20), default='gratuito')
+    plano            = db.Column(db.String(20), default='trial')
     hotmart_id       = db.Column(db.String(100))
     plano_expira     = db.Column(db.DateTime)
+    trial_expira     = db.Column(db.DateTime)
     bloqueado        = db.Column(db.Boolean, default=False)
     session_token    = db.Column(db.String(100))
     ultimo_ip        = db.Column(db.String(50))
@@ -51,6 +52,12 @@ class Usuario(db.Model):
         return SAE.query.filter(SAE.usuario_id == self.id, SAE.criado_em >= inicio).count()
 
     def plano_ativo(self):
+        if self.plano == 'trial':
+            if self.trial_expira and datetime.utcnow() > self.trial_expira:
+                self.plano = 'gratuito'
+                db.session.commit()
+                return False
+            return True
         if self.plano == 'gratuito':
             return False
         if self.plano_expira and datetime.utcnow() > self.plano_expira:
@@ -59,6 +66,12 @@ class Usuario(db.Model):
             db.session.commit()
             return False
         return True
+
+    def dias_trial_restantes(self):
+        if self.plano == 'trial' and self.trial_expira:
+            diff = (self.trial_expira - datetime.utcnow()).total_seconds()
+            return max(0, int(diff / 86400) + 1)
+        return 0
 
     def esta_bloqueado_temp(self):
         if self.bloqueado_ate and datetime.utcnow() < self.bloqueado_ate:
@@ -105,6 +118,7 @@ def migrar_banco():
                 ('ultimo_acesso', 'TIMESTAMP'),
                 ('tentativas_login', 'INTEGER DEFAULT 0'),
                 ('bloqueado_ate', 'TIMESTAMP'),
+                ('trial_expira', 'TIMESTAMP'),
             ]:
                 try:
                     conn.execute(db.text(f'ALTER TABLE usuario ADD COLUMN IF NOT EXISTS {col} {tipo}'))
@@ -156,12 +170,15 @@ def registro():
     u = Usuario(nome=data['nome'], email=data['email'],
         senha_hash=hashlib.sha256(data['senha'].encode()).hexdigest(),
         categoria=data.get('categoria',''), coren=data.get('coren',''),
+        plano='trial', trial_expira=datetime.utcnow() + timedelta(days=3),
         session_token=sid, ultimo_ip=get_ip(), ultimo_acesso=datetime.utcnow())
     db.session.add(u)
     db.session.commit()
     token = create_access_token(identity=str(u.id), additional_claims={'sid': sid})
     registrar_acesso(u.id, u.email, True)
-    return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano, 'categoria': u.categoria, 'coren': u.coren}), 201
+    return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano,
+        'categoria': u.categoria, 'coren': u.coren,
+        'trial_dias': u.dias_trial_restantes()}), 201
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -195,7 +212,7 @@ def login():
     db.session.commit()
     token = create_access_token(identity=str(u.id), additional_claims={'sid': sid})
     registrar_acesso(u.id, u.email, True)
-    return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano, 'categoria': u.categoria, 'coren': u.coren})
+    return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano, 'categoria': u.categoria, 'coren': u.coren, 'trial_dias': u.dias_trial_restantes()})
 
 # SAE
 @app.route('/api/gerar-sae', methods=['POST'])
@@ -206,8 +223,9 @@ def gerar_sae():
     u = Usuario.query.get(int(get_jwt_identity()))
     if u.bloqueado:
         return jsonify({'erro': 'Conta bloqueada.'}), 403
-    if u.plano == 'gratuito' and u.saes_mes() >= 10:
-        return jsonify({'erro': 'Limite atingido', 'limite': True}), 403
+    u.plano_ativo()
+    if u.plano == 'gratuito':
+        return jsonify({'erro': 'Seu período gratuito expirou. Assine o Plano Pro por R$ 67,00/mês para continuar.', 'limite': True, 'expirado': True}), 403
     data = request.json
     tipo = data.get('tipo', 'evolucao')
     pac = data.get('paciente', {})
@@ -245,7 +263,10 @@ def stats():
     return jsonify({'hoje': SAE.query.filter(SAE.usuario_id==uid, db.func.date(SAE.criado_em)==hoje).count(),
         'mes': SAE.query.filter(SAE.usuario_id==uid, SAE.criado_em>=inicio_mes).count(),
         'total': SAE.query.filter_by(usuario_id=uid).count(),
-        'plano': u.plano, 'limite_mes': 10 if u.plano == 'gratuito' else 9999})
+        'plano': u.plano,
+        'limite_mes': 9999,
+        'trial_dias': u.dias_trial_restantes(),
+        'trial_expira': u.trial_expira.isoformat() if u.trial_expira else None})
 
 # PERFIL
 @app.route('/api/auth/atualizar-perfil', methods=['PUT'])
