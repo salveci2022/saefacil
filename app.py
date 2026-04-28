@@ -583,8 +583,14 @@ def favicon(): return ('', 204)
 @app.route('/')
 def index(): return send_from_directory(app.static_folder, 'index.html')
 
+@app.route('/admin.html')
+def admin_html(): return send_from_directory(app.static_folder, 'admin.html')
+
 @app.errorhandler(404)
-def not_found(e): return send_from_directory(app.static_folder, 'index.html')
+def not_found(e):
+    if request.path.startswith('/api'):
+        return jsonify({'erro': 'Rota nao encontrada'}), 404
+    return send_from_directory(app.static_folder, 'index.html')
 
 # INIT
 with app.app_context():
