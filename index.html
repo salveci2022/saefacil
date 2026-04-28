@@ -237,6 +237,16 @@ textarea.ci{min-height:90px}
 .mi-tit{font-size:15px;font-weight:700}
 .mi-sub{font-size:12px;color:var(--cinza3);margin-top:1px}
 
+/* TRIAL BANNER */
+.trial-banner{background:linear-gradient(135deg,#E65100,#FF8F00);border-radius:var(--r);padding:14px 18px;color:#fff;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.trial-banner.urgente{background:linear-gradient(135deg,#B71C1C,#C62828);animation:pulsar 1.5s infinite}
+.trial-banner h3{font-size:15px;font-weight:800}
+.trial-banner p{font-size:12px;opacity:.9;margin-top:2px}
+.expirado-banner{background:linear-gradient(135deg,#B71C1C,#C62828);border-radius:var(--r);padding:18px;color:#fff;margin-bottom:14px;text-align:center}
+.expirado-banner h3{font-size:17px;font-weight:800;margin-bottom:6px}
+.expirado-banner p{font-size:13px;opacity:.9;margin-bottom:14px}
+.btn-assinar-agora{background:#fff;color:#C62828;padding:12px 28px;border-radius:var(--r3);font-size:14px;font-weight:800;border:none;cursor:pointer;width:100%}
+
 /* TOAST */
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;width:calc(100% - 32px);max-width:420px;pointer-events:none}
 .ti{background:var(--texto);color:#fff;border-radius:var(--r2);padding:13px 18px;font-size:14px;font-weight:600;text-align:center;animation:sd .3s ease;pointer-events:all}
@@ -341,8 +351,21 @@ textarea.ci{min-height:90px}
         <div class="st"><div class="st-n" id="s-ms">0</div><div class="st-l">este mês</div></div>
         <div class="st"><div class="st-n" id="s-tt">0</div><div class="st-l">total</div></div>
       </div>
-      <div class="plano-banner" onclick="mostrarPlanos()">
-        <div><h3>🆓 Plano Gratuito</h3><p id="banner-txt">10 SAEs restantes este mês</p></div>
+      <div id="banner-trial" class="trial-banner" onclick="mostrarPlanos()" style="display:none">
+        <div><h3 id="trial-titulo">⏳ Trial — 3 dias grátis</h3><p id="trial-txt">Seu período de teste está ativo</p></div>
+        <button class="btn-up" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)">Ver Pro</button>
+      </div>
+      <div id="banner-expirado" class="expirado-banner" style="display:none">
+        <h3>⏰ Seu período gratuito expirou</h3>
+        <p>Assine o Plano Pro por R$ 67,00/mês e continue usando sem limites</p>
+        <button class="btn-assinar-agora" onclick="assinar()">🚀 Assinar agora — R$ 67,00/mês</button>
+      </div>
+      <div id="banner-pro" class="plano-banner" onclick="mostrarPlanos()" style="display:none">
+        <div><h3>⭐ Plano Pro Ativo</h3><p id="banner-txt">SAEs ilimitadas · Acesso completo</p></div>
+        <button class="btn-up">Gerenciar</button>
+      </div>
+      <div id="banner-gratuito" class="plano-banner" onclick="mostrarPlanos()" style="display:none">
+        <div><h3>🆓 Plano Gratuito</h3><p id="banner-txt2">Faça upgrade para Pro</p></div>
         <button class="btn-up">Ver Pro</button>
       </div>
       <div class="ac-grid">
@@ -1036,7 +1059,16 @@ function iniciar(){
   document.getElementById('pf-coren').textContent=U.coren||'';
   document.getElementById('hdr-s').textContent=U.coren||'SAE Fácil';
   document.getElementById('gr-nome').textContent=`Olá, ${(U.nome||'').split(' ')[0]}! Pronto para documentar? 📋`;
-  atualizarStats(); renderUltimas();
+  // Busca stats atualizados do servidor (inclui plano e trial_dias)
+  fetch(`${API}/api/stats`,{headers:{'Authorization':`Bearer ${U?.token||''}`}})
+    .then(r=>r.json()).then(d=>{
+      if(d.plano){ U.plano=d.plano; U.trial_dias=d.trial_dias||0; localStorage.setItem('sae_u',JSON.stringify(U)); }
+      document.getElementById('s-hj').textContent=d.hoje||0;
+      document.getElementById('s-ms').textContent=d.mes||0;
+      document.getElementById('s-tt').textContent=d.total||0;
+      atualizarBannerPlano();
+    }).catch(()=>{ atualizarStats(); });
+  renderUltimas();
 }
 
 // NAVEGAÇÃO
@@ -1370,9 +1402,33 @@ function atualizarStats(){
   document.getElementById('s-hj').textContent=SAES.filter(s=>new Date(s.data).toDateString()===hoje).length;
   document.getElementById('s-ms').textContent=SAES.filter(s=>new Date(s.data).getMonth()===mes).length;
   document.getElementById('s-tt').textContent=SAES.length;
-  const resto=Math.max(0,10-SAES.filter(s=>new Date(s.data).getMonth()===new Date().getMonth()).length);
-  const bt=document.getElementById('banner-txt');
-  if(bt) bt.textContent=`${resto} SAEs restantes este mês • Clique para ver o Pro`;
+  atualizarBannerPlano();
+}
+
+function atualizarBannerPlano(){
+  const plano = U?.plano || 'gratuito';
+  const trialDias = U?.trial_dias || 0;
+  // Esconde todos os banners
+  ['banner-trial','banner-expirado','banner-pro','banner-gratuito'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  if(plano === 'pro'){
+    const el=document.getElementById('banner-pro'); if(el) el.style.display='flex';
+  } else if(plano === 'trial'){
+    const el=document.getElementById('banner-trial'); if(el) el.style.display='flex';
+    if(trialDias <= 1){
+      el.classList.add('urgente');
+      document.getElementById('trial-titulo').textContent = trialDias === 0 ? '🔴 Último dia de trial!' : '🔴 Último dia de trial!';
+      document.getElementById('trial-txt').textContent = 'Assine agora e não perca o acesso — R$ 67,00/mês';
+    } else {
+      el.classList.remove('urgente');
+      document.getElementById('trial-titulo').textContent = `⏳ ${trialDias} dias de trial restantes`;
+      document.getElementById('trial-txt').textContent = 'Após o trial, o Plano Pro é ativado por R$ 67,00/mês';
+    }
+  } else if(plano === 'gratuito'){
+    // Verifica se expirou (tinha trial antes)
+    const el=document.getElementById('banner-expirado'); if(el) el.style.display='block';
+  }
 }
 
 function renderUltimas(){
@@ -1722,7 +1778,7 @@ function inserirNANDA(idx){
 // MODAL
 function mostrarPlanos(){document.getElementById('modal-planos').classList.add('show');}
 function fecharModal(){document.getElementById('modal-planos').classList.remove('show');}
-function assinar(){fecharModal();window.open('https://pay.hotmart.com/S105507836E','_blank');toast('Redirecionando para pagamento...','ok');}
+function assinar(){fecharModal();window.open('https://pay.hotmart.com/S105507836E','_blank');toast('Redirecionando para pagamento — R$ 67,00/mês...','ok');}
 
 // TOAST
 function toast(msg,tipo=''){
