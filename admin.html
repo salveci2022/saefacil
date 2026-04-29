@@ -12,12 +12,13 @@ body{font-family:system-ui,sans-serif;background:#0A2F5C;min-height:100vh}
 .login p{color:#888;text-align:center;font-size:13px;margin-bottom:1.5rem}
 input{width:100%;padding:11px 14px;border:1.5px solid #ddd;border-radius:8px;margin-bottom:1rem;font-size:15px;outline:none}
 input:focus{border-color:#0A2F5C}
-.btn{padding:10px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;color:#fff;font-weight:700}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:13px;cursor:pointer;color:#fff;font-weight:700;transition:.15s}
+.btn:active{transform:scale(.97)}
 .full{width:100%;padding:13px;font-size:15px}
 .blue{background:#0A2F5C}.green{background:#1b5e20}.red{background:#c62828}.orange{background:#e65100}.gray{background:#607d8b}
-.sm{padding:5px 12px;font-size:12px;margin:2px}
+.sm{padding:6px 13px;font-size:12px;margin:2px}
 .panel{max-width:1100px;margin:0 auto;padding:1rem}
-.hdr{background:#0A2F5C;color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+.hdr{background:#0A2F5C;color:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
 .hdr h1{font-size:18px}
 .card{background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .card h3{color:#0A2F5C;margin-bottom:1rem;border-bottom:2px solid #4FC3F7;padding-bottom:8px;font-size:15px}
@@ -30,14 +31,14 @@ tr:hover td{background:#f5f8ff}
 .b-trial{background:#E3F2FD;color:#1565C0}
 .b-free{background:#eee;color:#555}
 .b-bloq{background:#c62828;color:#fff}
-.alert{padding:10px 16px;border-radius:8px;margin-bottom:1rem;font-size:13px}
-.aok{background:#e8f5e9;color:#1b5e20}
-.aerr{background:#ffebee;color:#c62828}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:1rem;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.aok{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.aerr{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center}
 .modal.show{display:flex}
-.mbox{background:#fff;border-radius:12px;padding:2rem;max-width:400px;width:90%}
-.mbox h3{margin-bottom:.5rem;color:#0A2F5C}
-.mbox p{color:#555;font-size:13px;margin-bottom:1rem}
+.mbox{background:#fff;border-radius:14px;padding:2rem;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.mbox h3{margin-bottom:.5rem;color:#0A2F5C;font-size:17px}
+.mbox p{color:#555;font-size:13px;margin-bottom:1.2rem;line-height:1.5}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row input{margin:0;flex:1}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1rem}
@@ -45,9 +46,16 @@ tr:hover td{background:#f5f8ff}
 .stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .stat-n{font-size:28px;font-weight:900;color:#0A2F5C}
 .stat-l{font-size:11px;color:#888;margin-top:2px}
+/* Toast flutuante */
+#toast-admin{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;min-width:280px;max-width:90vw;pointer-events:none}
+.toast-item{background:#1b5e20;color:#fff;border-radius:10px;padding:13px 20px;font-size:14px;font-weight:700;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:tin .3s ease;margin-bottom:8px}
+.toast-item.err{background:#c62828}
+@keyframes tin{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
 </style>
 </head>
 <body>
+<div id="toast-admin"></div>
+
 <div id="lp">
   <div class="login">
     <h2>⚕️ SAE Fácil</h2>
@@ -65,10 +73,10 @@ tr:hover td{background:#f5f8ff}
   </div>
   <div class="panel">
     <div id="ab"></div>
-
     <div class="stats-row" id="stats-row"></div>
 
-    <div class="card">
+    <!-- LISTA DE USUÁRIOS -->
+    <div class="card" id="card-usuarios">
       <h3>👥 Usuários Cadastrados <span id="tot" style="font-size:12px;color:#888;font-weight:400"></span></h3>
       <div class="row" style="margin-bottom:1rem">
         <input type="text" id="bq" placeholder="🔍 Buscar nome ou email..." oninput="filtrar()" style="margin:0">
@@ -83,15 +91,18 @@ tr:hover td{background:#f5f8ff}
       </div>
     </div>
 
+    <!-- RESETAR SENHA -->
     <div class="card">
       <h3>🔑 Resetar Senha de Usuário</h3>
       <div class="row">
         <input type="text" id="er" placeholder="Email do usuário">
-        <input type="text" id="ns" placeholder="Nova senha">
+        <input type="text" id="ns" placeholder="Nova senha (mín. 6 chars)">
         <button class="btn orange sm" onclick="resetSenha()">Resetar</button>
       </div>
+      <div id="reset-msg" style="display:none;margin-top:10px;font-size:13px"></div>
     </div>
 
+    <!-- LOGS -->
     <div class="card">
       <h3>📋 Logs de Acesso (últimos 100)</h3>
       <button class="btn blue sm" onclick="loadLogs()" style="margin-bottom:1rem">Carregar logs</button>
@@ -105,25 +116,27 @@ tr:hover td{background:#f5f8ff}
   </div>
 </div>
 
+<!-- MODAL CONFIRMAÇÃO -->
 <div id="modal" class="modal">
   <div class="mbox">
     <h3 id="mt"></h3>
     <p id="mp"></p>
     <div class="row">
-      <button class="btn green" id="mc">Confirmar</button>
-      <button class="btn red" onclick="closeM()">Cancelar</button>
+      <button class="btn green" id="mc">✅ Confirmar</button>
+      <button class="btn red" onclick="closeM()">✕ Cancelar</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL ATIVAR PRO -->
 <div id="modal-pro" class="modal">
   <div class="mbox">
     <h3>✅ Ativar Plano Pro</h3>
-    <p style="margin-bottom:1rem">Digite o email do usuário para ativar o Pro manualmente:</p>
-    <input type="email" id="pro-email" placeholder="email@exemplo.com" style="margin-bottom:1rem">
+    <p>Digite o email do usuário para ativar o Pro manualmente:</p>
+    <input type="email" id="pro-email" placeholder="email@exemplo.com" onkeydown="if(event.key==='Enter')confirmarAtivarPro()">
     <div class="row">
-      <button class="btn green" onclick="confirmarAtivarPro()">Ativar Pro</button>
-      <button class="btn red" onclick="fecharModalPro()">Cancelar</button>
+      <button class="btn green" onclick="confirmarAtivarPro()">✅ Ativar Pro</button>
+      <button class="btn red" onclick="fecharModalPro()">✕ Cancelar</button>
     </div>
   </div>
 </div>
@@ -172,7 +185,7 @@ function filtrar(){
 
 function render(d){
   document.getElementById('tot').textContent=`(${d.length} usuários)`;
-  document.getElementById('tb').innerHTML=d.map((u,i)=>`<tr>
+  document.getElementById('tb').innerHTML=d.map(u=>`<tr>
     <td style="color:#888;font-size:11px">${u.id}</td>
     <td><strong>${u.nome}</strong></td>
     <td style="font-size:12px;color:#555">${u.email}</td>
@@ -187,7 +200,7 @@ function render(d){
     <td style="font-size:11px;color:#888">${u.ultimo_acesso?u.ultimo_acesso.replace('T',' ').substring(0,16):'—'}</td>
     <td style="white-space:nowrap">
       ${!u.bloqueado&&u.plano!=='pro'?`<button class="btn green sm" onclick="acao('ativar-pro','${u.email}','Ativar PRO para ${u.nome}?')">✅ Pro</button>`:''}
-      ${u.plano==='pro'?`<button class="btn orange sm" onclick="acao('desativar-pro','${u.email}','Remover PRO de ${u.nome}?')">⬇️</button>`:''}
+      ${u.plano==='pro'?`<button class="btn orange sm" onclick="acao('desativar-pro','${u.email}','Remover PRO de ${u.nome}?')">⬇️ Pro</button>`:''}
       ${!u.bloqueado?`<button class="btn red sm" onclick="acao('bloquear','${u.email}','Bloquear ${u.nome}?')">🔒</button>`:`<button class="btn green sm" onclick="acao('desbloquear','${u.email}','Desbloquear ${u.nome}?')">🔓</button>`}
       <button class="btn red sm" onclick="acao('excluir-usuario','${u.email}','EXCLUIR ${u.nome}? Isso é irreversível!')">🗑️</button>
     </td>
@@ -201,30 +214,48 @@ function acao(tipo,email,msg){
   document.getElementById('mc').onclick=()=>{
     fetch(`${API}/api/admin/${tipo}/${S}/${encodeURIComponent(email)}`)
       .then(r=>r.text())
-      .then(t=>{closeM();alerta(t,'ok');reload();});
+      .then(t=>{
+        closeM();
+        toast(t,'ok');
+        reload();
+        voltarTopo();
+      });
   };
 }
 
 function abrirAtivarPro(){
   document.getElementById('pro-email').value='';
   document.getElementById('modal-pro').classList.add('show');
+  setTimeout(()=>document.getElementById('pro-email').focus(),200);
 }
 function fecharModalPro(){document.getElementById('modal-pro').classList.remove('show');}
 function confirmarAtivarPro(){
   const email=document.getElementById('pro-email').value.trim();
-  if(!email){alert('Digite o email');return;}
+  if(!email){toast('Digite o email!','err');return;}
   fetch(`${API}/api/admin/ativar-pro/${S}/${encodeURIComponent(email)}`)
     .then(r=>r.text())
-    .then(t=>{fecharModalPro();alerta(t,'ok');reload();});
+    .then(t=>{
+      fecharModalPro();
+      toast('✅ Pro ativado para '+email,'ok');
+      reload();
+      voltarTopo();
+    });
 }
 
 function resetSenha(){
   const e=document.getElementById('er').value.trim();
   const s=document.getElementById('ns').value.trim();
-  if(!e||!s||s.length<6){alerta('Preencha email e senha (mín. 6 caracteres)!','err');return;}
+  const msg=document.getElementById('reset-msg');
+  if(!e||!s||s.length<6){toast('Preencha email e senha (mín. 6 caracteres)!','err');return;}
   fetch(`${API}/api/admin/resetar-senha/${S}/${encodeURIComponent(e)}/${encodeURIComponent(s)}`)
     .then(r=>r.text())
-    .then(t=>{alerta(t,'ok');document.getElementById('er').value='';document.getElementById('ns').value='';});
+    .then(t=>{
+      toast('🔑 Senha redefinida com sucesso!','ok');
+      document.getElementById('er').value='';
+      document.getElementById('ns').value='';
+      reload();
+      voltarTopo();
+    });
 }
 
 function loadLogs(){
@@ -239,14 +270,29 @@ function loadLogs(){
 }
 
 function closeM(){document.getElementById('modal').classList.remove('show');}
-function alerta(m,t){
-  const b=document.getElementById('ab');
-  b.innerHTML=`<div class="alert a${t}">${m}</div>`;
-  setTimeout(()=>b.innerHTML='',5000);
+
+function toast(msg,tipo='ok'){
+  const c=document.getElementById('toast-admin');
+  const el=document.createElement('div');
+  el.className='toast-item'+(tipo==='err'?' err':'');
+  el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),4000);
 }
+
+function voltarTopo(){
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Limpa busca e mostra todos
+  document.getElementById('bq').value='';
+  setTimeout(()=>filtrar(),500);
+}
+
 function reload(){
-  fetch(`${API}/api/admin/listar-usuarios/${S}`).then(r=>r.json()).then(d=>{us=d;filtrar();renderStats(d);});
+  fetch(`${API}/api/admin/listar-usuarios/${S}`)
+    .then(r=>r.json())
+    .then(d=>{us=d;filtrar();renderStats(d);});
 }
+
 setInterval(reload,30000);
 </script>
 </body>
