@@ -53,6 +53,7 @@ class Usuario(db.Model):
 
     def plano_ativo(self):
         if self.plano == 'trial':
+            # Só expira se tiver trial_expira definido
             if self.trial_expira and datetime.utcnow() > self.trial_expira:
                 self.plano = 'gratuito'
                 db.session.commit()
@@ -266,6 +267,7 @@ def stats():
         'plano': u.plano,
         'limite_mes': 9999,
         'trial_dias': u.dias_trial_restantes(),
+        'tem_trial': u.trial_expira is not None,
         'trial_expira': u.trial_expira.isoformat() if u.trial_expira else None})
 
 # PERFIL

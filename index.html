@@ -718,7 +718,7 @@ textarea.ci{min-height:90px}
         <div class="pf-av" id="pf-av">?</div>
         <div><div class="pf-nome" id="pf-nome">...</div><div class="pf-cargo" id="pf-cargo">Enfermagem</div><div style="font-size:12px;color:var(--cinza3);margin-top:2px" id="pf-coren">COREN</div></div>
       </div>
-      <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">🆓 Gratuito</div><div class="pc-desc">10 SAEs/mês • Upgrade Pro: R$ 29/mês</div></div>
+      <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">🆓 Gratuito</div><div class="pc-desc">10 SAEs/mês • Upgrade Pro: R$ 67/mês</div></div>
 
       <!-- EDITAR PERFIL -->
       <div class="card" style="margin-bottom:14px">
@@ -796,7 +796,7 @@ textarea.ci{min-height:90px}
 
       <!-- PLANOS E SAIR -->
       <div class="card">
-        <div class="mi" onclick="mostrarPlanos()"><div class="mi-ic" style="background:var(--verde2)">⭐</div><div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 29/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div><span>›</span></div>
+        <div class="mi" onclick="mostrarPlanos()"><div class="mi-ic" style="background:var(--verde2)">⭐</div><div class="mi-txt"><div class="mi-tit">Assinar Pro — R$ 67/mês</div><div class="mi-sub">SAEs ilimitadas, PDF profissional, suporte</div></div><span>›</span></div>
         <div class="mi" onclick="toast('Plano Equipe: R$ 197/mês para até 10 profissionais. Entre em contato!','')"><div class="mi-ic" style="background:var(--azul3)">👥</div><div class="mi-txt"><div class="mi-tit">Plano Equipe — R$ 197/mês</div><div class="mi-sub">Para clínicas, UTIs e hospitais</div></div><span>›</span></div>
         <div class="mi" onclick="sair()"><div class="mi-ic" style="background:#FFEBEE">🚪</div><div class="mi-txt"><div class="mi-tit">Sair</div><div class="mi-sub">Encerrar sessão</div></div><span>›</span></div>
       </div>
@@ -835,7 +835,7 @@ textarea.ci{min-height:90px}
 <div class="modal-bg" id="modal-planos">
   <div class="modal">
     <div class="modal-tit">⭐ SAE Fácil Pro</div>
-    <div class="modal-sub">O assistente completo de enfermagem por R$ 29/mês</div>
+    <div class="modal-sub">O assistente completo de enfermagem por R$ 67/mês</div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
       <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">✅</span><div><div style="font-weight:700">SAEs ilimitadas</div><div style="font-size:12px;color:var(--cinza3)">Sem limite mensal</div></div></div>
       <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">📊</span><div><div style="font-weight:700">Escores clínicos ilimitados</div><div style="font-size:12px;color:var(--cinza3)">Braden, Glasgow, Morse, Apgar, NEWS</div></div></div>
@@ -843,7 +843,7 @@ textarea.ci{min-height:90px}
       <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--cinza2)"><span style="font-size:20px">📄</span><div><div style="font-weight:700">PDF profissional com COREN</div><div style="font-size:12px;color:var(--cinza3)">Com logo, assinatura e validade jurídica</div></div></div>
       <div style="display:flex;gap:10px;padding:10px 0"><span style="font-size:20px">☁️</span><div><div style="font-weight:700">Histórico em nuvem</div><div style="font-size:12px;color:var(--cinza3)">Acesse de qualquer dispositivo</div></div></div>
     </div>
-    <button class="btn-p" onclick="assinar()">Assinar por R$ 29/mês →</button>
+    <button class="btn-p" onclick="assinar()">Assinar por R$ 67/mês →</button>
     <div class="ls" style="margin-top:12px"><span onclick="fecharModal()">Agora não</span></div>
   </div>
 </div>
@@ -1408,6 +1408,7 @@ function atualizarStats(){
 function atualizarBannerPlano(){
   const plano = U?.plano || 'gratuito';
   const trialDias = U?.trial_dias || 0;
+  const temTrial = U?.tem_trial || false;
   // Esconde todos os banners
   ['banner-trial','banner-expirado','banner-pro','banner-gratuito'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
@@ -1418,7 +1419,7 @@ function atualizarBannerPlano(){
     const el=document.getElementById('banner-trial'); if(el) el.style.display='flex';
     if(trialDias <= 1){
       el.classList.add('urgente');
-      document.getElementById('trial-titulo').textContent = trialDias === 0 ? '🔴 Último dia de trial!' : '🔴 Último dia de trial!';
+      document.getElementById('trial-titulo').textContent = '🔴 Último dia de trial!';
       document.getElementById('trial-txt').textContent = 'Assine agora e não perca o acesso — R$ 67,00/mês';
     } else {
       el.classList.remove('urgente');
@@ -1426,8 +1427,13 @@ function atualizarBannerPlano(){
       document.getElementById('trial-txt').textContent = 'Após o trial, o Plano Pro é ativado por R$ 67,00/mês';
     }
   } else if(plano === 'gratuito'){
-    // Verifica se expirou (tinha trial antes)
-    const el=document.getElementById('banner-expirado'); if(el) el.style.display='block';
+    // Só mostra "expirou" se o usuário passou pelo trial
+    // Usuários antigos sem trial veem banner gratuito normal
+    if(temTrial){
+      const el=document.getElementById('banner-expirado'); if(el) el.style.display='block';
+    } else {
+      const el=document.getElementById('banner-gratuito'); if(el) el.style.display='flex';
+    }
   }
 }
 
