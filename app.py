@@ -412,8 +412,12 @@ def excluir_usuario(secret, email):
     if not check_admin(secret): return 'Sem permissao', 403
     u = Usuario.query.filter_by(email=email).first()
     if not u: return f'Usuario {email} nao encontrado', 404
+    u.session_token = None
+    u.bloqueado = True
+    db.session.commit()
     SAE.query.filter_by(usuario_id=u.id).delete()
-    db.session.delete(u); db.session.commit()
+    db.session.delete(u)
+    db.session.commit()
     return f'Usuario {email} excluido!'
 
 @app.route('/api/admin/logs-acesso/<secret>')
