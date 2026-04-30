@@ -175,6 +175,18 @@ def registro():
         session_token=sid, ultimo_ip=get_ip(), ultimo_acesso=datetime.utcnow())
     db.session.add(u)
     db.session.commit()
+    # Verifica se ja tem pagamento aprovado na Hotmart para esse email
+    log_pago = WebhookLog.query.filter_by(email=data['email'].lower().strip(), processado=False).filter(
+        WebhookLog.evento.in_(['PURCHASE_APPROVED','PURCHASE_COMPLETE','SUBSCRIPTION_ACTIVATED'])
+    ).first()
+    if log_pago:
+        u.plano = 'pro'
+        u.hotmart_id = log_pago.hotmart_id
+        u.plano_expira = datetime.utcnow() + timedelta(days=35)
+        u.trial_expira = None
+        log_pago.processado = True
+        db.session.commit()
+        print(f'[REGISTRO] PRO ativado automaticamente para {u.email}')
     token = create_access_token(identity=str(u.id), additional_claims={'sid': sid})
     registrar_acesso(u.id, u.email, True)
     return jsonify({'token': token, 'nome': u.nome, 'plano': u.plano,
@@ -331,14 +343,21 @@ def webhook_hotmart():
     log = WebhookLog(evento=evento, email=email, hotmart_id=hid, payload=json.dumps(data, ensure_ascii=False)[:2000])
     db.session.add(log)
     u = Usuario.query.filter_by(email=email).first()
-    if evento in ('PURCHASE_APPROVED', 'PURCHASE_COMPLETE'):
+    if evento in ('PURCHASE_APPROVED', 'PURCHASE_COMPLETE', 'SUBSCRIPTION_ACTIVATED', 
+                    'PURCHASE_BILLET_PRINTED', 'SUBSCRIPTION_REACTIVATED'):
         if u:
             u.plano = 'pro'
             u.hotmart_id = hid
             u.plano_expira = datetime.utcnow() + timedelta(days=35)
+            u.trial_expira = None
             log.processado = True
             print(f'[WEBHOOK] PRO ativado: {email}')
-    elif evento in ('PURCHASE_CANCELED', 'PURCHASE_REFUNDED', 'SUBSCRIPTION_CANCELLATION', 'PURCHASE_CHARGEBACK'):
+        else:
+            # Usuario nao cadastrado ainda — salva o log para ativar quando cadastrar
+            print(f'[WEBHOOK] Usuario {email} nao encontrado — aguardando cadastro')
+            log.processado = False
+    elif evento in ('PURCHASE_CANCELED', 'PURCHASE_REFUNDED', 'SUBSCRIPTION_CANCELLATION', 
+                    'PURCHASE_CHARGEBACK', 'SUBSCRIPTION_INACTIVE'):
         if u:
             u.plano = 'gratuito'
             u.hotmart_id = None
