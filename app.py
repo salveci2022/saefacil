@@ -171,7 +171,7 @@ def registro():
     u = Usuario(nome=data['nome'], email=data['email'],
         senha_hash=hashlib.sha256(data['senha'].encode()).hexdigest(),
         categoria=data.get('categoria',''), coren=data.get('coren',''),
-        plano='trial', trial_expira=datetime.utcnow() + timedelta(days=3),
+        plano='gratuito', trial_expira=None,
         session_token=sid, ultimo_ip=get_ip(), ultimo_acesso=datetime.utcnow())
     db.session.add(u)
     db.session.commit()
