@@ -662,60 +662,175 @@ def _gerar_ia(tipo, p):
     diag_completo = f"{diag_medico} {('('+cid_codigo+')') if cid_codigo else ''}".strip()
 
     prompts = {
-        'evolucao': f"""Enfermeiro especialista SAE NANDA-I 2024-2026 NIC NOC. Gere EVOLUCAO SOAP completa.
+        'evolucao': f"""Voce e enfermeiro(a) especialista em SAE com dominio total da taxonomia NANDA-I 2024-2026, NIC e NOC.
 {ctx}
-Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnostico Medico: {diag_completo}
-SVs: {p.get('sv')} | Queixas: {p.get('queixas')} | Sistemas: {', '.join(p.get('sistemas',[]))}
-Exames/Dispositivos: {p.get('exames')} | Alergias: {p.get('alergias','')} | Obs: {p.get('obs')}
-Estrutura: EVOLUCAO DE ENFERMAGEM / Data Hora / S-O-A(NANDA codigo R/A E/P)-P(NIC min6 NOC min3) / Assinatura.""",
 
-        'prescricao': f"""Voce e um enfermeiro especialista em SAE. Gere uma PRESCRICAO DE ENFERMAGEM completa e especifica para o diagnostico medico informado.
-
-{ctx}
 DADOS DO PACIENTE:
-- Nome: {p.get('nome')} | Leito: {p.get('leito')}
-- Diagnostico Medico: {diag_completo}
-- Sinais Vitais: {p.get('sv')}
-- Queixas/Avaliacao: {p.get('queixas')}
-- Dispositivos/Exames: {p.get('exames')}
-- Alergias: {p.get('alergias','')}
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnostico Medico: {diag_completo}
+Sinais Vitais: {p.get('sv')}
+Queixas e Estado Geral: {p.get('queixas')}
+Sistemas Avaliados: {', '.join(p.get('sistemas',[]))}
+Exames/Dispositivos: {p.get('exames')}
+Alergias/Comorbidades: {p.get('alergias','')}
+Observacoes: {p.get('obs')}
 
-INSTRUCOES:
-- Gere prescricao ESPECIFICA para o diagnostico "{diag_completo}"
-- Inclua cuidados posturais (ex: para DPOC/asma: posicao Fowler ou semi-Fowler 30-45 graus)
-- Inclua monitoramento especifico da doenca (ex: para DPOC: oximetria continua, padrão respiratório)
-- Inclua administracao de medicamentos conforme protocolo da doenca
-- Inclua cuidados de conforto e prevencao de complicacoes especificas
-- Minimo 14 itens numerados, claros e objetivos
-- Use linguagem tecnica de enfermagem brasileira
+INSTRUCOES CRITICAS — LEIA COM ATENCAO:
+1. Gere EVOLUCAO DE ENFERMAGEM no formato SOAP COMPLETO
+2. O item A (Avaliacao) deve conter OBRIGATORIAMENTE os diagnosticos de enfermagem NANDA-I especificos para "{diag_completo}". NAO use diagnosticos genericos. Use os diagnosticos corretos para esta patologia especifica.
+3. O item P (Plano) deve conter intervencoes NIC ESPECIFICAS para "{diag_completo}" — NAO copie o mesmo plano para todas as doencas. O plano deve refletir os cuidados reais desta patologia: posicionamento, monitoramento, terapia especifica, prevencao de complicacoes desta doenca.
+4. Exemplo: para asma/DPOC o 1o diagnostico NANDA e "Padrao respiratorio ineficaz (00032)" e o plano inclui posicao Fowler/semi-Fowler, broncodilatadores, oximetria continua. Para IAM o 1o diagnostico e "Debito cardiaco diminuido (00029)". Para sepse e "Perfusao tissular ineficaz (00228)". SIGA ESTA LOGICA PARA O DIAGNOSTICO INFORMADO.
+5. Cada paciente tem dados unicos — use os SVs, queixas e exames reais informados acima.
 
-ESTRUTURA:
+ESTRUTURA OBRIGATORIA:
+EVOLUCAO DE ENFERMAGEM
+Data: ___/___/______ Hora: ____:____ Turno: ( )Manha ( )Tarde ( )Noite
+
+S — SUBJETIVO:
+[Queixas relatadas pelo paciente usando os dados reais informados acima]
+
+O — OBJETIVO:
+[Dados mensuráveis: SVs reais, achados do exame fisico, dispositivos, exames]
+
+A — AVALIACAO (DIAGNOSTICOS DE ENFERMAGEM NANDA-I 2024-2026):
+[OBRIGATORIO: Liste 3 diagnosticos NANDA especificos para {diag_completo}, em ordem de prioridade clinica]
+1. [Diagnostico prioritario para esta patologia] (NANDA XXXXX) — Relacionado a: [fator especifico] — Evidenciado por: [dados reais do paciente]
+2. [2o diagnostico] (NANDA XXXXX) — Relacionado a: [...] — Evidenciado por: [...]
+3. [3o diagnostico] (NANDA XXXXX) — Relacionado a: [...] — Evidenciado por: [...]
+
+P — PLANO (INTERVENCOES NIC ESPECIFICAS PARA {diag_completo.upper()}):
+[OBRIGATORIO: Liste minimo 8 intervencoes NIC reais e especificas para esta patologia — NAO use itens genericos como "monitorar sinais vitais" sem especificidade clinica]
+
+NOC — RESULTADOS ESPERADOS:
+[3 metas mensuráveis especificas para esta patologia]
+
+Enfermeiro(a): {p.get('nome','___')} | COREN: ___________
+Assinatura: _________________________""",
+
+        'prescricao': f"""Voce e enfermeiro(a) especialista em SAE. Gere PRESCRICAO DE ENFERMAGEM 100% especifica para o diagnostico informado.
+{ctx}
+
+DADOS DO PACIENTE:
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnostico Medico: {diag_completo}
+Sinais Vitais: {p.get('sv')}
+Queixas/Avaliacao: {p.get('queixas')}
+Dispositivos/Exames: {p.get('exames')}
+Alergias: {p.get('alergias','')}
+
+INSTRUCOES CRITICAS:
+1. Os DIAGNOSTICOS DE ENFERMAGEM NANDA devem ser ESPECIFICOS para "{diag_completo}". NAO use diagnosticos genericos identicos para todos os pacientes.
+   - Para asma/DPOC: 1o diagnostico = Padrao respiratorio ineficaz (00032)
+   - Para IAM/ICC: 1o diagnostico = Debito cardiaco diminuido (00029)
+   - Para AVC: 1o diagnostico = Perfusao tissular cerebral ineficaz (00201)
+   - Para sepse: 1o diagnostico = Perfusao tissular ineficaz periferica (00204)
+   - Para DM descompensado: 1o diagnostico = Nivel de glicemia instavel (00179)
+   - Para IRA/IRC: 1o diagnostico = Eliminacao urinaria prejudicada (00016)
+   - Para pneumonia: 1o diagnostico = Troca de gases prejudicada (00030)
+   - SIGA ESTA LOGICA PARA O DIAGNOSTICO INFORMADO
+2. A PRESCRICAO deve conter cuidados ESPECIFICOS da patologia "{diag_completo}":
+   - Posicionamento especifico (ex: Fowler para dispneia, decubito dorsal para IAM)
+   - Monitoramento especifico da doenca
+   - Cuidados respiratorios, cardiacos, neurologicos conforme a patologia
+   - Prevencao das complicacoes especificas desta doenca
+   - NAO repita os mesmos itens genericos para todas as doencas
+3. Use os dados reais do paciente (SVs, queixas, exames) nas prescricoes
+
+ESTRUTURA OBRIGATORIA:
 PRESCRICAO DE ENFERMAGEM
 Data: ___/___/______ Turno: ( )Manha ( )Tarde ( )Noite
 Paciente: {p.get('nome')} | Leito: {p.get('leito')}
 Diagnostico Medico: {diag_completo}
 
-DIAGNOSTICO DE ENFERMAGEM (NANDA-I 2024-2026):
-[liste 2 diagnosticos prioritarios com codigo]
+DIAGNOSTICOS DE ENFERMAGEM (NANDA-I 2024-2026) — ESPECIFICOS PARA {diag_completo.upper()}:
+1. [1o diagnostico prioritario para esta patologia] (NANDA XXXXX)
+   Relacionado a: [fator especifico da doenca]
+   Evidenciado por: [dados reais do paciente]
+2. [2o diagnostico] (NANDA XXXXX)
+   Relacionado a: [...]
+   Evidenciado por: [...]
 
-PRESCRICAO:
-[min 14 itens numerados especificos para o diagnostico]
+PRESCRICAO — CUIDADOS ESPECIFICOS PARA {diag_completo.upper()}:
+[Liste minimo 14 itens numerados, especificos para esta patologia, usando dados reais do paciente]
 
-RESULTADOS ESPERADOS (NOC):
-[min 3 metas mensuráveis]
+RESULTADOS ESPERADOS (NOC) — METAS PARA {diag_completo.upper()}:
+[3 metas mensuráveis e especificas para esta patologia]
 
 Enfermeiro(a): _________________________ COREN: _________
 Assinatura: _________________________""",
 
-        'passagem': f"""Enfermeiro especialista. Gere PASSAGEM PLANTAO SBAR.
+        'passagem': f"""Voce e enfermeiro(a) especialista. Gere PASSAGEM DE PLANTAO no formato SBAR completo e especifico para o caso.
 {ctx}
-Paciente:{p.get('nome')}|Leito:{p.get('leito')}|Diag:{diag_completo}|SVs:{p.get('sv')}|Sit:{p.get('queixas')}|Disp:{p.get('exames')}
-Estrutura: SBAR completo S(situacao) B(background comorbidades dispositivos) A(NANDA hemodinamica) R(prioridades alertas pendencias) / Assinatura.""",
 
-        'nanda': f"""Especialista NANDA-I 2024-2026 NIC NOC. Gere 4 DIAGNOSTICOS por prioridade clinica.
+DADOS DO PACIENTE:
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnostico Medico: {diag_completo}
+Sinais Vitais: {p.get('sv')}
+Situacao Atual: {p.get('queixas')}
+Dispositivos/Exames: {p.get('exames')}
+Alergias/Comorbidades: {p.get('alergias','')}
+
+INSTRUCAO: Use TODOS os dados reais acima. Nao invente informacoes. A passagem deve ser especifica para este paciente e esta patologia.
+
+ESTRUTURA SBAR OBRIGATORIA:
+PASSAGEM DE PLANTAO — SBAR
+Data: ___/___/______ Hora: ____:____ | De: _______________ Para: _______________
+
+S — SITUACAO:
+[Identificacao do paciente, leito, diagnostico medico real, motivo da internacao]
+
+B — BACKGROUND (HISTORICO):
+[Comorbidades, alergias, dispositivos em uso, exames relevantes, evolucao do internamento]
+
+A — AVALIACAO CLINICA:
+[Estado hemodinamico atual com SVs reais, diagnosticos de enfermagem NANDA prioritarios para {diag_completo}, achados relevantes]
+
+R — RECOMENDACOES E PENDENCIAS:
+[Alertas especificos para {diag_completo}, pendencias de exames, cuidados prioritarios para o proximo turno, intercorrencias]
+
+Enfermeiro(a): _________________________ COREN: _________
+Assinatura: _________________________""",
+
+        'nanda': f"""Voce e especialista em taxonomia NANDA-I 2024-2026 com dominio total de NIC e NOC.
 {ctx}
-Paciente:{p.get('nome')}|Leito:{p.get('leito')}|Diag:{diag_completo}|SVs:{p.get('sv')}|Aval:{p.get('queixas')}|Disp:{p.get('exames')}
-Para cada: Nome(NANDA codigo) Dominio/Classe | R/A fator | E/P caracteristicas | NIC atividades | NOC meta mensuravel / Assinatura."""
+
+DADOS DO PACIENTE:
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnostico Medico: {diag_completo}
+Sinais Vitais: {p.get('sv')}
+Avaliacao: {p.get('queixas')}
+Dispositivos/Exames: {p.get('exames')}
+
+INSTRUCOES CRITICAS:
+1. Gere EXATAMENTE 4 diagnosticos de enfermagem NANDA-I em ordem de prioridade CLINICA para "{diag_completo}"
+2. O 1o diagnostico DEVE ser o mais prioritario para esta patologia especifica:
+   - Asma/DPOC/crise respiratoria: Padrao respiratorio ineficaz (00032) ou Troca de gases prejudicada (00030)
+   - IAM/ICC: Debito cardiaco diminuido (00029)
+   - AVC: Perfusao tissular cerebral ineficaz (00201)
+   - Sepse/choque: Perfusao tissular ineficaz periferica (00204)
+   - DM descompensado: Nivel de glicemia instavel (00179)
+   - IRA/IRC: Eliminacao urinaria prejudicada (00016)
+   - Pneumonia: Troca de gases prejudicada (00030)
+   - TCE: Capacidade de recuperacao intracraniana diminuida (00049)
+   - SIGA ESTA LOGICA PARA A PATOLOGIA INFORMADA
+3. Cada diagnostico deve usar dados REAIS do paciente (SVs, queixas, exames informados)
+4. As intervencoes NIC e metas NOC devem ser ESPECIFICAS para esta patologia
+
+ESTRUTURA OBRIGATORIA PARA CADA DIAGNOSTICO:
+DIAGNOSTICOS DE ENFERMAGEM — NANDA-I 2024-2026
+Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnostico Medico: {diag_completo}
+
+[Para cada um dos 4 diagnosticos:]
+DIAGNOSTICO X — [PRIORIDADE: ALTA/MEDIA/BAIXA]
+Nome: [Nome completo do diagnostico NANDA] (NANDA XXXXX)
+Dominio: [X — Nome] | Classe: [X — Nome]
+Relacionado a: [fator especifico da patologia e dos dados do paciente]
+Evidenciado por: [caracteristicas definidoras usando dados reais do paciente]
+Intervencoes NIC: [minimo 5 intervencoes especificas e mensuráveis para esta patologia]
+Resultados NOC: [2 metas mensuráveis especificas]
+
+Enfermeiro(a): _________________________ COREN: _________
+Assinatura: _________________________"""
     }
     try:
         r = requests.post('https://api.anthropic.com/v1/messages',
