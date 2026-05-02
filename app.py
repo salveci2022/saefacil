@@ -650,6 +650,127 @@ def buscar_cid():
             break
     return jsonify(resultado)
 
+
+# MAPEAMENTO CLINICO: Diagnostico Medico → NANDA prioritario + cuidados especificos
+def _mapear_nanda_por_patologia(diag_completo):
+    """Retorna o contexto clínico específico baseado no diagnóstico médico"""
+    d = diag_completo.lower()
+
+    # RESPIRATORIO
+    if any(x in d for x in ['asma','crise asmat','broncoespas','j45','j46']):
+        return {
+            'nanda1': 'Padrao respiratorio ineficaz (NANDA 00032) — Dominio 4, Classe 4',
+            'nanda2': 'Troca de gases prejudicada (NANDA 00030) — Dominio 4, Classe 4',
+            'nanda3': 'Ansiedade (NANDA 00146) — Dominio 9, Classe 2',
+            'plano': 'posicao Fowler ou semi-Fowler 30-45 graus, administrar broncodilatadores conforme prescricao medica, monitorar oximetria continua, observar uso de musculatura acessoria, ausculta pulmonar a cada 2h, nebulizacao conforme prescricao, evitar fatores desencadeantes',
+            'noc': 'Estado respiratorio: ventilacao (0403) — meta SpO2 > 95%; Controle de sintomas (1608); Nivel de ansiedade (1211)'
+        }
+    if any(x in d for x in ['dpoc','doenca pulmonar obstrutiva','j44','j43']):
+        return {
+            'nanda1': 'Troca de gases prejudicada (NANDA 00030) — Dominio 4, Classe 4',
+            'nanda2': 'Padrao respiratorio ineficaz (NANDA 00032) — Dominio 4, Classe 4',
+            'nanda3': 'Intolerancia a atividade (NANDA 00092) — Dominio 4, Classe 4',
+            'plano': 'posicao semi-Fowler 30-45 graus, oxigenoterapia controlada (atencao: risco de retencao de CO2), monitorar oximetria e frequencia respiratoria, fisioterapia respiratoria, tecnica de respiracao com labios franzidos, monitorar sinais de retencao de CO2 (sonolencia, confusao)',
+            'noc': 'Estado respiratorio: troca gasosa (0402) — meta SpO2 88-92%; Tolerancia a atividade (0005); Autocontrole da doenca pulmonar cronica (3200)'
+        }
+    if any(x in d for x in ['pneumonia','j18','j15','j12']):
+        return {
+            'nanda1': 'Troca de gases prejudicada (NANDA 00030) — Dominio 4, Classe 4',
+            'nanda2': 'Hipertermia (NANDA 00007) — Dominio 11, Classe 6',
+            'nanda3': 'Padrao respiratorio ineficaz (NANDA 00032) — Dominio 4, Classe 4',
+            'plano': 'elevar cabeceira 30-45 graus, monitorar oximetria continua, administrar antibioticoterapia conforme horario, controle de temperatura a cada 4h, hidratacao adequada, incentivar expectoracao, fisioterapia respiratoria, coleta de culturas conforme prescricao',
+            'noc': 'Estado respiratorio: troca gasosa (0402); Termorregulacao (0800); Controle de infeccao (1924)'
+        }
+    if any(x in d for x in ['insuficiencia respiratoria','j96']):
+        return {
+            'nanda1': 'Troca de gases prejudicada (NANDA 00030) — Dominio 4, Classe 4',
+            'nanda2': 'Padrao respiratorio ineficaz (NANDA 00032) — Dominio 4, Classe 4',
+            'nanda3': 'Risco de aspiracao (NANDA 00039) — Dominio 11, Classe 2',
+            'plano': 'monitorar oximetria e gasometria, elevar cabeceira 30-45 graus, preparar material para IOT se necessario, administrar O2 conforme prescricao, monitorar nivel de consciencia, aspiracao de vias aereas se necessario',
+            'noc': 'Estado respiratorio: troca gasosa (0402); Estado respiratorio: permeabilidade das vias aereas (0410); Nivel de consciencia (0912)'
+        }
+
+    # CARDIOVASCULAR
+    if any(x in d for x in ['infarto','iam','i21','supra de st','infarto agudo']):
+        return {
+            'nanda1': 'Debito cardiaco diminuido (NANDA 00029) — Dominio 4, Classe 4',
+            'nanda2': 'Dor aguda (NANDA 00132) — Dominio 12, Classe 1',
+            'nanda3': 'Ansiedade (NANDA 00146) — Dominio 9, Classe 2',
+            'plano': 'repouso absoluto no leito nas primeiras 12-24h, monitoracao cardiaca continua, acesso venoso calibroso, monitorar sinais de choque (PA, FC, perfusao periferica), controle da dor (escala visual analogica), administrar medicamentos conforme prescricao (antiagregantes, anticoagulantes), ECG seriado, dosar enzimas cardiacas conforme horario',
+            'noc': 'Estado cardiaco (0414); Nivel de dor (2102); Nivel de ansiedade (1211)'
+        }
+    if any(x in d for x in ['insuficiencia cardiaca','icc','i50','insuf cardiaca']):
+        return {
+            'nanda1': 'Debito cardiaco diminuido (NANDA 00029) — Dominio 4, Classe 4',
+            'nanda2': 'Excesso de volume de liquidos (NANDA 00026) — Dominio 2, Classe 5',
+            'nanda3': 'Intolerancia a atividade (NANDA 00092) — Dominio 4, Classe 4',
+            'plano': 'elevar membros inferiores 30 graus, restricao hidrica conforme prescricao, controle rigoroso de diurese (balanco hidrico), pesagem diaria, monitorar edema e crepitacoes pulmonares, restricao de sodio, oxigenoterapia se SpO2 < 95%, monitorar PA e FC',
+            'noc': 'Efetividade da bomba cardiaca (0400); Equilibrio hidrico (0601); Tolerancia a atividade (0005)'
+        }
+    if any(x in d for x in ['hipertensao','has','i10','pressao alta','crise hipertensiva']):
+        return {
+            'nanda1': 'Risco de perfusao tissular cerebral ineficaz (NANDA 00201) — Dominio 4, Classe 4',
+            'nanda2': 'Dor aguda (NANDA 00132) — Dominio 12, Classe 1',
+            'nanda3': 'Deficiencia de conhecimento (NANDA 00126) — Dominio 5, Classe 4',
+            'plano': 'monitorar PA em ambos os membros, repouso no leito com ambiente calmo, administrar anti-hipertensivos conforme prescricao, monitorar sinais neurologicos, restricao de sodio, orientar sobre adesao ao tratamento',
+            'noc': 'Estado neurologico (0909); Nivel de dor (2102); Conhecimento: controle da doenca cronica (1847)'
+        }
+
+    # NEUROLOGICO
+    if any(x in d for x in ['avc','acidente vascular','i63','i64','i61','derrame']):
+        return {
+            'nanda1': 'Perfusao tissular cerebral ineficaz (NANDA 00201) — Dominio 4, Classe 4',
+            'nanda2': 'Risco de aspiracao (NANDA 00039) — Dominio 11, Classe 2',
+            'nanda3': 'Mobilidade fisica prejudicada (NANDA 00085) — Dominio 4, Classe 2',
+            'plano': 'elevar cabeceira 30 graus, monitorar nivel de consciencia (Glasgow) a cada 2h, avaliacao neurologica frequente (pupilas, forca, fala), posicionamento adequado para prevencao de contraturas, fisioterapia motora precoce, teste de deglutição antes de dieta oral, profilaxia para TVP',
+            'noc': 'Perfusao tissular cerebral (0406); Estado neurologico (0909); Mobilidade (0208)'
+        }
+    if any(x in d for x in ['tce','traumatismo cranio','s06']):
+        return {
+            'nanda1': 'Capacidade de recuperacao intracraniana diminuida (NANDA 00049) — Dominio 11, Classe 2',
+            'nanda2': 'Risco de perfusao tissular cerebral ineficaz (NANDA 00201) — Dominio 4, Classe 4',
+            'nanda3': 'Risco de aspiracao (NANDA 00039) — Dominio 11, Classe 2',
+            'plano': 'elevar cabeceira 30 graus, monitorar escala de Glasgow a cada 1-2h, avaliacao de pupilas, controle rigoroso de PA (evitar hipotensao), monitorar sinais de herniacao cerebral, restricao hidrica conforme prescricao, ambiente calmo com estimulos minimos',
+            'noc': 'Estado neurologico: consciencia (0912); Perfusao tissular cerebral (0406); Estado respiratorio (0403)'
+        }
+
+    # METABOLICO
+    if any(x in d for x in ['diabetes','dm','e11','e10','glicemia','hiperglicemia','hipoglicemia']):
+        return {
+            'nanda1': 'Nivel de glicemia instavel (NANDA 00179) — Dominio 2, Classe 4',
+            'nanda2': 'Risco de infeccao (NANDA 00004) — Dominio 11, Classe 1',
+            'nanda3': 'Deficiencia de conhecimento (NANDA 00126) — Dominio 5, Classe 4',
+            'plano': 'monitorar glicemia capilar conforme prescricao (ex: 6x6h), administrar insulina conforme protocolo, observar sinais de hipo/hiperglicemia, inspecionar extremidades diariamente, cuidados com feridas se presentes, orientar dieta adequada',
+            'noc': 'Nivel de glicemia (2300); Controle do risco: processo infeccioso (1924); Conhecimento: controle do diabetes (1820)'
+        }
+    if any(x in d for x in ['sepse','a41','choque septico','r57']):
+        return {
+            'nanda1': 'Perfusao tissular ineficaz periferica (NANDA 00204) — Dominio 4, Classe 4',
+            'nanda2': 'Hipertermia (NANDA 00007) — Dominio 11, Classe 6',
+            'nanda3': 'Risco de choque (NANDA 00205) — Dominio 11, Classe 2',
+            'plano': 'monitorar sinais vitais a cada 1h, controle rigoroso de diurese (meta > 0.5ml/kg/h), coleta de culturas antes de antibioticos, administrar antibioticos dentro do prazo (bundle sepse), acesso venoso calibroso, reposicao volemia conforme prescricao, monitorar nivel de consciencia e lactato',
+            'noc': 'Perfusao tissular: periferica (0407); Termorregulacao (0800); Estado circulatorio (0401)'
+        }
+
+    # RENAL
+    if any(x in d for x in ['insuficiencia renal','n18','n17','ira','irc']):
+        return {
+            'nanda1': 'Eliminacao urinaria prejudicada (NANDA 00016) — Dominio 3, Classe 1',
+            'nanda2': 'Excesso de volume de liquidos (NANDA 00026) — Dominio 2, Classe 5',
+            'nanda3': 'Risco de desequilibrio eletolitico (NANDA 00195) — Dominio 2, Classe 5',
+            'plano': 'controle rigoroso de diurese horaria, balanco hidrico rigoroso, restricao hidrica e de potassio conforme prescricao, pesagem diaria, monitorar eletrólitos, observar sinais de hipercalemia (arritmias), cuidados com acesso para diálise se presente',
+            'noc': 'Eliminacao urinaria (0503); Equilibrio hidrico (0601); Equilibrio eletolitico (0606)'
+        }
+
+    # DEFAULT GENERICO (caso nao identifique a patologia)
+    return {
+        'nanda1': 'Dor aguda (NANDA 00132) — Dominio 12, Classe 1',
+        'nanda2': 'Risco de infeccao (NANDA 00004) — Dominio 11, Classe 1',
+        'nanda3': 'Ansiedade (NANDA 00146) — Dominio 9, Classe 2',
+        'plano': 'monitorar sinais vitais, administrar medicamentos conforme prescricao, observar evolucao clinica, manter conforto e seguranca do paciente',
+        'noc': 'Nivel de dor (2102); Controle do risco (1902); Nivel de ansiedade (1211)'
+    }
+
 # IA
 def _gerar_ia(tipo, p):
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -660,51 +781,61 @@ def _gerar_ia(tipo, p):
     diag_medico = p.get('diagnostico', '')
     cid_codigo  = p.get('cid_codigo', '')
     diag_completo = f"{diag_medico} {('('+cid_codigo+')') if cid_codigo else ''}".strip()
+    
+    # Mapear NANDA especifico pela patologia — resolve o problema de diagnosticos genericos
+    nc = _mapear_nanda_por_patologia(diag_completo)
 
     prompts = {
-        'evolucao': f"""Voce e enfermeiro(a) especialista em SAE com dominio total da taxonomia NANDA-I 2024-2026, NIC e NOC.
+        'evolucao': f"""Voce e enfermeiro(a) especialista em SAE. Gere EVOLUCAO SOAP para o paciente abaixo.
 {ctx}
 
-DADOS DO PACIENTE:
-Nome: {p.get('nome')} | Leito: {p.get('leito')}
-Diagnostico Medico: {diag_completo}
-Sinais Vitais: {p.get('sv')}
-Queixas e Estado Geral: {p.get('queixas')}
-Sistemas Avaliados: {', '.join(p.get('sistemas',[]))}
-Exames/Dispositivos: {p.get('exames')}
-Alergias/Comorbidades: {p.get('alergias','')}
-Observacoes: {p.get('obs')}
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNOSTICO MEDICO: {diag_completo}
+SINAIS VITAIS: {p.get('sv')}
+QUEIXAS/ESTADO GERAL: {p.get('queixas')}
+SISTEMAS: {', '.join(p.get('sistemas',[]))}
+EXAMES/DISPOSITIVOS: {p.get('exames')}
+ALERGIAS: {p.get('alergias','')}
+OBS: {p.get('obs')}
 
-INSTRUCOES CRITICAS — LEIA COM ATENCAO:
-1. Gere EVOLUCAO DE ENFERMAGEM no formato SOAP COMPLETO
-2. O item A (Avaliacao) deve conter OBRIGATORIAMENTE os diagnosticos de enfermagem NANDA-I especificos para "{diag_completo}". NAO use diagnosticos genericos. Use os diagnosticos corretos para esta patologia especifica.
-3. O item P (Plano) deve conter intervencoes NIC ESPECIFICAS para "{diag_completo}" — NAO copie o mesmo plano para todas as doencas. O plano deve refletir os cuidados reais desta patologia: posicionamento, monitoramento, terapia especifica, prevencao de complicacoes desta doenca.
-4. Exemplo: para asma/DPOC o 1o diagnostico NANDA e "Padrao respiratorio ineficaz (00032)" e o plano inclui posicao Fowler/semi-Fowler, broncodilatadores, oximetria continua. Para IAM o 1o diagnostico e "Debito cardiaco diminuido (00029)". Para sepse e "Perfusao tissular ineficaz (00228)". SIGA ESTA LOGICA PARA O DIAGNOSTICO INFORMADO.
-5. Cada paciente tem dados unicos — use os SVs, queixas e exames reais informados acima.
+DIAGNOSTICOS NANDA JA DEFINIDOS PELO SISTEMA — USE EXATAMENTE ESTES:
+1o DIAGNOSTICO (PRIORITARIO): {nc['nanda1']}
+2o DIAGNOSTICO: {nc['nanda2']}
+3o DIAGNOSTICO: {nc['nanda3']}
 
-ESTRUTURA OBRIGATORIA:
+PLANO JA DEFINIDO PELO SISTEMA — EXPANDA COM OS DADOS DO PACIENTE:
+Intervencoes base para {diag_completo}: {nc['plano']}
+NOC: {nc['noc']}
+
+INSTRUCAO FINAL: Use os dados reais do paciente acima (SVs, queixas, exames). Para o item A use os 3 diagnosticos NANDA ja definidos. Para o item P expanda as intervencoes base com detalhes clinicos do paciente. Nao invente dados.
+
+ESTRUTURA:
 EVOLUCAO DE ENFERMAGEM
 Data: ___/___/______ Hora: ____:____ Turno: ( )Manha ( )Tarde ( )Noite
 
 S — SUBJETIVO:
-[Queixas relatadas pelo paciente usando os dados reais informados acima]
+[queixas reais do paciente]
 
 O — OBJETIVO:
-[Dados mensuráveis: SVs reais, achados do exame fisico, dispositivos, exames]
+[SVs reais: {p.get('sv')} | achados fisicos | dispositivos: {p.get('exames')}]
 
-A — AVALIACAO (DIAGNOSTICOS DE ENFERMAGEM NANDA-I 2024-2026):
-[OBRIGATORIO: Liste 3 diagnosticos NANDA especificos para {diag_completo}, em ordem de prioridade clinica]
-1. [Diagnostico prioritario para esta patologia] (NANDA XXXXX) — Relacionado a: [fator especifico] — Evidenciado por: [dados reais do paciente]
-2. [2o diagnostico] (NANDA XXXXX) — Relacionado a: [...] — Evidenciado por: [...]
-3. [3o diagnostico] (NANDA XXXXX) — Relacionado a: [...] — Evidenciado por: [...]
+A — AVALIACAO:
+1. {nc['nanda1']}
+   Relacionado a: [fator especifico para {diag_completo}]
+   Evidenciado por: [dados reais do paciente]
+2. {nc['nanda2']}
+   Relacionado a: [...]
+   Evidenciado por: [...]
+3. {nc['nanda3']}
+   Relacionado a: [...]
+   Evidenciado por: [...]
 
-P — PLANO (INTERVENCOES NIC ESPECIFICAS PARA {diag_completo.upper()}):
-[OBRIGATORIO: Liste minimo 8 intervencoes NIC reais e especificas para esta patologia — NAO use itens genericos como "monitorar sinais vitais" sem especificidade clinica]
+P — PLANO NIC ESPECIFICO PARA {diag_completo.upper()}:
+[Expanda as intervencoes: {nc['plano']} — adicione horarios, doses e detalhes clinicos do paciente]
 
-NOC — RESULTADOS ESPERADOS:
-[3 metas mensuráveis especificas para esta patologia]
+NOC: {nc['noc']}
 
-Enfermeiro(a): {p.get('nome','___')} | COREN: ___________
+Enfermeiro(a): _________________________ COREN: _________
 Assinatura: _________________________""",
 
         'prescricao': f"""Voce e enfermeiro(a) especialista em SAE. Gere PRESCRICAO DE ENFERMAGEM 100% especifica para o diagnostico informado.
@@ -742,19 +873,18 @@ Data: ___/___/______ Turno: ( )Manha ( )Tarde ( )Noite
 Paciente: {p.get('nome')} | Leito: {p.get('leito')}
 Diagnostico Medico: {diag_completo}
 
-DIAGNOSTICOS DE ENFERMAGEM (NANDA-I 2024-2026) — ESPECIFICOS PARA {diag_completo.upper()}:
-1. [1o diagnostico prioritario para esta patologia] (NANDA XXXXX)
-   Relacionado a: [fator especifico da doenca]
-   Evidenciado por: [dados reais do paciente]
-2. [2o diagnostico] (NANDA XXXXX)
+DIAGNOSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
+1. {nc['nanda1']}
+   Relacionado a: [fator especifico de {diag_completo}]
+   Evidenciado por: [dados clinicos reais do paciente]
+2. {nc['nanda2']}
    Relacionado a: [...]
    Evidenciado por: [...]
 
 PRESCRICAO — CUIDADOS ESPECIFICOS PARA {diag_completo.upper()}:
-[Liste minimo 14 itens numerados, especificos para esta patologia, usando dados reais do paciente]
+[Baseado nas intervencoes: {nc['plano']} — expanda em minimo 14 itens numerados com horarios e detalhes]
 
-RESULTADOS ESPERADOS (NOC) — METAS PARA {diag_completo.upper()}:
-[3 metas mensuráveis e especificas para esta patologia]
+RESULTADOS ESPERADOS (NOC): {nc['noc']}
 
 Enfermeiro(a): _________________________ COREN: _________
 Assinatura: _________________________""",
@@ -791,43 +921,33 @@ R — RECOMENDACOES E PENDENCIAS:
 Enfermeiro(a): _________________________ COREN: _________
 Assinatura: _________________________""",
 
-        'nanda': f"""Voce e especialista em taxonomia NANDA-I 2024-2026 com dominio total de NIC e NOC.
+        'nanda': f"""Voce e especialista em NANDA-I 2024-2026. Gere 4 diagnosticos de enfermagem para o paciente.
 {ctx}
 
-DADOS DO PACIENTE:
-Nome: {p.get('nome')} | Leito: {p.get('leito')}
-Diagnostico Medico: {diag_completo}
-Sinais Vitais: {p.get('sv')}
-Avaliacao: {p.get('queixas')}
-Dispositivos/Exames: {p.get('exames')}
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNOSTICO MEDICO: {diag_completo}
+SINAIS VITAIS: {p.get('sv')}
+AVALIACAO: {p.get('queixas')}
+EXAMES/DISPOSITIVOS: {p.get('exames')}
 
-INSTRUCOES CRITICAS:
-1. Gere EXATAMENTE 4 diagnosticos de enfermagem NANDA-I em ordem de prioridade CLINICA para "{diag_completo}"
-2. O 1o diagnostico DEVE ser o mais prioritario para esta patologia especifica:
-   - Asma/DPOC/crise respiratoria: Padrao respiratorio ineficaz (00032) ou Troca de gases prejudicada (00030)
-   - IAM/ICC: Debito cardiaco diminuido (00029)
-   - AVC: Perfusao tissular cerebral ineficaz (00201)
-   - Sepse/choque: Perfusao tissular ineficaz periferica (00204)
-   - DM descompensado: Nivel de glicemia instavel (00179)
-   - IRA/IRC: Eliminacao urinaria prejudicada (00016)
-   - Pneumonia: Troca de gases prejudicada (00030)
-   - TCE: Capacidade de recuperacao intracraniana diminuida (00049)
-   - SIGA ESTA LOGICA PARA A PATOLOGIA INFORMADA
-3. Cada diagnostico deve usar dados REAIS do paciente (SVs, queixas, exames informados)
-4. As intervencoes NIC e metas NOC devem ser ESPECIFICAS para esta patologia
+OS 3 PRIMEIROS DIAGNOSTICOS JA FORAM DEFINIDOS — USE EXATAMENTE ESTES:
+1o (ALTA PRIORIDADE): {nc['nanda1']}
+2o (MEDIA PRIORIDADE): {nc['nanda2']}
+3o (MEDIA PRIORIDADE): {nc['nanda3']}
+4o diagnostico: defina voce com base nos dados do paciente acima
 
-ESTRUTURA OBRIGATORIA PARA CADA DIAGNOSTICO:
+PARA CADA DIAGNOSTICO USE A ESTRUTURA:
+DIAGNOSTICO X — PRIORIDADE: [ALTA/MEDIA/BAIXA]
+Nome: [nome exato conforme acima]
+Dominio/Classe: [conforme NANDA-I]
+Relacionado a: [fator especifico de {diag_completo} — use dados reais]
+Evidenciado por: [caracteristicas dos dados reais do paciente: {p.get('queixas')} / {p.get('sv')}]
+Intervencoes NIC (minimo 5): {nc['plano']}
+Resultados NOC: {nc['noc']}
+
+CABECALHO:
 DIAGNOSTICOS DE ENFERMAGEM — NANDA-I 2024-2026
 Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnostico Medico: {diag_completo}
-
-[Para cada um dos 4 diagnosticos:]
-DIAGNOSTICO X — [PRIORIDADE: ALTA/MEDIA/BAIXA]
-Nome: [Nome completo do diagnostico NANDA] (NANDA XXXXX)
-Dominio: [X — Nome] | Classe: [X — Nome]
-Relacionado a: [fator especifico da patologia e dos dados do paciente]
-Evidenciado por: [caracteristicas definidoras usando dados reais do paciente]
-Intervencoes NIC: [minimo 5 intervencoes especificas e mensuráveis para esta patologia]
-Resultados NOC: [2 metas mensuráveis especificas]
 
 Enfermeiro(a): _________________________ COREN: _________
 Assinatura: _________________________"""
@@ -835,7 +955,7 @@ Assinatura: _________________________"""
     try:
         r = requests.post('https://api.anthropic.com/v1/messages',
             headers={'x-api-key': api_key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
-            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 3000,
+            json={'model': 'claude-sonnet-4-6', 'max_tokens': 4000,
                   'messages': [{'role': 'user', 'content': prompts.get(tipo, prompts['evolucao'])}]}, timeout=30)
         return r.json()['content'][0]['text']
     except Exception as e:
