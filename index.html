@@ -1638,8 +1638,8 @@ function labelTipo(t){return{evolucao:'Evolução',prescricao:'Prescrição',pas
 
 // ESCORES
 function escTab(id,el){
-  ['braden','glasgow','morse','apgar','news'].forEach(x=>document.getElementById(`esc-${x}`).style.display=x===id?'block':'none');
-  document.querySelectorAll('.etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  ['braden','glasgow','morse','apgar','news','fugulin'].forEach(x=>{const e=document.getElementById('esc-'+x);if(e)e.style.display=x===id?'block':'none';});
+  document.querySelectorAll('.escore-tabs .etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
 }
 
 function calcBraden(){
@@ -2134,25 +2134,51 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ────────────────────────────────────────────────────────────
 let _cidTimer = null;
 async function buscarCID(val){
+  // Limpar seleção anterior ao digitar
   document.getElementById('p-cid-codigo').value='';
   document.getElementById('cid-selecionado').style.display='none';
   clearTimeout(_cidTimer);
-  if(!val||val.length<2){fecharCID();return;}
+  const v = val.trim();
+  if(!v||v.length<2){fecharCID();return;}
   _cidTimer = setTimeout(async()=>{
     try{
-      const r = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(val)}`);
-      const lista = await r.json();
+      // Busca primária
+      const r = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(v)}`);
+      let lista = await r.json();
+      // Se não achou nada, tenta termos alternativos
+      if(!lista||!lista.length){
+        const sinonimos = {
+          'dengue':['dengue','A90','A91','A97'],
+          'pressao alta':['hipertensão','I10'],
+          'diabetes':['diabetes','E11','E10'],
+          'infarto':['infarto','IAM','I21'],
+          'derrame':['AVC','acidente vascular','I63'],
+          'rim':['renal','N17','N18'],
+          'coracao':['cardíaca','I50'],
+        };
+        for(const [termo, alt] of Object.entries(sinonimos)){
+          if(v.toLowerCase().includes(termo)){
+            const r2 = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(alt[0])}`);
+            lista = await r2.json();
+            if(lista&&lista.length) break;
+          }
+        }
+      }
       const el = document.getElementById('cid-lista');
-      if(!lista||!lista.length){fecharCID();return;}
+      if(!lista||!lista.length){
+        el.style.display='block';
+        el.innerHTML='<div style="padding:12px 14px;font-size:13px;color:var(--cinza3)">Nenhum CID encontrado para "'+v+'"</div>';
+        return;
+      }
       el.style.display='block';
-      el.innerHTML=lista.map(c=>`
-        <div onclick="selecionarCID('${c.codigo}','${c.descricao.replace(/'/g,"&#39;")}')"
-          style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--cinza2);font-size:13px"
+      el.innerHTML=lista.map(item=>`
+        <div onclick="selecionarCID('${item.codigo}','${item.descricao.replace(/'/g,"&#39;").replace(/"/g,"&quot;")}')"
+          style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--cinza2);font-size:13px;transition:.1s"
           onmouseover="this.style.background='var(--azul3)'" onmouseout="this.style.background='#fff'">
-          <strong style="color:var(--azul);font-size:12px">${c.codigo}</strong>
-          <span style="color:var(--texto);margin-left:8px">${c.descricao}</span>
+          <strong style="color:var(--azul);font-size:12px">${item.codigo}</strong>
+          <span style="color:var(--texto);margin-left:8px">${item.descricao}</span>
         </div>`).join('');
-    }catch(e){fecharCID();}
+    }catch(e){console.error('Erro CID:',e);fecharCID();}
   },280);
 }
 function selecionarCID(codigo,descricao){

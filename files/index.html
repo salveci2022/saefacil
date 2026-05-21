@@ -294,7 +294,7 @@ textarea.ci{min-height:90px}
     </div>
     <div id="form-login">
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="l-email" class="fi" placeholder="seu@email.com"></div>
-      <div class="fg"><label class="fl">Senha</label><input type="password" id="l-senha" class="fi" placeholder="••••••••"><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
+      <div class="fg"><label class="fl">Senha</label><div style="position:relative"><input type="password" id="l-senha" class="fi" placeholder="••••••••" style="padding-right:42px"><span onclick="toggleSenha('l-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5" title="Mostrar/ocultar senha">👁️</span></div><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
       <button class="btn-p" onclick="fazerLogin()">Entrar</button>
       <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
       <div class="ls" style="margin-top:6px"><span onclick="abrirRecuperarSenha()" style="color:var(--cinza3);font-size:13px">🔑 Esqueci minha senha</span></div>
@@ -306,7 +306,7 @@ textarea.ci{min-height:90px}
       </div>
       <div class="fg"><label class="fl">COREN</label><input type="text" id="c-coren" class="fi" placeholder="COREN-DF 000000 Enf"></div>
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="c-email" class="fi" placeholder="seu@email.com"></div>
-      <div class="fg"><label class="fl">Senha</label><input type="password" id="c-senha" class="fi" placeholder="Mínimo 6 caracteres"><div id="c-erro" class="ferr">Preencha todos os campos</div></div>
+      <div class="fg"><label class="fl">Senha</label><div style="position:relative"><input type="password" id="c-senha" class="fi" placeholder="Mínimo 6 caracteres" style="padding-right:42px"><span onclick="toggleSenha('c-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5" title="Mostrar/ocultar senha">👁️</span></div><div id="c-erro" class="ferr">Preencha todos os campos</div></div>
       <button class="btn-p" onclick="fazerCadastro()">Criar conta gratuita</button>
       <div class="ls">Já tem conta? <span onclick="ver('form-login')">Entrar</span></div>
     </div>
@@ -395,16 +395,16 @@ textarea.ci{min-height:90px}
         <button class="bv" id="bv1" onclick="voz(1)">🎤 Falar dados do paciente</button>
         <div class="cg"><label class="cl">Nome e idade</label><input type="text" id="p-nome" class="ci" placeholder="Ex: João da Silva, 58 anos, masculino"></div>
         <div class="cg"><label class="cl">Leito / Setor</label><input type="text" id="p-leito" class="ci" placeholder="Ex: Leito 12 — UTI Adulto Cardio"></div>
-        <div class="cg">
-          <label class="cl">Diagnóstico médico (CID-10)</label>
+        <div class="cg"><label class="cl">Diagnóstico médico (CID-10)</label>
           <div style="position:relative">
-            <input type="text" id="p-diag" class="ci" placeholder="Digite o diagnóstico (ex: DPOC, asma, IAM, sepse...)" autocomplete="off" oninput="buscarCID(this.value)" onblur="setTimeout(()=>fecharCID(),200)">
+            <input type="text" id="p-diag" class="ci" placeholder="Digite o diagnóstico (ex: DPOC, asma, IAM, sepse...)" autocomplete="off" oninput="buscarCID(this.value)" onblur="setTimeout(()=>fecharCID(),200)" style="padding-right:36px">
             <input type="hidden" id="p-cid-codigo">
-            <div id="cid-lista" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--azul2);border-radius:var(--r2);box-shadow:var(--sombra2);z-index:200;max-height:240px;overflow-y:auto;margin-top:4px"></div>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.4">🔍</span>
+            <div id="cid-lista" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--azul2);border-radius:var(--r2);box-shadow:var(--sombra2);z-index:200;max-height:220px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <div id="cid-selecionado" style="display:none;margin-top:6px;background:var(--azul3);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--azul);align-items:center;justify-content:space-between">
-            <span id="cid-sel-txt"></span>
-            <span onclick="limparCID()" style="cursor:pointer;font-size:16px;margin-left:8px">✕</span>
+            <span id="cid-sel-txt" style="flex:1"></span>
+            <span onclick="limparCID()" style="cursor:pointer;font-size:16px;margin-left:8px;color:var(--cinza3)">✕</span>
           </div>
         </div>
         <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico dipirona, DM tipo 2, IRC"></div>
@@ -479,6 +479,7 @@ textarea.ci{min-height:90px}
         <button class="etab" onclick="escTab('morse',this)">Morse</button>
         <button class="etab" onclick="escTab('apgar',this)">Apgar</button>
         <button class="etab" onclick="escTab('news',this)">NEWS</button>
+        <button class="etab" onclick="escTab('fugulin',this)">Fugulin</button>
       </div>
 
       <!-- BRADEN -->
@@ -613,6 +614,83 @@ textarea.ci{min-height:90px}
         <button class="bav" style="width:100%" onclick="calcNEWS()">Calcular NEWS</button>
         <div id="r-news" class="escore-resultado"><div class="er-valor" id="rv-news"></div><div class="er-class" id="rc-news"></div><div class="er-desc" id="rd-news"></div></div>
       </div>
+
+      <!-- FUGULIN -->
+      <div id="esc-fugulin" class="card" style="display:none">
+        <div class="ct">Escala de Fugulin — Classificação do Grau de Dependência</div>
+        <div style="font-size:13px;color:var(--cinza3);margin-bottom:16px">Classifica o grau de dependência do paciente para dimensionamento de pessoal de enfermagem (RDC 07/2010)</div>
+        <div id="fugulin-form">
+          <!-- Estado Mental -->
+          <div class="cg"><label class="cl">1. Estado Mental</label>
+            <select id="fg-1" class="ci">
+              <option value="1">1 — Orientado / cooperativo</option>
+              <option value="2">2 — Desorientado / agitado</option>
+              <option value="3">3 — Comatoso / inconsciente</option>
+            </select></div>
+          <!-- Oxigenação -->
+          <div class="cg"><label class="cl">2. Oxigenação</label>
+            <select id="fg-2" class="ci">
+              <option value="1">1 — Sem suporte de O₂</option>
+              <option value="2">2 — O₂ por máscara ou cateter</option>
+              <option value="3">3 — IOT / Ventilação mecânica</option>
+            </select></div>
+          <!-- Sinais Vitais -->
+          <div class="cg"><label class="cl">3. Sinais Vitais</label>
+            <select id="fg-3" class="ci">
+              <option value="1">1 — Estáveis, verificação a cada 2h</option>
+              <option value="2">2 — Instáveis, verificação a cada 1h</option>
+              <option value="3">3 — Monitoração contínua</option>
+            </select></div>
+          <!-- Nutrição -->
+          <div class="cg"><label class="cl">4. Nutrição / Hidratação</label>
+            <select id="fg-4" class="ci">
+              <option value="1">1 — Via oral sem auxílio</option>
+              <option value="2">2 — Via oral com auxílio</option>
+              <option value="3">3 — Sonda enteral / nutrição parenteral</option>
+            </select></div>
+          <!-- Motilidade -->
+          <div class="cg"><label class="cl">5. Motilidade</label>
+            <select id="fg-5" class="ci">
+              <option value="1">1 — Deambula sem auxílio</option>
+              <option value="2">2 — Deambula com auxílio</option>
+              <option value="3">3 — Restrito ao leito</option>
+            </select></div>
+          <!-- Deambulação -->
+          <div class="cg"><label class="cl">6. Deambulação</label>
+            <select id="fg-6" class="ci">
+              <option value="1">1 — Sem restrições</option>
+              <option value="2">2 — Com restrições / auxílio</option>
+              <option value="3">3 — Imobilizado</option>
+            </select></div>
+          <!-- Cuidado corporal -->
+          <div class="cg"><label class="cl">7. Cuidado Corporal</label>
+            <select id="fg-7" class="ci">
+              <option value="1">1 — Independente</option>
+              <option value="2">2 — Auxílio parcial</option>
+              <option value="3">3 — Dependência total</option>
+            </select></div>
+          <!-- Eliminações -->
+          <div class="cg"><label class="cl">8. Eliminações</label>
+            <select id="fg-8" class="ci">
+              <option value="1">1 — Controle de esfíncteres</option>
+              <option value="2">2 — Incontinência ocasional</option>
+              <option value="3">3 — SVD / Incontinência total</option>
+            </select></div>
+          <!-- Terapêutica -->
+          <div class="cg"><label class="cl">9. Terapêutica</label>
+            <select id="fg-9" class="ci">
+              <option value="1">1 — Medicamentos VO / curativo simples</option>
+              <option value="2">2 — Medicamentos EV / curativo complexo</option>
+              <option value="3">3 — Drogas vasoativas / cuidados intensivos</option>
+            </select></div>
+        </div>
+        <button class="bav" style="width:100%;margin-top:8px" onclick="calcFugulin()">Calcular Fugulin</button>
+        <div id="r-fugulin" class="escore-resultado" style="display:none">
+          <div class="er-valor" id="rv-fugulin"></div>
+          <div class="er-class" id="rc-fugulin"></div>
+          <div class="er-desc" id="rd-fugulin"></div>
+        </div>
+      </div>
     </div>
 
     <!-- NANDA DATABASE -->
@@ -655,6 +733,81 @@ textarea.ci{min-height:90px}
       </div>
       <div id="lista-plantao">
         <div style="text-align:center;padding:30px;color:var(--cinza3);font-size:14px">Adicione pacientes para iniciar o plantão 🏥</div>
+      </div>
+
+      <!-- DISPOSITIVOS -->
+      <div style="margin-top:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:800">🔌 Dispositivos do Paciente</div>
+          <button class="btn-plantao btn-iniciar" onclick="abrirModalDispositivo()" style="padding:8px 14px;font-size:12px">+ Adicionar</button>
+        </div>
+        <div id="lista-dispositivos" style="display:flex;flex-wrap:wrap;gap:8px;min-height:44px">
+          <div style="color:var(--cinza3);font-size:13px;padding:12px">Nenhum dispositivo registrado</div>
+        </div>
+      </div>
+
+      <!-- PENDÊNCIAS -->
+      <div style="margin-top:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:800">📋 Pendências do Turno</div>
+          <button class="btn-plantao btn-iniciar" onclick="abrirModalPendencia()" style="padding:8px 14px;font-size:12px">+ Nova pendência</button>
+        </div>
+        <div id="lista-pendencias" style="display:flex;flex-direction:column;gap:8px;min-height:44px">
+          <div style="color:var(--cinza3);font-size:13px;padding:12px">Nenhuma pendência registrada</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DISPOSITIVO -->
+    <div id="modal-dispositivo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center">
+      <div class="card" style="width:min(400px,92vw);max-height:90vh;overflow-y:auto">
+        <div style="font-size:16px;font-weight:800;margin-bottom:16px">🔌 Adicionar Dispositivo</div>
+        <div class="cg"><label class="cl">Paciente / Leito</label>
+          <input type="text" id="disp-pac" class="ci" placeholder="Ex: João — Leito 12"></div>
+        <div class="cg"><label class="cl">Dispositivo (selecione ou digite)</label>
+          <select id="disp-select" class="ci" onchange="if(this.value)document.getElementById('disp-nome').value=this.value">
+            <option value="">— Selecionar da lista —</option>
+            <option>AVP — Acesso Venoso Periférico</option>
+            <option>CICC — Cateter Venoso Central Inserção Cirúrgica</option>
+            <option>FICC — Cateter Venoso Central Femoral</option>
+            <option>Portocath — Cateter Totalmente Implantável</option>
+            <option>PICC — Cateter Central de Inserção Periférica</option>
+            <option>Sonda Vesical de Demora (SVD)</option>
+            <option>Sonda Enteral Nasal</option>
+            <option>Sonda Enteral Oral</option>
+            <option>Sonda Gástrica Nasal</option>
+            <option>Sonda Gástrica Oral</option>
+            <option>Tubo Orotraqueal (TOT)</option>
+            <option>Traqueostomia</option>
+            <option>Cateter de Diálise</option>
+            <option>Fístula Arteriovenosa</option>
+            <option>Bolsa de Colostomia</option>
+            <option>Bolsa de Ileostomia</option>
+          </select>
+          <input type="text" id="disp-nome" class="ci" placeholder="Ou digite um dispositivo personalizado" style="margin-top:8px"></div>
+        <div class="cg"><label class="cl">Data de inserção</label>
+          <input type="date" id="disp-data" class="ci"></div>
+        <div class="cg"><label class="cl">Observação (opcional)</label>
+          <input type="text" id="disp-obs" class="ci" placeholder="Ex: Calibre 20G, MSD"></div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="bav" style="flex:1" onclick="salvarDispositivo()">Salvar</button>
+          <button class="bav" style="flex:1;background:var(--cinza2);color:var(--texto)" onclick="document.getElementById('modal-dispositivo').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PENDÊNCIA -->
+    <div id="modal-pendencia" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;align-items:center;justify-content:center">
+      <div class="card" style="width:min(400px,92vw)">
+        <div style="font-size:16px;font-weight:800;margin-bottom:16px">📋 Nova Pendência</div>
+        <div class="cg"><label class="cl">Paciente / Leito</label>
+          <input type="text" id="pend-pac" class="ci" placeholder="Ex: João — Leito 12"></div>
+        <div class="cg"><label class="cl">Descrição da pendência</label>
+          <textarea id="pend-desc" class="ci" rows="3" placeholder="Ex: Aguardar resultado de hemocultura, Contatar médico sobre prescrição de dieta..."></textarea></div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="bav" style="flex:1" onclick="salvarPendencia()">Salvar</button>
+          <button class="bav" style="flex:1;background:var(--cinza2);color:var(--texto)" onclick="document.getElementById('modal-pendencia').style.display='none'">Cancelar</button>
+        </div>
       </div>
     </div>
 
@@ -791,15 +944,15 @@ textarea.ci{min-height:90px}
         <div style="font-weight:700;font-size:15px;margin-bottom:14px">🔒 Trocar senha</div>
         <div class="cg" style="margin-bottom:10px">
           <label class="cl">Senha atual</label>
-          <input type="password" id="pf-senha-atual" class="ci" placeholder="••••••••">
+          <div style="position:relative"><input type="password" id="pf-senha-atual" class="ci" placeholder="••••••••" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-atual',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div class="cg" style="margin-bottom:10px">
           <label class="cl">Nova senha</label>
-          <input type="password" id="pf-senha-nova" class="ci" placeholder="Mínimo 6 caracteres">
+          <div style="position:relative"><input type="password" id="pf-senha-nova" class="ci" placeholder="Mínimo 6 caracteres" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-nova',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div class="cg" style="margin-bottom:14px">
           <label class="cl">Confirmar nova senha</label>
-          <input type="password" id="pf-senha-conf" class="ci" placeholder="Repita a nova senha">
+          <div style="position:relative"><input type="password" id="pf-senha-conf" class="ci" placeholder="Repita a nova senha" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-conf',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div id="pf-senha-erro" class="ferr">Senhas não conferem</div>
         <button class="bav" style="width:100%;background:var(--cinza3)" onclick="trocarSenha()">🔑 Trocar senha</button>
@@ -1186,13 +1339,15 @@ async function gerar(){
     nome:document.getElementById('p-nome').value,
     leito:document.getElementById('p-leito').value,
     diagnostico:document.getElementById('p-diag').value,
-    cid_codigo:document.getElementById('p-cid-codigo').value,
     alergias:document.getElementById('p-aler').value,
     sv:document.getElementById('a-sv').value,
     queixas:document.getElementById('a-eq').value,
     sistemas:[...document.querySelectorAll('.og .on')].map(b=>b.textContent.trim()),
     exames:document.getElementById('a-ex').value,
-    obs:document.getElementById('a-obs').value
+    obs:document.getElementById('a-obs').value,
+    cid_codigo:(document.getElementById('p-cid-codigo')||{value:''}).value,
+    dispositivos:dispositivosLocal.filter(d=>d.ativo).map(d=>d.nome).join(', '),
+    pendencias:pendenciasLocal.filter(p=>!p.resolvida).map(p=>p.descricao).join(' | ')
   };
 
   // Gerar cada documento selecionado em sequência
@@ -1483,8 +1638,8 @@ function labelTipo(t){return{evolucao:'Evolução',prescricao:'Prescrição',pas
 
 // ESCORES
 function escTab(id,el){
-  ['braden','glasgow','morse','apgar','news'].forEach(x=>document.getElementById(`esc-${x}`).style.display=x===id?'block':'none');
-  document.querySelectorAll('.etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
+  ['braden','glasgow','morse','apgar','news','fugulin'].forEach(x=>{const e=document.getElementById('esc-'+x);if(e)e.style.display=x===id?'block':'none';});
+  document.querySelectorAll('.escore-tabs .etab').forEach(b=>b.classList.remove('on'));el.classList.add('on');
 }
 
 function calcBraden(){
@@ -1794,52 +1949,18 @@ function inserirNANDA(idx){
 }
 
 
-// CID-10 AUTOCOMPLETE
-let cidTimer = null;
-async function buscarCID(val){
-  document.getElementById('p-cid-codigo').value = '';
-  document.getElementById('cid-selecionado').style.display = 'none';
-  clearTimeout(cidTimer);
-  if(!val || val.length < 2){ fecharCID(); return; }
-  cidTimer = setTimeout(async () => {
-    try {
-      const r = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(val)}`);
-      const lista = await r.json();
-      const el = document.getElementById('cid-lista');
-      if(!lista.length){ fecharCID(); return; }
-      el.style.display = 'block';
-      el.innerHTML = lista.map(c =>
-        `<div onclick="selecionarCID('${c.codigo}','${c.descricao.replace(/'/g,"&#39;")}')"
-          style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--cinza2);font-size:13px;transition:.15s"
-          onmouseover="this.style.background='var(--azul3)'" onmouseout="this.style.background='#fff'">
-          <strong style="color:var(--azul);font-size:12px">${c.codigo}</strong>
-          <span style="color:var(--texto);margin-left:8px">${c.descricao}</span>
-        </div>`
-      ).join('');
-    } catch(e){ fecharCID(); }
-  }, 300);
-}
-
-function selecionarCID(codigo, descricao){
-  document.getElementById('p-diag').value = descricao;
-  document.getElementById('p-cid-codigo').value = codigo;
-  const sel = document.getElementById('cid-selecionado');
-  document.getElementById('cid-sel-txt').textContent = codigo + ' — ' + descricao;
-  sel.style.display = 'flex';
-  fecharCID();
-  toast('✅ CID-10 selecionado: ' + codigo, 'ok');
-}
-
-function fecharCID(){
-  const el = document.getElementById('cid-lista');
-  if(el) el.style.display = 'none';
-}
-
-function limparCID(){
-  document.getElementById('p-diag').value = '';
-  document.getElementById('p-cid-codigo').value = '';
-  document.getElementById('cid-selecionado').style.display = 'none';
-  fecharCID();
+// TOGGLE SENHA — mostrar/ocultar
+function toggleSenha(id, btn){
+  const input = document.getElementById(id);
+  if(input.type === 'password'){
+    input.type = 'text';
+    btn.style.opacity = '1';
+    btn.title = 'Ocultar senha';
+  } else {
+    input.type = 'password';
+    btn.style.opacity = '.5';
+    btn.title = 'Mostrar senha';
+  }
 }
 
 // MODAL
@@ -1854,6 +1975,232 @@ function toast(msg,tipo=''){
   el.className=`ti ${tipo}`;el.textContent=msg;
   c.appendChild(el);setTimeout(()=>el.remove(),3500);
 }
+
+// ────────────────────────────────────────────────────────────
+// FUGULIN — cálculo local
+// ────────────────────────────────────────────────────────────
+function calcFugulin(){
+  let total = 0;
+  for(let i=1;i<=9;i++){
+    const el = document.getElementById('fg-'+i);
+    if(el) total += parseInt(el.value||1);
+  }
+  let cls, desc, cor;
+  if(total<=9){cls='Cuidados Mínimos (PCM)';desc='Paciente estável, semi-dependente. Requer orientações e supervisão.';cor='#1b5e20';}
+  else if(total<=12){cls='Cuidados Intermediários (PCI)';desc='Paciente com alguma instabilidade. Requer atenção de enfermagem a cada 2-4h.';cor='#f57f17';}
+  else if(total<=18){cls='Cuidados Semi-Intensivos (PCSI)';desc='Paciente instável sem risco imediato de vida. Atenção contínua.';cor='#e65100';}
+  else{cls='Cuidados Intensivos (UTI)';desc='Paciente crítico com risco de vida. Requer cuidados intensivos contínuos.';cor='#c62828';}
+  document.getElementById('rv-fugulin').textContent = total + '/27';
+  document.getElementById('rv-fugulin').style.color = cor;
+  document.getElementById('rc-fugulin').textContent = cls;
+  document.getElementById('rc-fugulin').style.color = cor;
+  document.getElementById('rd-fugulin').textContent = desc;
+  document.getElementById('r-fugulin').style.display = 'block';
+  toast('Fugulin calculado: '+total+'/27 — '+cls,'ok');
+}
+
+// ────────────────────────────────────────────────────────────
+// DISPOSITIVOS — CRUD local + API
+// ────────────────────────────────────────────────────────────
+let dispositivosLocal = JSON.parse(localStorage.getItem('sae_dispositivos')||'[]');
+
+function abrirModalDispositivo(){
+  document.getElementById('disp-pac').value='';
+  document.getElementById('disp-select').value='';
+  document.getElementById('disp-nome').value='';
+  document.getElementById('disp-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('disp-obs').value='';
+  document.getElementById('modal-dispositivo').style.display='flex';
+}
+
+async function salvarDispositivo(){
+  const nome = document.getElementById('disp-nome').value.trim() || document.getElementById('disp-select').value;
+  const pac  = document.getElementById('disp-pac').value.trim();
+  if(!nome){toast('Informe o dispositivo','err');return;}
+  const disp = {
+    id: Date.now(), paciente: pac, nome,
+    data_insercao: document.getElementById('disp-data').value,
+    observacao: document.getElementById('disp-obs').value.trim(),
+    ativo: true, criado_em: new Date().toISOString()
+  };
+  // Salvar na API se autenticado
+  try{
+    await fetchAuth('/api/dispositivos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(disp)});
+  }catch(e){}
+  // Salvar local também
+  dispositivosLocal.unshift(disp);
+  localStorage.setItem('sae_dispositivos',JSON.stringify(dispositivosLocal));
+  document.getElementById('modal-dispositivo').style.display='none';
+  renderDispositivos();
+  toast('Dispositivo adicionado!','ok');
+}
+
+function removerDispositivo(id){
+  dispositivosLocal = dispositivosLocal.filter(d=>d.id!==id);
+  localStorage.setItem('sae_dispositivos',JSON.stringify(dispositivosLocal));
+  // Tentar remover na API
+  fetchAuth('/api/dispositivos/'+id,{method:'DELETE'}).catch(()=>{});
+  renderDispositivos();
+  toast('Dispositivo removido','ok');
+}
+
+function renderDispositivos(){
+  const el = document.getElementById('lista-dispositivos');
+  if(!el) return;
+  if(!dispositivosLocal.length){
+    el.innerHTML='<div style="color:var(--cinza3);font-size:13px;padding:12px">Nenhum dispositivo registrado</div>';
+    return;
+  }
+  el.innerHTML = dispositivosLocal.filter(d=>d.ativo).map(d=>`
+    <div style="background:var(--azul3);border:1px solid var(--azul2);border-radius:8px;padding:8px 12px;font-size:13px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">🔌</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:var(--azul)">${d.nome}</div>
+        ${d.paciente?'<div style="font-size:11px;color:var(--cinza3)">'+d.paciente+'</div>':''}
+        ${d.data_insercao?'<div style="font-size:11px;color:var(--cinza3)">Inserido: '+d.data_insercao+'</div>':''}
+        ${d.observacao?'<div style="font-size:11px;color:var(--cinza3)">'+d.observacao+'</div>':''}
+      </div>
+      <span onclick="removerDispositivo(${d.id})" style="cursor:pointer;color:var(--cinza3);font-size:16px">✕</span>
+    </div>`).join('');
+}
+
+// ────────────────────────────────────────────────────────────
+// PENDÊNCIAS — CRUD local + API
+// ────────────────────────────────────────────────────────────
+let pendenciasLocal = JSON.parse(localStorage.getItem('sae_pendencias')||'[]');
+
+function abrirModalPendencia(){
+  document.getElementById('pend-pac').value='';
+  document.getElementById('pend-desc').value='';
+  document.getElementById('modal-pendencia').style.display='flex';
+}
+
+async function salvarPendencia(){
+  const desc = document.getElementById('pend-desc').value.trim();
+  const pac  = document.getElementById('pend-pac').value.trim();
+  if(!desc){toast('Informe a descrição da pendência','err');return;}
+  const pend = {
+    id: Date.now(), paciente: pac, descricao: desc,
+    resolvida: false, criado_em: new Date().toISOString()
+  };
+  try{
+    await fetchAuth('/api/pendencias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pend)});
+  }catch(e){}
+  pendenciasLocal.unshift(pend);
+  localStorage.setItem('sae_pendencias',JSON.stringify(pendenciasLocal));
+  document.getElementById('modal-pendencia').style.display='none';
+  renderPendencias();
+  toast('Pendência adicionada!','ok');
+}
+
+function resolverPendencia(id){
+  const p = pendenciasLocal.find(x=>x.id===id);
+  if(p){ p.resolvida=true; localStorage.setItem('sae_pendencias',JSON.stringify(pendenciasLocal)); }
+  fetchAuth('/api/pendencias/'+id+'/resolver',{method:'POST'}).catch(()=>{});
+  renderPendencias();
+  toast('Pendência resolvida ✅','ok');
+}
+
+function renderPendencias(){
+  const el = document.getElementById('lista-pendencias');
+  if(!el) return;
+  const abertas = pendenciasLocal.filter(p=>!p.resolvida);
+  if(!abertas.length){
+    el.innerHTML='<div style="color:var(--cinza3);font-size:13px;padding:12px">Nenhuma pendência em aberto ✅</div>';
+    return;
+  }
+  el.innerHTML = abertas.map(p=>`
+    <div style="background:#fff;border:1px solid var(--cinza2);border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:16px">📋</span>
+      <div style="flex:1">
+        <div style="font-size:13px;color:var(--texto)">${p.descricao}</div>
+        ${p.paciente?'<div style="font-size:11px;color:var(--cinza3);margin-top:2px">'+p.paciente+'</div>':''}
+        <div style="font-size:11px;color:var(--cinza3);margin-top:2px">${new Date(p.criado_em).toLocaleString('pt-BR')}</div>
+      </div>
+      <button onclick="resolverPendencia(${p.id})" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">✓ Resolver</button>
+    </div>`).join('');
+}
+
+// Carregar dispositivos e pendências ao entrar no modo plantão
+const _irOriginal = typeof ir === 'function' ? ir : null;
+document.addEventListener('DOMContentLoaded', ()=>{
+  renderDispositivos();
+  renderPendencias();
+});
+
+
+// ────────────────────────────────────────────────────────────
+// CID-10 AUTOCOMPLETE
+// ────────────────────────────────────────────────────────────
+let _cidTimer = null;
+async function buscarCID(val){
+  // Limpar seleção anterior ao digitar
+  document.getElementById('p-cid-codigo').value='';
+  document.getElementById('cid-selecionado').style.display='none';
+  clearTimeout(_cidTimer);
+  const v = val.trim();
+  if(!v||v.length<2){fecharCID();return;}
+  _cidTimer = setTimeout(async()=>{
+    try{
+      // Busca primária
+      const r = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(v)}`);
+      let lista = await r.json();
+      // Se não achou nada, tenta termos alternativos
+      if(!lista||!lista.length){
+        const sinonimos = {
+          'dengue':['dengue','A90','A91','A97'],
+          'pressao alta':['hipertensão','I10'],
+          'diabetes':['diabetes','E11','E10'],
+          'infarto':['infarto','IAM','I21'],
+          'derrame':['AVC','acidente vascular','I63'],
+          'rim':['renal','N17','N18'],
+          'coracao':['cardíaca','I50'],
+        };
+        for(const [termo, alt] of Object.entries(sinonimos)){
+          if(v.toLowerCase().includes(termo)){
+            const r2 = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(alt[0])}`);
+            lista = await r2.json();
+            if(lista&&lista.length) break;
+          }
+        }
+      }
+      const el = document.getElementById('cid-lista');
+      if(!lista||!lista.length){
+        el.style.display='block';
+        el.innerHTML='<div style="padding:12px 14px;font-size:13px;color:var(--cinza3)">Nenhum CID encontrado para "'+v+'"</div>';
+        return;
+      }
+      el.style.display='block';
+      el.innerHTML=lista.map(item=>`
+        <div onclick="selecionarCID('${item.codigo}','${item.descricao.replace(/'/g,"&#39;").replace(/"/g,"&quot;")}')"
+          style="padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--cinza2);font-size:13px;transition:.1s"
+          onmouseover="this.style.background='var(--azul3)'" onmouseout="this.style.background='#fff'">
+          <strong style="color:var(--azul);font-size:12px">${item.codigo}</strong>
+          <span style="color:var(--texto);margin-left:8px">${item.descricao}</span>
+        </div>`).join('');
+    }catch(e){console.error('Erro CID:',e);fecharCID();}
+  },280);
+}
+function selecionarCID(codigo,descricao){
+  document.getElementById('p-diag').value=descricao;
+  document.getElementById('p-cid-codigo').value=codigo;
+  const sel=document.getElementById('cid-selecionado');
+  document.getElementById('cid-sel-txt').textContent=codigo+' — '+descricao;
+  sel.style.display='flex';
+  fecharCID();
+  toast('CID-10 selecionado: '+codigo,'ok');
+}
+function fecharCID(){
+  const el=document.getElementById('cid-lista');
+  if(el)el.style.display='none';
+}
+function limparCID(){
+  document.getElementById('p-diag').value='';
+  document.getElementById('p-cid-codigo').value='';
+  document.getElementById('cid-selecionado').style.display='none';
+  fecharCID();
+}
+
 </script>
 </body>
 </html>

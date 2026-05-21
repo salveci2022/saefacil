@@ -89,6 +89,31 @@ class SAE(db.Model):
     texto_gerado = db.Column(db.Text)
     criado_em    = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+# MODELO — Dispositivos do paciente
+class Dispositivo(db.Model):
+    __tablename__ = 'dispositivo'
+    id         = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+    paciente   = db.Column(db.String(150))
+    leito      = db.Column(db.String(50))
+    nome       = db.Column(db.String(100), nullable=False)
+    data_insercao = db.Column(db.String(20))
+    observacao = db.Column(db.String(300))
+    ativo      = db.Column(db.Boolean, default=True)
+    criado_em  = db.Column(db.DateTime, default=datetime.utcnow)
+
+# MODELO — Pendências do turno
+class Pendencia(db.Model):
+    __tablename__ = 'pendencia'
+    id         = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+    paciente   = db.Column(db.String(150))
+    leito      = db.Column(db.String(50))
+    descricao  = db.Column(db.String(500), nullable=False)
+    resolvida  = db.Column(db.Boolean, default=False)
+    criado_em  = db.Column(db.DateTime, default=datetime.utcnow)
+
 class WebhookLog(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     evento     = db.Column(db.String(100))
@@ -132,10 +157,25 @@ def migrar_banco():
                 """CREATE TABLE IF NOT EXISTS log_acesso (
                     id SERIAL PRIMARY KEY, usuario_id INTEGER, email VARCHAR(120),
                     ip VARCHAR(50), sucesso BOOLEAN DEFAULT TRUE,
+                    criado_em TIMESTAMP DEFAULT NOW())""",
+                """CREATE TABLE IF NOT EXISTS dispositivo (
+                    id SERIAL PRIMARY KEY, usuario_id INTEGER, paciente VARCHAR(150),
+                    leito VARCHAR(50), nome VARCHAR(100) NOT NULL,
+                    data_insercao VARCHAR(20), observacao VARCHAR(300),
+                    ativo BOOLEAN DEFAULT TRUE,
+                    criado_em TIMESTAMP DEFAULT NOW())""",
+                """CREATE TABLE IF NOT EXISTS pendencia (
+                    id SERIAL PRIMARY KEY, usuario_id INTEGER, paciente VARCHAR(150),
+                    leito VARCHAR(50), descricao VARCHAR(500) NOT NULL,
+                    resolvida BOOLEAN DEFAULT FALSE,
                     criado_em TIMESTAMP DEFAULT NOW())"""
             ]:
                 try: conn.execute(db.text(ddl))
                 except: pass
+            # Adicionar campo cid_codigo na tabela sae se nao existir
+            try:
+                conn.execute(db.text("ALTER TABLE sae ADD COLUMN IF NOT EXISTS cid_codigo VARCHAR(20)"))
+            except: pass
             conn.commit()
         print('[MIGRACAO] OK!')
     except Exception as e:
@@ -246,7 +286,13 @@ def gerar_sae():
     if not texto:
         return jsonify({'erro': 'Erro na IA'}), 500
     sae = SAE(usuario_id=u.id, tipo=tipo, paciente=pac.get('nome',''),
-              leito=pac.get('leito',''), diagnostico=pac.get('diagnostico',''), texto_gerado=texto)
+              leito=pac.get('leito',''), diagnostico=pac.get('diagnostico',''),
+              texto_gerado=texto)
+    # Salvar cid_codigo se o modelo suportar (migração segura)
+    try:
+        if hasattr(sae, 'cid_codigo'):
+            sae.cid_codigo = pac.get('cid_codigo', '')
+    except: pass
     db.session.add(sae)
     u.ultimo_acesso = datetime.utcnow()
     u.ultimo_ip = get_ip()
@@ -565,80 +611,310 @@ function reload(){fetch('/api/admin/listar-usuarios/'+S).then(r=>r.json()).then(
 setInterval(reload,30000);
 </script></body></html>"""
 
-# CID-10 — base de dados resumida para busca autocomplete
+
+# CID-10 GERAL — base ampliada pesquisável por autocomplete
 CID10_BASE = [
-    {"codigo":"J44.1","descricao":"Doença pulmonar obstrutiva crônica com exacerbação aguda (DPOC exacerbada)"},
-    {"codigo":"J44.0","descricao":"Doença pulmonar obstrutiva crônica com infecção respiratória aguda"},
-    {"codigo":"J44.9","descricao":"Doença pulmonar obstrutiva crônica não especificada (DPOC)"},
+    # RESPIRATÓRIO
+    {"codigo":"J00","descricao":"Nasofaringite aguda (resfriado comum)"},
+    {"codigo":"J06.9","descricao":"Infecção aguda das vias aéreas superiores não especificada"},
+    {"codigo":"J12.9","descricao":"Pneumonia viral não especificada"},
+    {"codigo":"J15.9","descricao":"Pneumonia bacteriana não especificada"},
+    {"codigo":"J18.0","descricao":"Broncopneumonia não especificada"},
+    {"codigo":"J18.9","descricao":"Pneumonia não especificada"},
+    {"codigo":"J20.9","descricao":"Bronquite aguda não especificada"},
+    {"codigo":"J22","descricao":"Infecção aguda não especificada das vias aéreas inferiores"},
+    {"codigo":"J43.9","descricao":"Enfisema pulmonar não especificado"},
+    {"codigo":"J44.0","descricao":"DPOC com infecção respiratória aguda"},
+    {"codigo":"J44.1","descricao":"DPOC com exacerbação aguda (DPOC exacerbada)"},
+    {"codigo":"J44.9","descricao":"DPOC não especificada"},
     {"codigo":"J45.0","descricao":"Asma predominantemente alérgica"},
     {"codigo":"J45.1","descricao":"Asma não alérgica"},
     {"codigo":"J45.9","descricao":"Asma não especificada"},
-    {"codigo":"J46","descricao":"Estado de mal asmático"},
+    {"codigo":"J46","descricao":"Estado de mal asmático (status asmaticus)"},
+    {"codigo":"J47","descricao":"Bronquiectasia"},
+    {"codigo":"J80","descricao":"Síndrome do desconforto respiratório agudo (SARA)"},
+    {"codigo":"J81","descricao":"Edema pulmonar agudo"},
+    {"codigo":"J84.1","descricao":"Outras doenças pulmonares intersticiais com fibrose"},
+    {"codigo":"J85.2","descricao":"Abscesso de pulmão"},
+    {"codigo":"J90","descricao":"Derrame pleural"},
+    {"codigo":"J93.1","descricao":"Pneumotórax espontâneo"},
+    {"codigo":"J96.0","descricao":"Insuficiência respiratória aguda"},
+    {"codigo":"J96.1","descricao":"Insuficiência respiratória crônica"},
+    {"codigo":"J98.1","descricao":"Colapso pulmonar (atelectasia)"},
+    {"codigo":"U07.1","descricao":"COVID-19"},
+    # CARDIOVASCULAR
+    {"codigo":"I10","descricao":"Hipertensão arterial essencial (HAS)"},
+    {"codigo":"I11.0","descricao":"Cardiopatia hipertensiva com insuficiência cardíaca"},
+    {"codigo":"I20.0","descricao":"Angina instável"},
+    {"codigo":"I20.9","descricao":"Angina pectoris não especificada"},
+    {"codigo":"I21.0","descricao":"IAM com supra de ST da parede anterior"},
+    {"codigo":"I21.1","descricao":"IAM com supra de ST da parede inferior"},
+    {"codigo":"I21.4","descricao":"IAM sem supra de ST (IAMSST)"},
+    {"codigo":"I21.9","descricao":"Infarto agudo do miocárdio não especificado (IAM)"},
+    {"codigo":"I22.9","descricao":"IAM recorrente não especificado"},
+    {"codigo":"I25.1","descricao":"Cardiopatia aterosclerótica"},
+    {"codigo":"I26.9","descricao":"Embolia pulmonar sem cor pulmonale agudo (TEP)"},
+    {"codigo":"I27.0","descricao":"Hipertensão pulmonar primária"},
+    {"codigo":"I33.0","descricao":"Endocardite infecciosa aguda e subaguda"},
+    {"codigo":"I34.0","descricao":"Regurgitação mitral"},
+    {"codigo":"I35.0","descricao":"Estenose aórtica"},
+    {"codigo":"I42.0","descricao":"Cardiomiopatia dilatada"},
+    {"codigo":"I44.2","descricao":"Bloqueio atrioventricular total (BAVT)"},
+    {"codigo":"I47.1","descricao":"Taquicardia supraventricular"},
+    {"codigo":"I47.2","descricao":"Taquicardia ventricular"},
+    {"codigo":"I48","descricao":"Fibrilação e flutter atrial (FA)"},
+    {"codigo":"I49.0","descricao":"Fibrilação ventricular"},
     {"codigo":"I50.0","descricao":"Insuficiência cardíaca congestiva (ICC)"},
     {"codigo":"I50.1","descricao":"Insuficiência ventricular esquerda"},
     {"codigo":"I50.9","descricao":"Insuficiência cardíaca não especificada"},
-    {"codigo":"I21.0","descricao":"Infarto agudo do miocárdio com supra de ST anterior"},
-    {"codigo":"I21.1","descricao":"Infarto agudo do miocárdio com supra de ST inferior"},
-    {"codigo":"I21.9","descricao":"Infarto agudo do miocárdio não especificado (IAM)"},
-    {"codigo":"I10","descricao":"Hipertensão arterial sistêmica essencial (HAS)"},
-    {"codigo":"I11.0","descricao":"Cardiopatia hipertensiva com insuficiência cardíaca"},
-    {"codigo":"I63.9","descricao":"Acidente vascular cerebral isquêmico não especificado (AVC isquêmico)"},
-    {"codigo":"I64","descricao":"Acidente vascular cerebral não especificado como hemorrágico ou isquêmico"},
+    {"codigo":"I60.9","descricao":"Hemorragia subaracnóidea não especificada"},
     {"codigo":"I61.9","descricao":"Hemorragia intracerebral não especificada (AVC hemorrágico)"},
-    {"codigo":"E11.9","descricao":"Diabetes mellitus tipo 2 sem complicações"},
-    {"codigo":"E11.0","descricao":"Diabetes mellitus tipo 2 com coma"},
-    {"codigo":"E11.6","descricao":"Diabetes mellitus tipo 2 com outras complicações especificadas"},
+    {"codigo":"I63.9","descricao":"AVC isquêmico não especificado"},
+    {"codigo":"I64","descricao":"AVC não especificado como hemorrágico ou isquêmico"},
+    {"codigo":"I70.2","descricao":"Aterosclerose das artérias dos membros"},
+    {"codigo":"I74.3","descricao":"Embolia e trombose das artérias dos membros inferiores"},
+    {"codigo":"I80.2","descricao":"Flebite e tromboflebite de outros vasos profundos"},
+    {"codigo":"I82.4","descricao":"Trombose venosa profunda (TVP) de veias dos membros inferiores"},
+    # NEUROLÓGICO
+    {"codigo":"G20","descricao":"Doença de Parkinson"},
+    {"codigo":"G35","descricao":"Esclerose múltipla"},
+    {"codigo":"G40.9","descricao":"Epilepsia não especificada"},
+    {"codigo":"G41.0","descricao":"Estado de mal epiléptico tônico-clônico"},
+    {"codigo":"G43.9","descricao":"Enxaqueca não especificada"},
+    {"codigo":"G45.9","descricao":"Ataque isquêmico transitório (AIT) não especificado"},
+    {"codigo":"G62.9","descricao":"Polineuropatia não especificada"},
+    {"codigo":"G93.1","descricao":"Lesão cerebral anóxica"},
+    {"codigo":"S06.0","descricao":"Concussão cerebral"},
+    {"codigo":"S06.9","descricao":"Traumatismo cranioencefálico não especificado (TCE)"},
+    # ENDÓCRINO / METABÓLICO
+    {"codigo":"E03.9","descricao":"Hipotireoidismo não especificado"},
+    {"codigo":"E05.0","descricao":"Bócio difuso com hipertireoidismo"},
+    {"codigo":"E05.9","descricao":"Tireotoxicose não especificada (hipertireoidismo)"},
+    {"codigo":"E10.1","descricao":"Diabetes mellitus tipo 1 com cetoacidose"},
     {"codigo":"E10.9","descricao":"Diabetes mellitus tipo 1 sem complicações"},
+    {"codigo":"E11.0","descricao":"Diabetes mellitus tipo 2 com coma"},
+    {"codigo":"E11.5","descricao":"Diabetes mellitus tipo 2 com complicações circulatórias periféricas"},
+    {"codigo":"E11.9","descricao":"Diabetes mellitus tipo 2 sem complicações"},
+    {"codigo":"E14.9","descricao":"Diabetes mellitus não especificado"},
+    {"codigo":"E16.0","descricao":"Hipoglicemia induzida por insulina sem coma"},
+    {"codigo":"E66.9","descricao":"Obesidade não especificada"},
+    {"codigo":"E83.5","descricao":"Distúrbios do metabolismo do cálcio"},
+    {"codigo":"E86","descricao":"Depleção de volume (desidratação)"},
+    {"codigo":"E87.0","descricao":"Hiperosmolaridade e hipernatremia"},
     {"codigo":"E87.1","descricao":"Hiponatremia"},
+    {"codigo":"E87.2","descricao":"Acidose"},
+    {"codigo":"E87.3","descricao":"Alcalose"},
     {"codigo":"E87.5","descricao":"Hipercalemia"},
     {"codigo":"E87.6","descricao":"Hipocalemia"},
-    {"codigo":"N18.9","descricao":"Insuficiência renal crônica não especificada (IRC)"},
+    {"codigo":"E87.7","descricao":"Hipervolemia"},
+    # RENAL / UROLÓGICO
+    {"codigo":"N00.9","descricao":"Síndrome nefrítica aguda não especificada"},
+    {"codigo":"N04.9","descricao":"Síndrome nefrótica não especificada"},
+    {"codigo":"N17.0","descricao":"Insuficiência renal aguda com necrose tubular"},
     {"codigo":"N17.9","descricao":"Insuficiência renal aguda não especificada (IRA)"},
-    {"codigo":"N39.0","descricao":"Infecção do trato urinário de localização não especificada (ITU)"},
-    {"codigo":"J18.9","descricao":"Pneumonia não especificada"},
-    {"codigo":"J15.9","descricao":"Pneumonia bacteriana não especificada"},
-    {"codigo":"J96.0","descricao":"Insuficiência respiratória aguda"},
-    {"codigo":"J96.1","descricao":"Insuficiência respiratória crônica"},
-    {"codigo":"A41.9","descricao":"Sepse não especificada"},
-    {"codigo":"A41.0","descricao":"Sepse por Staphylococcus aureus"},
-    {"codigo":"R57.2","descricao":"Choque séptico"},
-    {"codigo":"K92.1","descricao":"Melena / Hemorragia digestiva alta"},
-    {"codigo":"K57.3","descricao":"Doença diverticular do intestino grosso sem perfuração ou abscesso"},
-    {"codigo":"K85.9","descricao":"Pancreatite aguda não especificada"},
+    {"codigo":"N18.3","descricao":"Doença renal crônica estágio 3"},
+    {"codigo":"N18.4","descricao":"Doença renal crônica estágio 4"},
+    {"codigo":"N18.5","descricao":"Doença renal crônica estágio 5"},
+    {"codigo":"N18.9","descricao":"Insuficiência renal crônica não especificada (IRC)"},
+    {"codigo":"N20.0","descricao":"Calculose renal (nefrolitíase)"},
+    {"codigo":"N39.0","descricao":"Infecção do trato urinário não especificada (ITU)"},
+    {"codigo":"N40","descricao":"Hiperplasia da próstata"},
+    # GASTROINTESTINAL / HEPÁTICO
+    {"codigo":"K21.0","descricao":"Doença do refluxo gastroesofágico com esofagite"},
+    {"codigo":"K25.9","descricao":"Úlcera gástrica não especificada"},
+    {"codigo":"K26.9","descricao":"Úlcera duodenal não especificada"},
+    {"codigo":"K29.7","descricao":"Gastrite não especificada"},
+    {"codigo":"K35.2","descricao":"Apendicite aguda com peritonite"},
+    {"codigo":"K40.9","descricao":"Hérnia inguinal não especificada"},
+    {"codigo":"K56.6","descricao":"Outras obstruções intestinais e as não especificadas"},
+    {"codigo":"K57.3","descricao":"Doença diverticular do cólon sem perfuração/abscesso"},
     {"codigo":"K70.3","descricao":"Cirrose hepática alcoólica"},
     {"codigo":"K72.0","descricao":"Insuficiência hepática aguda e subaguda"},
+    {"codigo":"K74.6","descricao":"Cirrose hepática não especificada"},
+    {"codigo":"K80.2","descricao":"Calculose vesicular com colecistite aguda (colelitíase)"},
+    {"codigo":"K85.9","descricao":"Pancreatite aguda não especificada"},
+    {"codigo":"K92.0","descricao":"Hematêmese"},
+    {"codigo":"K92.1","descricao":"Melena / Hemorragia digestiva alta"},
+    {"codigo":"K92.2","descricao":"Hemorragia gastrointestinal não especificada"},
+    # INFECCIOSO / SÉPTICO
+    {"codigo":"A04.9","descricao":"Infecção intestinal bacteriana não especificada"},
+    {"codigo":"A09","descricao":"Diarreia e gastroenterite de origem infecciosa"},
+    {"codigo":"A15.0","descricao":"Tuberculose pulmonar (TBC)"},
+    {"codigo":"A41.0","descricao":"Sepse por Staphylococcus aureus"},
+    {"codigo":"A41.5","descricao":"Sepse por outros microrganismos gram-negativos"},
+    {"codigo":"A41.9","descricao":"Sepse não especificada"},
+    {"codigo":"B20","descricao":"Doença pelo HIV com doenças infecciosas e parasitárias"},
+    {"codigo":"B34.9","descricao":"Infecção viral não especificada"},
+    {"codigo":"R57.2","descricao":"Choque séptico"},
+    {"codigo":"R57.9","descricao":"Choque não especificado"},
+    # ONCOLÓGICO
+    {"codigo":"C18.9","descricao":"Neoplasia maligna do cólon não especificada"},
+    {"codigo":"C34.9","descricao":"Neoplasia maligna do brônquio e do pulmão"},
+    {"codigo":"C50.9","descricao":"Neoplasia maligna da mama não especificada"},
+    {"codigo":"C61","descricao":"Neoplasia maligna da próstata"},
+    {"codigo":"C67.9","descricao":"Neoplasia maligna da bexiga não especificada"},
     {"codigo":"C80.1","descricao":"Neoplasia maligna não especificada (câncer)"},
+    {"codigo":"C91.0","descricao":"Leucemia linfoblástica aguda"},
+    {"codigo":"C92.0","descricao":"Leucemia mieloide aguda"},
+    {"codigo":"D64.9","descricao":"Anemia não especificada"},
     {"codigo":"Z51.1","descricao":"Quimioterapia para neoplasia"},
-    {"codigo":"G40.9","descricao":"Epilepsia não especificada"},
-    {"codigo":"G20","descricao":"Doença de Parkinson"},
+    {"codigo":"Z51.0","descricao":"Radioterapia"},
+    # MUSCULOESQUELÉTICO
+    {"codigo":"M05.9","descricao":"Artrite reumatoide soropositiva não especificada"},
+    {"codigo":"M10.9","descricao":"Gota não especificada"},
+    {"codigo":"M16.9","descricao":"Coxartrose (artrose do quadril) não especificada"},
+    {"codigo":"M17.9","descricao":"Gonartrose (artrose do joelho) não especificada"},
+    {"codigo":"M54.5","descricao":"Lombalgia (dor lombar)"},
+    {"codigo":"M79.3","descricao":"Paniculite não especificada"},
+    {"codigo":"S72.0","descricao":"Fratura do colo do fêmur"},
+    {"codigo":"S82.2","descricao":"Fratura da diáfise da tíbia"},
+    {"codigo":"T14.9","descricao":"Traumatismo não especificado"},
+    # PELE
+    {"codigo":"L03.1","descricao":"Celulite de outras partes dos membros (erisipela)"},
+    {"codigo":"L89.0","descricao":"Úlcera de pressão estágio 1"},
+    {"codigo":"L89.1","descricao":"Úlcera de pressão estágio 2"},
+    {"codigo":"L89.2","descricao":"Úlcera de pressão estágio 3"},
+    {"codigo":"L89.3","descricao":"Úlcera de pressão estágio 4"},
+    {"codigo":"L89.9","descricao":"Úlcera de pressão não especificada (lesão por pressão)"},
+    # PSIQUIÁTRICO
     {"codigo":"F03","descricao":"Demência não especificada"},
+    {"codigo":"F10.2","descricao":"Síndrome de dependência ao álcool"},
     {"codigo":"F20.9","descricao":"Esquizofrenia não especificada"},
     {"codigo":"F32.9","descricao":"Episódio depressivo não especificado"},
-    {"codigo":"T14.9","descricao":"Traumatismo não especificado"},
-    {"codigo":"S06.9","descricao":"Traumatismo cranioencefálico não especificado (TCE)"},
-    {"codigo":"T79.3","descricao":"Infecção pós-traumática não especificada"},
-    {"codigo":"L89.9","descricao":"Úlcera de pressão não especificada (lesão por pressão)"},
-    {"codigo":"M79.3","descricao":"Paniculite não especificada"},
-    {"codigo":"B20","descricao":"Doença pelo vírus HIV resultando em doenças infecciosas e parasitárias"},
-    {"codigo":"J12.9","descricao":"Pneumonia viral não especificada (COVID-19 relacionado)"},
-    {"codigo":"U07.1","descricao":"COVID-19"},
-    {"codigo":"I26.9","descricao":"Embolia pulmonar sem menção de cor pulmonale agudo (TEP)"},
-    {"codigo":"I82.9","descricao":"Trombose venosa profunda não especificada (TVP)"},
-    {"codigo":"K40.9","descricao":"Hérnia inguinal unilateral ou não especificada"},
-    {"codigo":"N20.0","descricao":"Cálculo renal (nefrolitíase)"},
-    {"codigo":"J32.9","descricao":"Sinusite crônica não especificada"},
-    {"codigo":"H91.9","descricao":"Perda de audição não especificada"},
-    {"codigo":"E03.9","descricao":"Hipotireoidismo não especificado"},
-    {"codigo":"E05.9","descricao":"Tireotoxicose não especificada (hipertireoidismo)"},
-    {"codigo":"M05.9","descricao":"Artrite reumatoide soropositiva não especificada"},
-    {"codigo":"M16.9","descricao":"Coxartrose não especificada (artrose do quadril)"},
-    {"codigo":"M17.9","descricao":"Gonartrose não especificada (artrose do joelho)"},
+    {"codigo":"F41.1","descricao":"Transtorno de ansiedade generalizada"},
+    # PROCEDIMENTOS E OUTROS
+    {"codigo":"Z03.9","descricao":"Observação e avaliação médica por razão não especificada"},
     {"codigo":"Z96.6","descricao":"Presença de implantes ortopédicos articulares (pós-artroplastia)"},
+    {"codigo":"T39.1","descricao":"Intoxicação por paracetamol"},
+    {"codigo":"T60.0","descricao":"Intoxicação por organofosforados e carbamatos"},
+    {"codigo":"T71","descricao":"Asfixia"},
+    {"codigo":"T79.3","descricao":"Infecção pós-traumática não especificada"},
+    # DOENÇAS INFECCIOSAS / TROPICAIS (faltavam)
+    {"codigo":"A90","descricao":"Dengue clássica (febre do dengue)"},
+    {"codigo":"A91","descricao":"Febre hemorrágica do dengue"},
+    {"codigo":"A97.0","descricao":"Dengue sem sinais de alarme"},
+    {"codigo":"A97.1","descricao":"Dengue com sinais de alarme"},
+    {"codigo":"A97.2","descricao":"Dengue grave"},
+    {"codigo":"A92.0","descricao":"Infecção pelo vírus Chikungunya"},
+    {"codigo":"A92.8","descricao":"Febre Zika"},
+    {"codigo":"A16.2","descricao":"Tuberculose pulmonar sem confirmação bacteriológica"},
+    {"codigo":"B54","descricao":"Malária não especificada"},
+    {"codigo":"B50","descricao":"Malária por Plasmodium falciparum"},
+    {"codigo":"B19.9","descricao":"Hepatite viral não especificada"},
+    {"codigo":"B16","descricao":"Hepatite aguda tipo B"},
+    {"codigo":"B17.1","descricao":"Hepatite aguda tipo C"},
+    {"codigo":"B18.2","descricao":"Hepatite crônica tipo C"},
+    {"codigo":"B15.9","descricao":"Hepatite A sem coma hepático"},
+    {"codigo":"A01.0","descricao":"Febre tifoide"},
+    {"codigo":"A02.0","descricao":"Enterite por Salmonella"},
+    {"codigo":"A06.0","descricao":"Disenteria amebiana aguda"},
+    {"codigo":"A37.0","descricao":"Coqueluche por Bordetella pertussis"},
+    {"codigo":"A36.9","descricao":"Difteria não especificada"},
+    {"codigo":"A80.9","descricao":"Poliomielite aguda não especificada"},
+    {"codigo":"B05.9","descricao":"Sarampo sem complicações"},
+    {"codigo":"B06.9","descricao":"Rubéola sem complicações"},
+    {"codigo":"B26.9","descricao":"Caxumba (parotidite epidêmica) sem complicações"},
+    {"codigo":"B01.9","descricao":"Catapora (varicela) sem complicações"},
+    {"codigo":"B02.9","descricao":"Herpes zoster sem complicações"},
+    {"codigo":"B00.9","descricao":"Infecção pelo herpes simplex não especificada"},
+    {"codigo":"B37.0","descricao":"Candidíase da boca (muguet)"},
+    {"codigo":"B37.3","descricao":"Candidíase da vulva e vagina"},
+    {"codigo":"A60.0","descricao":"Infecção pelo herpesvírus nos órgãos genitais"},
+    # DOENÇAS CRÔNICAS COMUNS (faltavam)
+    {"codigo":"J30.1","descricao":"Rinite alérgica devida a pólen (rinite alérgica)"},
+    {"codigo":"J30.4","descricao":"Rinite alérgica crônica"},
+    {"codigo":"H10.1","descricao":"Conjuntivite aguda atópica (conjuntivite alérgica)"},
+    {"codigo":"H10.0","descricao":"Conjuntivite mucopurulenta"},
+    {"codigo":"K59.0","descricao":"Constipação intestinal"},
+    {"codigo":"K58.9","descricao":"Síndrome do intestino irritável sem diarreia"},
+    {"codigo":"K21.9","descricao":"Doença do refluxo gastroesofágico sem esofagite (DRGE)"},
+    {"codigo":"K81.0","descricao":"Colecistite aguda"},
+    {"codigo":"K81.1","descricao":"Colecistite crônica"},
+    {"codigo":"I84.9","descricao":"Hemorroidas não especificadas"},
+    {"codigo":"L50.9","descricao":"Urticária não especificada"},
+    {"codigo":"L20.9","descricao":"Dermatite atópica não especificada"},
+    {"codigo":"L30.9","descricao":"Dermatite não especificada"},
+    {"codigo":"M54.4","descricao":"Lumbago com ciática"},
+    {"codigo":"M54.2","descricao":"Cervicalgia"},
+    {"codigo":"M75.1","descricao":"Síndrome do manguito rotador"},
+    {"codigo":"G43.0","descricao":"Enxaqueca sem aura"},
+    {"codigo":"G47.0","descricao":"Insônia"},
+    {"codigo":"R51","descricao":"Cefaleia"},
+    {"codigo":"R10.4","descricao":"Outras dores abdominais e as não especificadas"},
+    {"codigo":"R11","descricao":"Náusea e vômitos"},
+    {"codigo":"R50.9","descricao":"Febre não especificada"},
+    {"codigo":"R05","descricao":"Tosse"},
+    {"codigo":"R06.0","descricao":"Dispneia"},
+    {"codigo":"R00.0","descricao":"Taquicardia não especificada"},
+    {"codigo":"R00.1","descricao":"Bradicardia não especificada"},
+    {"codigo":"R55","descricao":"Síncope e colapso"},
+    {"codigo":"R41.3","descricao":"Outras amnésias (confusão mental)"},
+    {"codigo":"R42","descricao":"Tontura e vertigem"},
+    # OBSTETRÍCIA / GINECOLOGIA
+    {"codigo":"O10.0","descricao":"Hipertensão essencial pré-existente na gravidez"},
+    {"codigo":"O14.1","descricao":"Pré-eclâmpsia grave"},
+    {"codigo":"O15.0","descricao":"Eclâmpsia na gravidez"},
+    {"codigo":"O20.0","descricao":"Ameaça de aborto"},
+    {"codigo":"O21.0","descricao":"Hiperemese gravídica leve"},
+    {"codigo":"O24.4","descricao":"Diabetes mellitus gestacional"},
+    {"codigo":"O42.9","descricao":"Rotura prematura de membranas não especificada"},
+    {"codigo":"O60.0","descricao":"Trabalho de parto pré-termo sem parto"},
+    {"codigo":"O80","descricao":"Parto único espontâneo"},
+    {"codigo":"O82","descricao":"Parto por cesariana não especificado"},
+    {"codigo":"N93.9","descricao":"Sangramento uterino e vaginal anormal não especificado"},
+    {"codigo":"N94.6","descricao":"Dismenorreia não especificada"},
+    # PEDIATRIA / NEONATAL
+    {"codigo":"P07.1","descricao":"Outros recém-nascidos de baixo peso"},
+    {"codigo":"P22.0","descricao":"Síndrome da angústia respiratória do recém-nascido (SARNN)"},
+    {"codigo":"P36.9","descricao":"Sepse bacteriana do recém-nascido não especificada"},
+    {"codigo":"J02.9","descricao":"Faringite aguda (amigdalite)"},
+    {"codigo":"J03.9","descricao":"Amigdalite aguda não especificada"},
+    {"codigo":"H66.9","descricao":"Otite média não especificada"},
+    {"codigo":"H65.9","descricao":"Otite média não supurativa não especificada"},
+    # SAÚDE MENTAL
+    {"codigo":"F10.0","descricao":"Transtorno mental e comportamental por uso de álcool — intoxicação aguda"},
+    {"codigo":"F11.2","descricao":"Síndrome de dependência a opiáceos"},
+    {"codigo":"F19.2","descricao":"Síndrome de dependência a múltiplas drogas"},
+    {"codigo":"F43.1","descricao":"Transtorno de estresse pós-traumático (TEPT)"},
+    {"codigo":"F40.1","descricao":"Fobias sociais"},
+    {"codigo":"F50.0","descricao":"Anorexia nervosa"},
+    {"codigo":"F50.2","descricao":"Bulimia nervosa"},
+    {"codigo":"F60.3","descricao":"Transtorno de personalidade borderline"},
+    {"codigo":"F84.0","descricao":"Autismo infantil (TEA)"},
+    {"codigo":"F90.0","descricao":"Distúrbio da atividade e da atenção (TDAH)"},
+    # CIRÚRGICO / TRAUMA
+    {"codigo":"S22.0","descricao":"Fratura de vértebra torácica"},
+    {"codigo":"S32.0","descricao":"Fratura de vértebra lombar"},
+    {"codigo":"S42.2","descricao":"Fratura da diáfise do úmero"},
+    {"codigo":"S52.5","descricao":"Fratura da extremidade distal do rádio (Colles)"},
+    {"codigo":"T20.3","descricao":"Queimadura de terceiro grau da cabeça e pescoço"},
+    {"codigo":"T31.1","descricao":"Queimaduras que abrangem 10-19% da superfície corporal"},
+    {"codigo":"T36.9","descricao":"Intoxicação por antibiótico sistêmico não especificado"},
+    {"codigo":"T45.5","descricao":"Intoxicação por anticoagulantes"},
+    {"codigo":"T50.9","descricao":"Intoxicação por outros medicamentos e substâncias"},
+    {"codigo":"X84","descricao":"Lesão autoprovocada intencionalmente (tentativa de suicídio)"},
+    # OUTROS COMUNS
+    {"codigo":"E55.9","descricao":"Deficiência de vitamina D não especificada"},
+    {"codigo":"E50.9","descricao":"Deficiência de vitamina A não especificada"},
+    {"codigo":"D50.9","descricao":"Anemia por deficiência de ferro não especificada"},
+    {"codigo":"D51.9","descricao":"Anemia por deficiência de vitamina B12 não especificada"},
+    {"codigo":"D69.6","descricao":"Trombocitopenia não especificada"},
+    {"codigo":"M32.9","descricao":"Lúpus eritematoso sistêmico não especificado (LES)"},
+    {"codigo":"M34.9","descricao":"Esclerodermia não especificada"},
+    {"codigo":"K90.0","descricao":"Doença celíaca"},
+    {"codigo":"K50.9","descricao":"Doença de Crohn não especificada"},
+    {"codigo":"K51.9","descricao":"Retocolite ulcerativa não especificada"},
+    {"codigo":"N80.9","descricao":"Endometriose não especificada"},
+    {"codigo":"N18.1","descricao":"Doença renal crônica estágio 1"},
+    {"codigo":"I73.9","descricao":"Doença vascular periférica não especificada"},
+    {"codigo":"E78.0","descricao":"Hipercolesterolemia pura (dislipidemia)"},
+    {"codigo":"E78.5","descricao":"Hiperlipidemia não especificada"},
+    {"codigo":"Z87.3","descricao":"História pessoal de doenças musculoesqueléticas"},
 ]
 
 @app.route('/api/buscar-cid', methods=['GET'])
 def buscar_cid():
-    """Busca CID-10 por termo — retorna até 10 resultados para autocomplete"""
+    """Busca CID-10 por termo — retorna até 12 resultados para autocomplete"""
     termo = request.args.get('q', '').lower().strip()
     if not termo or len(termo) < 2:
         return jsonify([])
@@ -646,86 +922,489 @@ def buscar_cid():
     for item in CID10_BASE:
         if (termo in item['descricao'].lower() or termo in item['codigo'].lower()):
             resultado.append(item)
-        if len(resultado) >= 10:
+        if len(resultado) >= 12:
             break
     return jsonify(resultado)
 
-# IA
+# IA — MAPEAMENTO CLÍNICO E GERAÇÃO DE DOCUMENTOS
+# ────────────────────────────────────────────────────────────
+def _mapear_nanda_por_patologia(diag_completo):
+    """Mapeia diagnóstico médico → NANDA prioritário + cuidados específicos.
+    Resolve o problema de diagnósticos genéricos iguais para todos os pacientes."""
+    d = diag_completo.lower()
+    # RESPIRATÓRIO
+    if any(x in d for x in ['asma','crise asmat','broncoespas','j45','j46','status asmat']):
+        return {'nanda1':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
+                'nanda2':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
+                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+                'plano':'posição Fowler 45°, broncodilatadores conforme prescrição, oximetria contínua (meta SpO2>95%), ausculta pulmonar 2/2h, nebulização conforme prescrição, observar uso musculatura acessória, evitar fatores desencadeantes, inaloterapia',
+                'noc':'Estado respiratório: ventilação (0403) SpO2>95%; Controle de sintomas (1608); Nível de ansiedade (1211)'}
+    if any(x in d for x in ['dpoc','doença pulmonar obstrutiva','j44','j43','enfisema']):
+        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
+                'nanda2':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
+                'nanda3':'Intolerância à atividade (NANDA 00092) — Domínio 4, Classe 4',
+                'plano':'posição semi-Fowler 30-45°, O2 controlado (atenção retenção CO2 meta SpO2 88-92%), fisioterapia respiratória, respiração com lábios franzidos, monitorar sonolência/confusão (retenção CO2), nebulização com broncodilatador',
+                'noc':'Estado respiratório: troca gasosa (0402) SpO2 88-92%; Tolerância à atividade (0005); Autocontrole DPOC (3200)'}
+    if any(x in d for x in ['pneumonia','j18','j15','j12']):
+        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
+                'nanda2':'Hipertermia (NANDA 00007) — Domínio 11, Classe 6',
+                'nanda3':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
+                'plano':'cabeceira 30-45°, antibioticoterapia rigorosa no horário, controle temperatura 4/4h, hidratação, incentivar expectoração, fisioterapia respiratória, coleta culturas conforme prescrição',
+                'noc':'Estado respiratório: troca gasosa (0402); Termorregulação (0800); Controle infecção (1924)'}
+    if any(x in d for x in ['insuficiência respiratória','j96','sara','sdra']):
+        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
+                'nanda2':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
+                'nanda3':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
+                'plano':'monitorar gasometria e oximetria, cabeceira 30-45°, O2 conforme prescrição, preparar material IOT, aspiração vias aéreas se necessário, monitorar nível consciência',
+                'noc':'Estado respiratório: troca gasosa (0402); Permeabilidade vias aéreas (0410); Nível consciência (0912)'}
+    # CARDIOVASCULAR
+    if any(x in d for x in ['infarto','iam','i21','supra de st','iamsst']):
+        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
+                'nanda2':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
+                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+                'plano':'repouso absoluto 12-24h, monitoração cardíaca contínua, acesso venoso calibroso, controle da dor (EVA), administrar antiagregantes/anticoagulantes, ECG seriado, enzimas cardíacas conforme horário, O2 se SpO2<95%',
+                'noc':'Estado cardíaco (0414); Nível de dor (2102); Nível de ansiedade (1211)'}
+    if any(x in d for x in ['insuficiência cardíaca','icc','i50']):
+        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
+                'nanda2':'Excesso de volume de líquidos (NANDA 00026) — Domínio 2, Classe 5',
+                'nanda3':'Intolerância à atividade (NANDA 00092) — Domínio 4, Classe 4',
+                'plano':'MMII elevados 30°, restrição hídrica conforme prescrição, diurese rigorosa (balanço hídrico), pesagem diária, monitorar edema/crepitações, restrição sódio, O2 se SpO2<95%',
+                'noc':'Efetividade bomba cardíaca (0400); Equilíbrio hídrico (0601); Tolerância atividade (0005)'}
+    if any(x in d for x in ['hipertensão','has','i10','crise hipertensiva','pressão alta']):
+        return {'nanda1':'Risco de perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
+                'nanda2':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
+                'nanda3':'Deficiência de conhecimento (NANDA 00126) — Domínio 5, Classe 4',
+                'plano':'monitorar PA ambos os membros, repouso ambiente calmo, anti-hipertensivos conforme prescrição, monitorar sinais neurológicos, restrição sódio, orientar adesão ao tratamento',
+                'noc':'Estado neurológico (0909); Nível de dor (2102); Conhecimento: controle doença crônica (1847)'}
+    if any(x in d for x in ['fibrilação atrial','fa ','i48','flutter']):
+        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
+                'nanda2':'Risco de perfusão tissular ineficaz (NANDA 00204) — Domínio 4, Classe 4',
+                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+                'plano':'monitoração cardíaca contínua, controle FC e PA, anticoagulação conforme prescrição, cardioversão se indicada, monitorar sinais tromboembolismo, repouso relativo',
+                'noc':'Estado cardíaco (0414); Perfusão tissular periférica (0407); Nível ansiedade (1211)'}
+    # NEUROLÓGICO
+    if any(x in d for x in ['avc','acidente vascular','i63','i64','i61','derrame']):
+        return {'nanda1':'Perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
+                'nanda2':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
+                'nanda3':'Mobilidade física prejudicada (NANDA 00085) — Domínio 4, Classe 2',
+                'plano':'cabeceira 30°, Glasgow 2/2h, avaliação pupilas/força/fala, posicionamento anti-contraturas, fisioterapia motora precoce, teste deglutição antes dieta oral, profilaxia TVP',
+                'noc':'Perfusão tissular cerebral (0406); Estado neurológico (0909); Mobilidade (0208)'}
+    if any(x in d for x in ['tce','traumatismo crânio','s06','trauma cranioence']):
+        return {'nanda1':'Capacidade de recuperação intracraniana diminuída (NANDA 00049) — Domínio 11, Classe 2',
+                'nanda2':'Risco de perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
+                'nanda3':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
+                'plano':'cabeceira 30°, Glasgow 1/1h, pupilas fotorreativas, PA rigorosa (evitar hipotensão), sinais herniação cerebral, restrição hídrica se prescrito, ambiente calmo estímulos mínimos',
+                'noc':'Estado neurológico: consciência (0912); Perfusão tissular cerebral (0406); Estado respiratório (0403)'}
+    if any(x in d for x in ['epilepsia','convuls','g40','g41','status epilept']):
+        return {'nanda1':'Risco de lesão (NANDA 00035) — Domínio 11, Classe 2',
+                'nanda2':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
+                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+                'plano':'proteção lateral durante crise, não conter movimentos, decúbito lateral após crise, O2 disponível, monitorar pós-ictal, anticonvulsivante conforme prescrição, grades elevadas',
+                'noc':'Controle do risco (1902); Estado respiratório (0403); Nível ansiedade (1211)'}
+    # METABÓLICO / ENDÓCRINO
+    if any(x in d for x in ['diabetes','dm ','e11','e10','glicemia','hiperglicemia','hipoglicemia','cetoacidose']):
+        return {'nanda1':'Nível de glicemia instável (NANDA 00179) — Domínio 2, Classe 4',
+                'nanda2':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
+                'nanda3':'Deficiência de conhecimento (NANDA 00126) — Domínio 5, Classe 4',
+                'plano':'glicemia capilar 6/6h, insulina conforme protocolo, sinais hipo/hiperglicemia, inspeção extremidades diária, cuidados com feridas, orientar dieta adequada',
+                'noc':'Nível de glicemia (2300); Controle risco infeccioso (1924); Conhecimento: controle DM (1820)'}
+    if any(x in d for x in ['sepse','a41','choque séptico','r57','séptico']):
+        return {'nanda1':'Perfusão tissular ineficaz periférica (NANDA 00204) — Domínio 4, Classe 4',
+                'nanda2':'Hipertermia (NANDA 00007) — Domínio 11, Classe 6',
+                'nanda3':'Risco de choque (NANDA 00205) — Domínio 11, Classe 2',
+                'plano':'SVs 1/1h, diurese rigorosa meta>0.5ml/kg/h, culturas antes ATB, ATB dentro do prazo (bundle sepse), acesso calibroso, reposição volemia, lactato seriado, nível consciência',
+                'noc':'Perfusão tissular periférica (0407); Termorregulação (0800); Estado circulatório (0401)'}
+    # RENAL
+    if any(x in d for x in ['insuficiência renal','n17','n18','ira ','irc ','renal aguda','renal crônica','diálise']):
+        return {'nanda1':'Eliminação urinária prejudicada (NANDA 00016) — Domínio 3, Classe 1',
+                'nanda2':'Excesso de volume de líquidos (NANDA 00026) — Domínio 2, Classe 5',
+                'nanda3':'Risco de desequilíbrio eletrolítico (NANDA 00195) — Domínio 2, Classe 5',
+                'plano':'diurese horária rigorosa, balanço hídrico, restrição hídrica e potássio conforme prescrição, pesagem diária, eletrólitos, sinais hipercalemia (arritmias), cuidados acesso diálise se presente',
+                'noc':'Eliminação urinária (0503); Equilíbrio hídrico (0601); Equilíbrio eletrolítico (0606)'}
+    # GASTROINTESTINAL
+    if any(x in d for x in ['pancreatite','k85']):
+        return {'nanda1':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
+                'nanda2':'Nutrição desequilibrada: menor que as necessidades (NANDA 00002) — Domínio 2, Classe 1',
+                'nanda3':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
+                'plano':'jejum conforme prescrição, controle da dor (EVA), reposição volêmica, monitorar amilase/lipase, posição confortável (joelhos fletidos), eletrólitos, nutrição enteral se indicada',
+                'noc':'Nível de dor (2102); Estado nutricional (1004); Controle infecção (1924)'}
+    if any(x in d for x in ['hemorragia digestiva','k92','melena','hematêmese']):
+        return {'nanda1':'Perfusão tissular ineficaz periférica (NANDA 00204) — Domínio 4, Classe 4',
+                'nanda2':'Risco de choque (NANDA 00205) — Domínio 11, Classe 2',
+                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+                'plano':'acesso venoso calibroso, reposição volêmica rigorosa, monitorar PA/FC, jejum absoluto, preparar para endoscopia, monitorar hematócrito/hemoglobina seriados, decúbito dorsal',
+                'noc':'Estado circulatório (0401); Controle risco (1902); Nível ansiedade (1211)'}
+    # DEFAULT
+    return {'nanda1':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
+            'nanda2':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
+            'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+            'plano':'monitorar sinais vitais frequentemente, administrar medicamentos conforme prescrição, observar evolução clínica, manter conforto e segurança',
+            'noc':'Nível de dor (2102); Controle do risco (1902); Nível de ansiedade (1211)'}
+
 def _gerar_ia(tipo, p):
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key: return None
+
     sedado = any(x in p.get('queixas','').upper() for x in ['SEDADO','SEDADA','IOT','INTUBADO','INTUBADA','VM ','INCONSCIENTE'])
-    ctx = "ATENCAO: Paciente sedado/intubado. Nao use diagnosticos com relato verbal. Use dados objetivos." if sedado else ""
-    
-    diag_medico = p.get('diagnostico', '')
-    cid_codigo  = p.get('cid_codigo', '')
-    diag_completo = f"{diag_medico} {('('+cid_codigo+')') if cid_codigo else ''}".strip()
+    ctx = "ATENÇÃO: Paciente sedado/intubado. Não use diagnósticos com relato verbal. Use dados objetivos." if sedado else ""
+
+    diag_medico   = p.get('diagnostico', '')
+    cid_codigo    = p.get('cid_codigo', '')
+    diag_completo = f"{diag_medico}{' ('+cid_codigo+')' if cid_codigo else ''}".strip()
+    dispositivos  = p.get('dispositivos', '')
+    pendencias    = p.get('pendencias', '')
+
+    # Mapeamento clínico — garante NANDA e plano específicos por patologia
+    nc = _mapear_nanda_por_patologia(diag_completo)
 
     prompts = {
-        'evolucao': f"""Enfermeiro especialista SAE NANDA-I 2024-2026 NIC NOC. Gere EVOLUCAO SOAP completa.
+        'evolucao': f"""Você é enfermeiro(a) especialista em SAE. Gere EVOLUÇÃO SOAP para o paciente abaixo.
 {ctx}
-Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnostico Medico: {diag_completo}
-SVs: {p.get('sv')} | Queixas: {p.get('queixas')} | Sistemas: {', '.join(p.get('sistemas',[]))}
-Exames/Dispositivos: {p.get('exames')} | Alergias: {p.get('alergias','')} | Obs: {p.get('obs')}
-Estrutura: EVOLUCAO DE ENFERMAGEM / Data Hora / S-O-A(NANDA codigo R/A E/P)-P(NIC min6 NOC min3) / Assinatura.""",
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNÓSTICO MÉDICO: {diag_completo}
+SINAIS VITAIS: {p.get('sv')}
+QUEIXAS/ESTADO GERAL: {p.get('queixas')}
+SISTEMAS AVALIADOS: {', '.join(p.get('sistemas',[]))}
+DISPOSITIVOS: {dispositivos or p.get('exames','')}
+ALERGIAS: {p.get('alergias','')}
+OBS: {p.get('obs','')}
 
-        'prescricao': f"""Voce e um enfermeiro especialista em SAE. Gere uma PRESCRICAO DE ENFERMAGEM completa e especifica para o diagnostico medico informado.
+OS 3 DIAGNÓSTICOS NANDA JÁ FORAM DEFINIDOS — USE EXATAMENTE ESTES:
+1º DIAGNÓSTICO (PRIORITÁRIO): {nc['nanda1']}
+2º DIAGNÓSTICO: {nc['nanda2']}
+3º DIAGNÓSTICO: {nc['nanda3']}
 
+INTERVENÇÕES BASE PARA {diag_completo}: {nc['plano']}
+NOC: {nc['noc']}
+
+ESTRUTURA OBRIGATÓRIA:
+EVOLUÇÃO DE ENFERMAGEM
+Data: ___/___/______ Hora: ____:____ Turno: ( )Manhã ( )Tarde ( )Noite
+
+S — SUBJETIVO: [queixas reais do paciente usando dados acima]
+O — OBJETIVO: [SVs reais: {p.get('sv')} | achados físicos | dispositivos: {dispositivos or p.get('exames','')}]
+A — AVALIAÇÃO:
+1. {nc['nanda1']} | Relacionado a: [fator específico de {diag_completo}] | Evidenciado por: [dados reais]
+2. {nc['nanda2']} | Relacionado a: [...] | Evidenciado por: [...]
+3. {nc['nanda3']} | Relacionado a: [...] | Evidenciado por: [...]
+P — PLANO NIC ESPECÍFICO PARA {diag_completo.upper()}:
+[Expanda: {nc['plano']} com horários e detalhes clínicos do paciente — mínimo 8 intervenções]
+NOC: {nc['noc']}
+
+Enfermeiro(a): _________________________ COREN: _________""",
+
+        'prescricao': f"""Você é enfermeiro(a) especialista. Gere PRESCRIÇÃO DE ENFERMAGEM individualizada para o diagnóstico informado.
 {ctx}
-DADOS DO PACIENTE:
-- Nome: {p.get('nome')} | Leito: {p.get('leito')}
-- Diagnostico Medico: {diag_completo}
-- Sinais Vitais: {p.get('sv')}
-- Queixas/Avaliacao: {p.get('queixas')}
-- Dispositivos/Exames: {p.get('exames')}
-- Alergias: {p.get('alergias','')}
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNÓSTICO MÉDICO: {diag_completo}
+DIAGNÓSTICO DE ENFERMAGEM (NANDA): {nc['nanda1']}
+SINAIS VITAIS: {p.get('sv')}
+QUEIXAS: {p.get('queixas')}
+DISPOSITIVOS: {dispositivos or p.get('exames','')}
+ALERGIAS: {p.get('alergias','')}
+PENDÊNCIAS DO TURNO: {pendencias}
 
-INSTRUCOES:
-- Gere prescricao ESPECIFICA para o diagnostico "{diag_completo}"
-- Inclua cuidados posturais (ex: para DPOC/asma: posicao Fowler ou semi-Fowler 30-45 graus)
-- Inclua monitoramento especifico da doenca (ex: para DPOC: oximetria continua, padrão respiratório)
-- Inclua administracao de medicamentos conforme protocolo da doenca
-- Inclua cuidados de conforto e prevencao de complicacoes especificas
-- Minimo 14 itens numerados, claros e objetivos
-- Use linguagem tecnica de enfermagem brasileira
-
-ESTRUTURA:
-PRESCRICAO DE ENFERMAGEM
-Data: ___/___/______ Turno: ( )Manha ( )Tarde ( )Noite
+PRESCRIÇÃO DE ENFERMAGEM
+Data: ___/___/______ Turno: ( )Manhã ( )Tarde ( )Noite
 Paciente: {p.get('nome')} | Leito: {p.get('leito')}
-Diagnostico Medico: {diag_completo}
+Diagnóstico Médico: {diag_completo}
 
-DIAGNOSTICO DE ENFERMAGEM (NANDA-I 2024-2026):
-[liste 2 diagnosticos prioritarios com codigo]
+DIAGNÓSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
+1. {nc['nanda1']}
+   Relacionado a: [fator específico de {diag_completo}]
+   Evidenciado por: [dados clínicos reais: {p.get('queixas')}]
+2. {nc['nanda2']}
+   Relacionado a: [...] | Evidenciado por: [...]
 
-PRESCRICAO:
-[min 14 itens numerados especificos para o diagnostico]
+PRESCRIÇÃO — CUIDADOS ESPECÍFICOS PARA {diag_completo.upper()}:
+[Baseado em: {nc['plano']} — expanda em MÍNIMO 14 itens numerados com horários específicos, usando dados reais do paciente]
 
-RESULTADOS ESPERADOS (NOC):
-[min 3 metas mensuráveis]
+RESULTADOS ESPERADOS (NOC): {nc['noc']}
 
-Enfermeiro(a): _________________________ COREN: _________
-Assinatura: _________________________""",
+Enfermeiro(a): _________________________ COREN: _________""",
 
-        'passagem': f"""Enfermeiro especialista. Gere PASSAGEM PLANTAO SBAR.
+        'passagem': f"""Você é enfermeiro(a) especialista. Gere PASSAGEM DE PLANTÃO com os modelos SBAR e FAST HUG.
 {ctx}
-Paciente:{p.get('nome')}|Leito:{p.get('leito')}|Diag:{diag_completo}|SVs:{p.get('sv')}|Sit:{p.get('queixas')}|Disp:{p.get('exames')}
-Estrutura: SBAR completo S(situacao) B(background comorbidades dispositivos) A(NANDA hemodinamica) R(prioridades alertas pendencias) / Assinatura.""",
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNÓSTICO MÉDICO: {diag_completo}
+SINAIS VITAIS: {p.get('sv')}
+SITUAÇÃO ATUAL: {p.get('queixas')}
+DISPOSITIVOS: {dispositivos or p.get('exames','')}
+ALERGIAS: {p.get('alergias','')}
+PENDÊNCIAS DO TURNO: {pendencias}
 
-        'nanda': f"""Especialista NANDA-I 2024-2026 NIC NOC. Gere 4 DIAGNOSTICOS por prioridade clinica.
+PASSAGEM DE PLANTÃO
+Data: ___/___/______ | De: _______________ Para: _______________
+
+━━━ MODELO SBAR ━━━
+S — SITUAÇÃO: [identificação, diagnóstico médico real, motivo internação]
+B — BACKGROUND: [comorbidades, alergias, dispositivos, exames relevantes, evolução]
+A — AVALIAÇÃO: [SVs reais: {p.get('sv')}, NANDA prioritário: {nc['nanda1']}, achados relevantes]
+R — RECOMENDAÇÕES: [alertas específicos para {diag_completo}, pendências, cuidados prioritários próximo turno: {pendencias}]
+
+━━━ FAST HUG (checklist de cuidados intensivos) ━━━
+F — Feeding (alimentação/nutrição): [status e via de alimentação]
+A — Analgesia: [controle da dor, escala utilizada, medicamento]
+S — Sedação: [nível de sedação se aplicável, escala]
+T — Thrombus (profilaxia TVP): [anticoagulante, meias compressivas]
+H — HOB (cabeceira elevada): [grau de elevação]
+U — Úlcera (profilaxia gástrica): [protetor gástrico conforme prescrição]
+G — Glicemia: [valor atual, meta glicêmica, insulinoterapia]
+
+Enfermeiro(a): _________________________ COREN: _________""",
+
+        'nanda': f"""Você é especialista em NANDA-I 2024-2026. Gere 4 diagnósticos de enfermagem para o paciente.
 {ctx}
-Paciente:{p.get('nome')}|Leito:{p.get('leito')}|Diag:{diag_completo}|SVs:{p.get('sv')}|Aval:{p.get('queixas')}|Disp:{p.get('exames')}
-Para cada: Nome(NANDA codigo) Dominio/Classe | R/A fator | E/P caracteristicas | NIC atividades | NOC meta mensuravel / Assinatura."""
+PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
+DIAGNÓSTICO MÉDICO: {diag_completo}
+SINAIS VITAIS: {p.get('sv')}
+AVALIAÇÃO: {p.get('queixas')}
+DISPOSITIVOS: {dispositivos or p.get('exames','')}
+
+OS 3 PRIMEIROS DIAGNÓSTICOS JÁ FORAM DEFINIDOS — USE EXATAMENTE ESTES:
+1º (ALTA PRIORIDADE): {nc['nanda1']}
+2º (MÉDIA PRIORIDADE): {nc['nanda2']}
+3º (MÉDIA PRIORIDADE): {nc['nanda3']}
+4º diagnóstico: defina com base nos dados do paciente acima
+
+DIAGNÓSTICOS DE ENFERMAGEM — NANDA-I 2024-2026
+Paciente: {p.get('nome')} | Leito: {p.get('leito')} | Diagnóstico Médico: {diag_completo}
+
+[Para cada diagnóstico:]
+DIAGNÓSTICO X — PRIORIDADE: [ALTA/MÉDIA/BAIXA]
+Nome: [exatamente conforme definido acima]
+Domínio/Classe: [conforme NANDA-I]
+Relacionado a: [fator específico de {diag_completo} usando dados reais]
+Evidenciado por: [dados reais: {p.get('queixas')} / {p.get('sv')}]
+Intervenções NIC (mín 5): [baseado em: {nc['plano']}]
+Resultados NOC: {nc['noc']}
+
+Enfermeiro(a): _________________________ COREN: _________"""
     }
+
     try:
         r = requests.post('https://api.anthropic.com/v1/messages',
             headers={'x-api-key': api_key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json'},
-            json={'model': 'claude-haiku-4-5-20251001', 'max_tokens': 3000,
-                  'messages': [{'role': 'user', 'content': prompts.get(tipo, prompts['evolucao'])}]}, timeout=30)
+            json={'model': 'claude-sonnet-4-6', 'max_tokens': 4000,
+                  'messages': [{'role': 'user', 'content': prompts.get(tipo, prompts['evolucao'])}]}, timeout=45)
         return r.json()['content'][0]['text']
     except Exception as e:
         print(f'Erro IA: {e}')
         return None
+
+
+
+# ────────────────────────────────────────────────────────────
+# ESCALA DE FUGULIN — classificação do grau de dependência
+# ────────────────────────────────────────────────────────────
+FUGULIN_ITENS = {
+    'estado_mental': {'nome': 'Estado Mental', 'opcoes': [
+        {'valor': 1, 'desc': 'Orientado'},
+        {'valor': 2, 'desc': 'Desorientado / agitado'},
+        {'valor': 3, 'desc': 'Comatoso / inconsciente'},
+    ]},
+    'oxigenacao': {'nome': 'Oxigenação', 'opcoes': [
+        {'valor': 1, 'desc': 'Sem suporte'},
+        {'valor': 2, 'desc': 'O2 máscara / cateter'},
+        {'valor': 3, 'desc': 'IOT / VM'},
+    ]},
+    'sinais_vitais': {'nome': 'Sinais Vitais', 'opcoes': [
+        {'valor': 1, 'desc': 'Estáveis, verificação 2/2h'},
+        {'valor': 2, 'desc': 'Instáveis, verificação 1/1h'},
+        {'valor': 3, 'desc': 'Monitoração contínua'},
+    ]},
+    'nutricao': {'nome': 'Nutrição / Hidratação', 'opcoes': [
+        {'valor': 1, 'desc': 'Via oral sem auxílio'},
+        {'valor': 2, 'desc': 'Via oral com auxílio'},
+        {'valor': 3, 'desc': 'Sonda / parenteral'},
+    ]},
+    'motilidade': {'nome': 'Motilidade', 'opcoes': [
+        {'valor': 1, 'desc': 'Deambula sem auxílio'},
+        {'valor': 2, 'desc': 'Deambula com auxílio'},
+        {'valor': 3, 'desc': 'Restrito ao leito'},
+    ]},
+    'deambulacao': {'nome': 'Deambulação', 'opcoes': [
+        {'valor': 1, 'desc': 'Sem restrições'},
+        {'valor': 2, 'desc': 'Com restrições'},
+        {'valor': 3, 'desc': 'Imobilizado'},
+    ]},
+    'cuidado_corporal': {'nome': 'Cuidado Corporal', 'opcoes': [
+        {'valor': 1, 'desc': 'Independente'},
+        {'valor': 2, 'desc': 'Auxílio parcial'},
+        {'valor': 3, 'desc': 'Dependência total'},
+    ]},
+    'eliminacoes': {'nome': 'Eliminações', 'opcoes': [
+        {'valor': 1, 'desc': 'Controle dos esfíncteres'},
+        {'valor': 2, 'desc': 'Incontinência ocasional'},
+        {'valor': 3, 'desc': 'SVD / incontinência total'},
+    ]},
+    'terapeutica': {'nome': 'Terapêutica', 'opcoes': [
+        {'valor': 1, 'desc': 'Medicamentos VO / curativo simples'},
+        {'valor': 2, 'desc': 'Medicamentos EV / curativo complexo'},
+        {'valor': 3, 'desc': 'Drogas vasoativas / cuidados intensivos'},
+    ]},
+}
+
+@app.route('/api/escores/fugulin-itens', methods=['GET'])
+@jwt_required()
+def fugulin_itens():
+    """Retorna itens da Escala de Fugulin para o frontend"""
+    if not validar_sessao():
+        return jsonify({'erro': 'Sessao invalida.', 'sessao_invalida': True}), 401
+    return jsonify(FUGULIN_ITENS)
+
+@app.route('/api/escores/fugulin-calcular', methods=['POST'])
+@jwt_required()
+def fugulin_calcular():
+    """Calcula Escala de Fugulin e retorna classificação"""
+    if not validar_sessao():
+        return jsonify({'erro': 'Sessao invalida.', 'sessao_invalida': True}), 401
+    data = request.json
+    scores = data.get('scores', {})
+    total = sum(int(v) for v in scores.values() if str(v).isdigit())
+    if total <= 9:
+        classificacao = 'Mínimo — Cuidados mínimos (PCM)'
+        cor = 'verde'
+    elif total <= 12:
+        classificacao = 'Intermediário — Cuidados intermediários (PCI)'
+        cor = 'amarelo'
+    elif total <= 18:
+        classificacao = 'Semi-intensivo — Cuidados semi-intensivos (PCSI)'
+        cor = 'laranja'
+    else:
+        classificacao = 'Intensivo — Cuidados intensivos (PCI intensivo)'
+        cor = 'vermelho'
+    return jsonify({'total': total, 'classificacao': classificacao, 'cor': cor,
+                    'itens_max': 27, 'percentual': round(total/27*100)})
+
+
+# ────────────────────────────────────────────────────────────
+# DISPOSITIVOS — seleção rápida + histórico por paciente
+# ────────────────────────────────────────────────────────────
+DISPOSITIVOS_PADRAO = [
+    'AVP — Acesso Venoso Periférico',
+    'CICC — Cateter Venoso Central Inserção Cirúrgica',
+    'FICC — Cateter Venoso Central Femoral',
+    'Portocath — Cateter Totalmente Implantável',
+    'PICC — Cateter Central de Inserção Periférica',
+    'Sonda Vesical de Demora (SVD)',
+    'Sonda Enteral Nasal','Sonda Enteral Oral',
+    'Sonda Gástrica Nasal','Sonda Gástrica Oral',
+    'Tubo Orotraqueal (TOT)','Traqueostomia',
+    'Cateter de Diálise','Fístula Arteriovenosa',
+    'Bolsa de Colostomia','Bolsa de Ileostomia',
+]
+
+@app.route('/api/dispositivos/lista-padrao', methods=['GET'])
+@jwt_required()
+def lista_dispositivos_padrao():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    return jsonify(DISPOSITIVOS_PADRAO)
+
+@app.route('/api/dispositivos', methods=['GET'])
+@jwt_required()
+def listar_dispositivos():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    leito = request.args.get('leito','')
+    q = Dispositivo.query.filter_by(usuario_id=uid, ativo=True)
+    if leito: q = q.filter_by(leito=leito)
+    devs = q.order_by(Dispositivo.criado_em.desc()).all()
+    return jsonify([{'id':d.id,'paciente':d.paciente,'leito':d.leito,'nome':d.nome,
+        'data_insercao':d.data_insercao,'observacao':d.observacao,
+        'criado_em':d.criado_em.isoformat()} for d in devs])
+
+@app.route('/api/dispositivos', methods=['POST'])
+@jwt_required()
+def adicionar_dispositivo():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    data = request.json
+    if not data.get('nome'): return jsonify({'erro':'Nome obrigatorio'}),400
+    d = Dispositivo(usuario_id=uid,paciente=data.get('paciente',''),
+        leito=data.get('leito',''),nome=data['nome'],
+        data_insercao=data.get('data_insercao',''),observacao=data.get('observacao',''))
+    db.session.add(d)
+    db.session.commit()
+    return jsonify({'ok':True,'id':d.id}),201
+
+@app.route('/api/dispositivos/<int:did>', methods=['DELETE'])
+@jwt_required()
+def remover_dispositivo(did):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    d = Dispositivo.query.filter_by(id=did,usuario_id=uid).first()
+    if not d: return jsonify({'erro':'Nao encontrado'}),404
+    d.ativo = False
+    db.session.commit()
+    return jsonify({'ok':True})
+
+# ────────────────────────────────────────────────────────────
+# PENDÊNCIAS — inclusão manual pelo profissional
+# ────────────────────────────────────────────────────────────
+@app.route('/api/pendencias', methods=['GET'])
+@jwt_required()
+def listar_pendencias():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    leito = request.args.get('leito','')
+    q = Pendencia.query.filter_by(usuario_id=uid,resolvida=False)
+    if leito: q = q.filter_by(leito=leito)
+    pends = q.order_by(Pendencia.criado_em.desc()).all()
+    return jsonify([{'id':p.id,'paciente':p.paciente,'leito':p.leito,
+        'descricao':p.descricao,'resolvida':p.resolvida,
+        'criado_em':p.criado_em.isoformat()} for p in pends])
+
+@app.route('/api/pendencias', methods=['POST'])
+@jwt_required()
+def adicionar_pendencia():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    data = request.json
+    if not data.get('descricao'): return jsonify({'erro':'Descricao obrigatoria'}),400
+    p = Pendencia(usuario_id=uid,paciente=data.get('paciente',''),
+        leito=data.get('leito',''),descricao=data['descricao'])
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'ok':True,'id':p.id}),201
+
+@app.route('/api/pendencias/<int:pid>/resolver', methods=['POST'])
+@jwt_required()
+def resolver_pendencia(pid):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    p = Pendencia.query.filter_by(id=pid,usuario_id=uid).first()
+    if not p: return jsonify({'erro':'Nao encontrada'}),404
+    p.resolvida = True
+    db.session.commit()
+    return jsonify({'ok':True})
+
+@app.route('/api/pendencias/<int:pid>', methods=['DELETE'])
+@jwt_required()
+def excluir_pendencia(pid):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    p = Pendencia.query.filter_by(id=pid,usuario_id=uid).first()
+    if not p: return jsonify({'erro':'Nao encontrada'}),404
+    db.session.delete(p)
+    db.session.commit()
+    return jsonify({'ok':True})
+
+# ────────────────────────────────────────────────────────────
+# ESCALA DE FUGULIN
+# ────────────────────────────────────────────────────────────
+@app.route('/api/escores/fugulin-calcular', methods=['POST'])
+@jwt_required()
+def fugulin_calcular():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    data = request.json
+    scores = data.get('scores',{})
+    total = sum(int(v) for v in scores.values() if str(v).isdigit())
+    if total<=9:   cls,cor='Cuidados Mínimos (PCM)','verde'
+    elif total<=12: cls,cor='Cuidados Intermediários (PCI)','amarelo'
+    elif total<=18: cls,cor='Cuidados Semi-Intensivos (PCSI)','laranja'
+    else:           cls,cor='Cuidados Intensivos (UTI)','vermelho'
+    return jsonify({'total':total,'classificacao':cls,'cor':cor,'itens_max':27})
 
 # ROTAS ESTATICAS
 @app.route('/favicon.ico')

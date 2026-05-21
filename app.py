@@ -789,6 +789,127 @@ CID10_BASE = [
     {"codigo":"T60.0","descricao":"Intoxicação por organofosforados e carbamatos"},
     {"codigo":"T71","descricao":"Asfixia"},
     {"codigo":"T79.3","descricao":"Infecção pós-traumática não especificada"},
+    # DOENÇAS INFECCIOSAS / TROPICAIS (faltavam)
+    {"codigo":"A90","descricao":"Dengue clássica (febre do dengue)"},
+    {"codigo":"A91","descricao":"Febre hemorrágica do dengue"},
+    {"codigo":"A97.0","descricao":"Dengue sem sinais de alarme"},
+    {"codigo":"A97.1","descricao":"Dengue com sinais de alarme"},
+    {"codigo":"A97.2","descricao":"Dengue grave"},
+    {"codigo":"A92.0","descricao":"Infecção pelo vírus Chikungunya"},
+    {"codigo":"A92.8","descricao":"Febre Zika"},
+    {"codigo":"A16.2","descricao":"Tuberculose pulmonar sem confirmação bacteriológica"},
+    {"codigo":"B54","descricao":"Malária não especificada"},
+    {"codigo":"B50","descricao":"Malária por Plasmodium falciparum"},
+    {"codigo":"B19.9","descricao":"Hepatite viral não especificada"},
+    {"codigo":"B16","descricao":"Hepatite aguda tipo B"},
+    {"codigo":"B17.1","descricao":"Hepatite aguda tipo C"},
+    {"codigo":"B18.2","descricao":"Hepatite crônica tipo C"},
+    {"codigo":"B15.9","descricao":"Hepatite A sem coma hepático"},
+    {"codigo":"A01.0","descricao":"Febre tifoide"},
+    {"codigo":"A02.0","descricao":"Enterite por Salmonella"},
+    {"codigo":"A06.0","descricao":"Disenteria amebiana aguda"},
+    {"codigo":"A37.0","descricao":"Coqueluche por Bordetella pertussis"},
+    {"codigo":"A36.9","descricao":"Difteria não especificada"},
+    {"codigo":"A80.9","descricao":"Poliomielite aguda não especificada"},
+    {"codigo":"B05.9","descricao":"Sarampo sem complicações"},
+    {"codigo":"B06.9","descricao":"Rubéola sem complicações"},
+    {"codigo":"B26.9","descricao":"Caxumba (parotidite epidêmica) sem complicações"},
+    {"codigo":"B01.9","descricao":"Catapora (varicela) sem complicações"},
+    {"codigo":"B02.9","descricao":"Herpes zoster sem complicações"},
+    {"codigo":"B00.9","descricao":"Infecção pelo herpes simplex não especificada"},
+    {"codigo":"B37.0","descricao":"Candidíase da boca (muguet)"},
+    {"codigo":"B37.3","descricao":"Candidíase da vulva e vagina"},
+    {"codigo":"A60.0","descricao":"Infecção pelo herpesvírus nos órgãos genitais"},
+    # DOENÇAS CRÔNICAS COMUNS (faltavam)
+    {"codigo":"J30.1","descricao":"Rinite alérgica devida a pólen (rinite alérgica)"},
+    {"codigo":"J30.4","descricao":"Rinite alérgica crônica"},
+    {"codigo":"H10.1","descricao":"Conjuntivite aguda atópica (conjuntivite alérgica)"},
+    {"codigo":"H10.0","descricao":"Conjuntivite mucopurulenta"},
+    {"codigo":"K59.0","descricao":"Constipação intestinal"},
+    {"codigo":"K58.9","descricao":"Síndrome do intestino irritável sem diarreia"},
+    {"codigo":"K21.9","descricao":"Doença do refluxo gastroesofágico sem esofagite (DRGE)"},
+    {"codigo":"K81.0","descricao":"Colecistite aguda"},
+    {"codigo":"K81.1","descricao":"Colecistite crônica"},
+    {"codigo":"I84.9","descricao":"Hemorroidas não especificadas"},
+    {"codigo":"L50.9","descricao":"Urticária não especificada"},
+    {"codigo":"L20.9","descricao":"Dermatite atópica não especificada"},
+    {"codigo":"L30.9","descricao":"Dermatite não especificada"},
+    {"codigo":"M54.4","descricao":"Lumbago com ciática"},
+    {"codigo":"M54.2","descricao":"Cervicalgia"},
+    {"codigo":"M75.1","descricao":"Síndrome do manguito rotador"},
+    {"codigo":"G43.0","descricao":"Enxaqueca sem aura"},
+    {"codigo":"G47.0","descricao":"Insônia"},
+    {"codigo":"R51","descricao":"Cefaleia"},
+    {"codigo":"R10.4","descricao":"Outras dores abdominais e as não especificadas"},
+    {"codigo":"R11","descricao":"Náusea e vômitos"},
+    {"codigo":"R50.9","descricao":"Febre não especificada"},
+    {"codigo":"R05","descricao":"Tosse"},
+    {"codigo":"R06.0","descricao":"Dispneia"},
+    {"codigo":"R00.0","descricao":"Taquicardia não especificada"},
+    {"codigo":"R00.1","descricao":"Bradicardia não especificada"},
+    {"codigo":"R55","descricao":"Síncope e colapso"},
+    {"codigo":"R41.3","descricao":"Outras amnésias (confusão mental)"},
+    {"codigo":"R42","descricao":"Tontura e vertigem"},
+    # OBSTETRÍCIA / GINECOLOGIA
+    {"codigo":"O10.0","descricao":"Hipertensão essencial pré-existente na gravidez"},
+    {"codigo":"O14.1","descricao":"Pré-eclâmpsia grave"},
+    {"codigo":"O15.0","descricao":"Eclâmpsia na gravidez"},
+    {"codigo":"O20.0","descricao":"Ameaça de aborto"},
+    {"codigo":"O21.0","descricao":"Hiperemese gravídica leve"},
+    {"codigo":"O24.4","descricao":"Diabetes mellitus gestacional"},
+    {"codigo":"O42.9","descricao":"Rotura prematura de membranas não especificada"},
+    {"codigo":"O60.0","descricao":"Trabalho de parto pré-termo sem parto"},
+    {"codigo":"O80","descricao":"Parto único espontâneo"},
+    {"codigo":"O82","descricao":"Parto por cesariana não especificado"},
+    {"codigo":"N93.9","descricao":"Sangramento uterino e vaginal anormal não especificado"},
+    {"codigo":"N94.6","descricao":"Dismenorreia não especificada"},
+    # PEDIATRIA / NEONATAL
+    {"codigo":"P07.1","descricao":"Outros recém-nascidos de baixo peso"},
+    {"codigo":"P22.0","descricao":"Síndrome da angústia respiratória do recém-nascido (SARNN)"},
+    {"codigo":"P36.9","descricao":"Sepse bacteriana do recém-nascido não especificada"},
+    {"codigo":"J02.9","descricao":"Faringite aguda (amigdalite)"},
+    {"codigo":"J03.9","descricao":"Amigdalite aguda não especificada"},
+    {"codigo":"H66.9","descricao":"Otite média não especificada"},
+    {"codigo":"H65.9","descricao":"Otite média não supurativa não especificada"},
+    # SAÚDE MENTAL
+    {"codigo":"F10.0","descricao":"Transtorno mental e comportamental por uso de álcool — intoxicação aguda"},
+    {"codigo":"F11.2","descricao":"Síndrome de dependência a opiáceos"},
+    {"codigo":"F19.2","descricao":"Síndrome de dependência a múltiplas drogas"},
+    {"codigo":"F43.1","descricao":"Transtorno de estresse pós-traumático (TEPT)"},
+    {"codigo":"F40.1","descricao":"Fobias sociais"},
+    {"codigo":"F50.0","descricao":"Anorexia nervosa"},
+    {"codigo":"F50.2","descricao":"Bulimia nervosa"},
+    {"codigo":"F60.3","descricao":"Transtorno de personalidade borderline"},
+    {"codigo":"F84.0","descricao":"Autismo infantil (TEA)"},
+    {"codigo":"F90.0","descricao":"Distúrbio da atividade e da atenção (TDAH)"},
+    # CIRÚRGICO / TRAUMA
+    {"codigo":"S22.0","descricao":"Fratura de vértebra torácica"},
+    {"codigo":"S32.0","descricao":"Fratura de vértebra lombar"},
+    {"codigo":"S42.2","descricao":"Fratura da diáfise do úmero"},
+    {"codigo":"S52.5","descricao":"Fratura da extremidade distal do rádio (Colles)"},
+    {"codigo":"T20.3","descricao":"Queimadura de terceiro grau da cabeça e pescoço"},
+    {"codigo":"T31.1","descricao":"Queimaduras que abrangem 10-19% da superfície corporal"},
+    {"codigo":"T36.9","descricao":"Intoxicação por antibiótico sistêmico não especificado"},
+    {"codigo":"T45.5","descricao":"Intoxicação por anticoagulantes"},
+    {"codigo":"T50.9","descricao":"Intoxicação por outros medicamentos e substâncias"},
+    {"codigo":"X84","descricao":"Lesão autoprovocada intencionalmente (tentativa de suicídio)"},
+    # OUTROS COMUNS
+    {"codigo":"E55.9","descricao":"Deficiência de vitamina D não especificada"},
+    {"codigo":"E50.9","descricao":"Deficiência de vitamina A não especificada"},
+    {"codigo":"D50.9","descricao":"Anemia por deficiência de ferro não especificada"},
+    {"codigo":"D51.9","descricao":"Anemia por deficiência de vitamina B12 não especificada"},
+    {"codigo":"D69.6","descricao":"Trombocitopenia não especificada"},
+    {"codigo":"M32.9","descricao":"Lúpus eritematoso sistêmico não especificado (LES)"},
+    {"codigo":"M34.9","descricao":"Esclerodermia não especificada"},
+    {"codigo":"K90.0","descricao":"Doença celíaca"},
+    {"codigo":"K50.9","descricao":"Doença de Crohn não especificada"},
+    {"codigo":"K51.9","descricao":"Retocolite ulcerativa não especificada"},
+    {"codigo":"N80.9","descricao":"Endometriose não especificada"},
+    {"codigo":"N18.1","descricao":"Doença renal crônica estágio 1"},
+    {"codigo":"I73.9","descricao":"Doença vascular periférica não especificada"},
+    {"codigo":"E78.0","descricao":"Hipercolesterolemia pura (dislipidemia)"},
+    {"codigo":"E78.5","descricao":"Hiperlipidemia não especificada"},
+    {"codigo":"Z87.3","descricao":"História pessoal de doenças musculoesqueléticas"},
 ]
 
 @app.route('/api/buscar-cid', methods=['GET'])
@@ -1155,6 +1276,135 @@ def fugulin_calcular():
         cor = 'vermelho'
     return jsonify({'total': total, 'classificacao': classificacao, 'cor': cor,
                     'itens_max': 27, 'percentual': round(total/27*100)})
+
+
+# ────────────────────────────────────────────────────────────
+# DISPOSITIVOS — seleção rápida + histórico por paciente
+# ────────────────────────────────────────────────────────────
+DISPOSITIVOS_PADRAO = [
+    'AVP — Acesso Venoso Periférico',
+    'CICC — Cateter Venoso Central Inserção Cirúrgica',
+    'FICC — Cateter Venoso Central Femoral',
+    'Portocath — Cateter Totalmente Implantável',
+    'PICC — Cateter Central de Inserção Periférica',
+    'Sonda Vesical de Demora (SVD)',
+    'Sonda Enteral Nasal','Sonda Enteral Oral',
+    'Sonda Gástrica Nasal','Sonda Gástrica Oral',
+    'Tubo Orotraqueal (TOT)','Traqueostomia',
+    'Cateter de Diálise','Fístula Arteriovenosa',
+    'Bolsa de Colostomia','Bolsa de Ileostomia',
+]
+
+@app.route('/api/dispositivos/lista-padrao', methods=['GET'])
+@jwt_required()
+def lista_dispositivos_padrao():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    return jsonify(DISPOSITIVOS_PADRAO)
+
+@app.route('/api/dispositivos', methods=['GET'])
+@jwt_required()
+def listar_dispositivos():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    leito = request.args.get('leito','')
+    q = Dispositivo.query.filter_by(usuario_id=uid, ativo=True)
+    if leito: q = q.filter_by(leito=leito)
+    devs = q.order_by(Dispositivo.criado_em.desc()).all()
+    return jsonify([{'id':d.id,'paciente':d.paciente,'leito':d.leito,'nome':d.nome,
+        'data_insercao':d.data_insercao,'observacao':d.observacao,
+        'criado_em':d.criado_em.isoformat()} for d in devs])
+
+@app.route('/api/dispositivos', methods=['POST'])
+@jwt_required()
+def adicionar_dispositivo():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    data = request.json
+    if not data.get('nome'): return jsonify({'erro':'Nome obrigatorio'}),400
+    d = Dispositivo(usuario_id=uid,paciente=data.get('paciente',''),
+        leito=data.get('leito',''),nome=data['nome'],
+        data_insercao=data.get('data_insercao',''),observacao=data.get('observacao',''))
+    db.session.add(d)
+    db.session.commit()
+    return jsonify({'ok':True,'id':d.id}),201
+
+@app.route('/api/dispositivos/<int:did>', methods=['DELETE'])
+@jwt_required()
+def remover_dispositivo(did):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    d = Dispositivo.query.filter_by(id=did,usuario_id=uid).first()
+    if not d: return jsonify({'erro':'Nao encontrado'}),404
+    d.ativo = False
+    db.session.commit()
+    return jsonify({'ok':True})
+
+# ────────────────────────────────────────────────────────────
+# PENDÊNCIAS — inclusão manual pelo profissional
+# ────────────────────────────────────────────────────────────
+@app.route('/api/pendencias', methods=['GET'])
+@jwt_required()
+def listar_pendencias():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    leito = request.args.get('leito','')
+    q = Pendencia.query.filter_by(usuario_id=uid,resolvida=False)
+    if leito: q = q.filter_by(leito=leito)
+    pends = q.order_by(Pendencia.criado_em.desc()).all()
+    return jsonify([{'id':p.id,'paciente':p.paciente,'leito':p.leito,
+        'descricao':p.descricao,'resolvida':p.resolvida,
+        'criado_em':p.criado_em.isoformat()} for p in pends])
+
+@app.route('/api/pendencias', methods=['POST'])
+@jwt_required()
+def adicionar_pendencia():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    data = request.json
+    if not data.get('descricao'): return jsonify({'erro':'Descricao obrigatoria'}),400
+    p = Pendencia(usuario_id=uid,paciente=data.get('paciente',''),
+        leito=data.get('leito',''),descricao=data['descricao'])
+    db.session.add(p)
+    db.session.commit()
+    return jsonify({'ok':True,'id':p.id}),201
+
+@app.route('/api/pendencias/<int:pid>/resolver', methods=['POST'])
+@jwt_required()
+def resolver_pendencia(pid):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    p = Pendencia.query.filter_by(id=pid,usuario_id=uid).first()
+    if not p: return jsonify({'erro':'Nao encontrada'}),404
+    p.resolvida = True
+    db.session.commit()
+    return jsonify({'ok':True})
+
+@app.route('/api/pendencias/<int:pid>', methods=['DELETE'])
+@jwt_required()
+def excluir_pendencia(pid):
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    uid = int(get_jwt_identity())
+    p = Pendencia.query.filter_by(id=pid,usuario_id=uid).first()
+    if not p: return jsonify({'erro':'Nao encontrada'}),404
+    db.session.delete(p)
+    db.session.commit()
+    return jsonify({'ok':True})
+
+# ────────────────────────────────────────────────────────────
+# ESCALA DE FUGULIN
+# ────────────────────────────────────────────────────────────
+@app.route('/api/escores/fugulin-calcular', methods=['POST'])
+@jwt_required()
+def fugulin_calcular():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    data = request.json
+    scores = data.get('scores',{})
+    total = sum(int(v) for v in scores.values() if str(v).isdigit())
+    if total<=9:   cls,cor='Cuidados Mínimos (PCM)','verde'
+    elif total<=12: cls,cor='Cuidados Intermediários (PCI)','amarelo'
+    elif total<=18: cls,cor='Cuidados Semi-Intensivos (PCSI)','laranja'
+    else:           cls,cor='Cuidados Intensivos (UTI)','vermelho'
+    return jsonify({'total':total,'classificacao':cls,'cor':cor,'itens_max':27})
 
 # ROTAS ESTATICAS
 @app.route('/favicon.ico')
