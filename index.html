@@ -294,7 +294,7 @@ textarea.ci{min-height:90px}
     </div>
     <div id="form-login">
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="l-email" class="fi" placeholder="seu@email.com"></div>
-      <div class="fg"><label class="fl">Senha</label><input type="password" id="l-senha" class="fi" placeholder="••••••••"><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
+      <div class="fg"><label class="fl">Senha</label><div style="position:relative"><input type="password" id="l-senha" class="fi" placeholder="••••••••" style="padding-right:42px"><span onclick="toggleSenha('l-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5" title="Mostrar/ocultar senha">👁️</span></div><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
       <button class="btn-p" onclick="fazerLogin()">Entrar</button>
       <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
       <div class="ls" style="margin-top:6px"><span onclick="abrirRecuperarSenha()" style="color:var(--cinza3);font-size:13px">🔑 Esqueci minha senha</span></div>
@@ -306,7 +306,7 @@ textarea.ci{min-height:90px}
       </div>
       <div class="fg"><label class="fl">COREN</label><input type="text" id="c-coren" class="fi" placeholder="COREN-DF 000000 Enf"></div>
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="c-email" class="fi" placeholder="seu@email.com"></div>
-      <div class="fg"><label class="fl">Senha</label><input type="password" id="c-senha" class="fi" placeholder="Mínimo 6 caracteres"><div id="c-erro" class="ferr">Preencha todos os campos</div></div>
+      <div class="fg"><label class="fl">Senha</label><div style="position:relative"><input type="password" id="c-senha" class="fi" placeholder="Mínimo 6 caracteres" style="padding-right:42px"><span onclick="toggleSenha('c-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5" title="Mostrar/ocultar senha">👁️</span></div><div id="c-erro" class="ferr">Preencha todos os campos</div></div>
       <button class="btn-p" onclick="fazerCadastro()">Criar conta gratuita</button>
       <div class="ls">Já tem conta? <span onclick="ver('form-login')">Entrar</span></div>
     </div>
@@ -395,18 +395,7 @@ textarea.ci{min-height:90px}
         <button class="bv" id="bv1" onclick="voz(1)">🎤 Falar dados do paciente</button>
         <div class="cg"><label class="cl">Nome e idade</label><input type="text" id="p-nome" class="ci" placeholder="Ex: João da Silva, 58 anos, masculino"></div>
         <div class="cg"><label class="cl">Leito / Setor</label><input type="text" id="p-leito" class="ci" placeholder="Ex: Leito 12 — UTI Adulto Cardio"></div>
-        <div class="cg">
-          <label class="cl">Diagnóstico médico (CID-10)</label>
-          <div style="position:relative">
-            <input type="text" id="p-diag" class="ci" placeholder="Digite o diagnóstico (ex: DPOC, asma, IAM, sepse...)" autocomplete="off" oninput="buscarCID(this.value)" onblur="setTimeout(()=>fecharCID(),200)">
-            <input type="hidden" id="p-cid-codigo">
-            <div id="cid-lista" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--azul2);border-radius:var(--r2);box-shadow:var(--sombra2);z-index:200;max-height:240px;overflow-y:auto;margin-top:4px"></div>
-          </div>
-          <div id="cid-selecionado" style="display:none;margin-top:6px;background:var(--azul3);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--azul);align-items:center;justify-content:space-between">
-            <span id="cid-sel-txt"></span>
-            <span onclick="limparCID()" style="cursor:pointer;font-size:16px;margin-left:8px">✕</span>
-          </div>
-        </div>
+        <div class="cg"><label class="cl">Diagnóstico médico</label><input type="text" id="p-diag" class="ci" placeholder="Ex: IAM com supra de ST + HAS"></div>
         <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico dipirona, DM tipo 2, IRC"></div>
         <div class="bnav"><button class="bav" onclick="av(2)" style="flex:1">Próximo →</button></div>
       </div>
@@ -791,15 +780,15 @@ textarea.ci{min-height:90px}
         <div style="font-weight:700;font-size:15px;margin-bottom:14px">🔒 Trocar senha</div>
         <div class="cg" style="margin-bottom:10px">
           <label class="cl">Senha atual</label>
-          <input type="password" id="pf-senha-atual" class="ci" placeholder="••••••••">
+          <div style="position:relative"><input type="password" id="pf-senha-atual" class="ci" placeholder="••••••••" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-atual',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div class="cg" style="margin-bottom:10px">
           <label class="cl">Nova senha</label>
-          <input type="password" id="pf-senha-nova" class="ci" placeholder="Mínimo 6 caracteres">
+          <div style="position:relative"><input type="password" id="pf-senha-nova" class="ci" placeholder="Mínimo 6 caracteres" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-nova',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div class="cg" style="margin-bottom:14px">
           <label class="cl">Confirmar nova senha</label>
-          <input type="password" id="pf-senha-conf" class="ci" placeholder="Repita a nova senha">
+          <div style="position:relative"><input type="password" id="pf-senha-conf" class="ci" placeholder="Repita a nova senha" style="padding-right:42px"><span onclick="toggleSenha('pf-senha-conf',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5">👁️</span></div>
         </div>
         <div id="pf-senha-erro" class="ferr">Senhas não conferem</div>
         <button class="bav" style="width:100%;background:var(--cinza3)" onclick="trocarSenha()">🔑 Trocar senha</button>
@@ -1186,7 +1175,6 @@ async function gerar(){
     nome:document.getElementById('p-nome').value,
     leito:document.getElementById('p-leito').value,
     diagnostico:document.getElementById('p-diag').value,
-    cid_codigo:document.getElementById('p-cid-codigo').value,
     alergias:document.getElementById('p-aler').value,
     sv:document.getElementById('a-sv').value,
     queixas:document.getElementById('a-eq').value,
@@ -1794,52 +1782,18 @@ function inserirNANDA(idx){
 }
 
 
-// CID-10 AUTOCOMPLETE
-let cidTimer = null;
-async function buscarCID(val){
-  document.getElementById('p-cid-codigo').value = '';
-  document.getElementById('cid-selecionado').style.display = 'none';
-  clearTimeout(cidTimer);
-  if(!val || val.length < 2){ fecharCID(); return; }
-  cidTimer = setTimeout(async () => {
-    try {
-      const r = await fetch(`${API}/api/buscar-cid?q=${encodeURIComponent(val)}`);
-      const lista = await r.json();
-      const el = document.getElementById('cid-lista');
-      if(!lista.length){ fecharCID(); return; }
-      el.style.display = 'block';
-      el.innerHTML = lista.map(c =>
-        `<div onclick="selecionarCID('${c.codigo}','${c.descricao.replace(/'/g,"&#39;")}')"
-          style="padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--cinza2);font-size:13px;transition:.15s"
-          onmouseover="this.style.background='var(--azul3)'" onmouseout="this.style.background='#fff'">
-          <strong style="color:var(--azul);font-size:12px">${c.codigo}</strong>
-          <span style="color:var(--texto);margin-left:8px">${c.descricao}</span>
-        </div>`
-      ).join('');
-    } catch(e){ fecharCID(); }
-  }, 300);
-}
-
-function selecionarCID(codigo, descricao){
-  document.getElementById('p-diag').value = descricao;
-  document.getElementById('p-cid-codigo').value = codigo;
-  const sel = document.getElementById('cid-selecionado');
-  document.getElementById('cid-sel-txt').textContent = codigo + ' — ' + descricao;
-  sel.style.display = 'flex';
-  fecharCID();
-  toast('✅ CID-10 selecionado: ' + codigo, 'ok');
-}
-
-function fecharCID(){
-  const el = document.getElementById('cid-lista');
-  if(el) el.style.display = 'none';
-}
-
-function limparCID(){
-  document.getElementById('p-diag').value = '';
-  document.getElementById('p-cid-codigo').value = '';
-  document.getElementById('cid-selecionado').style.display = 'none';
-  fecharCID();
+// TOGGLE SENHA — mostrar/ocultar
+function toggleSenha(id, btn){
+  const input = document.getElementById(id);
+  if(input.type === 'password'){
+    input.type = 'text';
+    btn.style.opacity = '1';
+    btn.title = 'Ocultar senha';
+  } else {
+    input.type = 'password';
+    btn.style.opacity = '.5';
+    btn.title = 'Mostrar senha';
+  }
 }
 
 // MODAL
