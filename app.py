@@ -1390,6 +1390,22 @@ def excluir_pendencia(pid):
     db.session.commit()
     return jsonify({'ok':True})
 
+# ────────────────────────────────────────────────────────────
+# ESCALA DE FUGULIN
+# ────────────────────────────────────────────────────────────
+@app.route('/api/escores/fugulin-calcular', methods=['POST'])
+@jwt_required()
+def fugulin_calcular():
+    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
+    data = request.json
+    scores = data.get('scores',{})
+    total = sum(int(v) for v in scores.values() if str(v).isdigit())
+    if total<=9:   cls,cor='Cuidados Mínimos (PCM)','verde'
+    elif total<=12: cls,cor='Cuidados Intermediários (PCI)','amarelo'
+    elif total<=18: cls,cor='Cuidados Semi-Intensivos (PCSI)','laranja'
+    else:           cls,cor='Cuidados Intensivos (UTI)','vermelho'
+    return jsonify({'total':total,'classificacao':cls,'cor':cor,'itens_max':27})
+
 # ROTAS ESTATICAS
 @app.route('/favicon.ico')
 def favicon(): return ('', 204)
