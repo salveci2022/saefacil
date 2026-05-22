@@ -20,6 +20,65 @@ db = SQLAlchemy(app)
 jwt = JWTManager(app)
 CORS(app)
 
+# ────────────────────────────────────────────────────────────
+# SECURITY HEADERS — aplicados em todas as respostas
+# ────────────────────────────────────────────────────────────
+@app.after_request
+def aplicar_security_headers(response):
+    # Previne clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+    # Previne MIME sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # XSS protection (legacy browsers)
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    # Referrer policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Permissions policy
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    # HSTS — força HTTPS por 1 ano (só ativa em produção)
+    if not app.debug:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # CSP — permite apenas recursos do próprio domínio + CDNs confiáveis
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://api.anthropic.com; "
+        "frame-ancestors 'none';"
+    )
+    return response
+
+# ────────────────────────────────────────────────────────────
+# SANITIZAÇÃO DE INPUT — remove caracteres perigosos
+# ────────────────────────────────────────────────────────────
+import re as _re
+
+def sanitizar(texto, max_len=500):
+    """Remove tags HTML/script e limita tamanho do input"""
+    if not texto or not isinstance(texto, str):
+        return ''
+    # Remove tags HTML
+    texto = _re.sub(r'<[^>]+>', '', texto)
+    # Remove scripts inline
+    texto = _re.sub(r'(?i)(javascript:|vbscript:|onload=|onerror=|onclick=)', '', texto)
+    # Limita tamanho
+    return texto[:max_len].strip()
+
+def sanitizar_pac(pac):
+    """Sanitiza todos os campos do paciente antes de processar"""
+    campos_curtos = ['nome','leito','diagnostico','cid_codigo','alergias','obs']
+    campos_longos = ['sv','queixas','exames','dispositivos','pendencias']
+    for campo in campos_curtos:
+        if campo in pac:
+            pac[campo] = sanitizar(pac[campo], 200)
+    for campo in campos_longos:
+        if campo in pac:
+            pac[campo] = sanitizar(pac[campo], 1000)
+    return pac
+
+
 ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'spynet2026admin')
 ADMIN_EMAIL  = os.environ.get('ADMIN_EMAIL', 'salvecidossantos454@gmail.com')
 
@@ -181,6 +240,31 @@ def migrar_banco():
     except Exception as e:
         print(f'[MIGRACAO] {e}')
 
+
+# ────────────────────────────────────────────────────────────
+# RATE LIMITING SIMPLES — sem dependência externa
+# Limita tentativas por IP em endpoints críticos
+# ────────────────────────────────────────────────────────────
+from collections import defaultdict
+import time as _time
+
+_rate_store = defaultdict(list)  # {ip: [timestamps]}
+
+def check_rate_limit(ip, max_req=10, janela=60):
+    """Retorna True se dentro do limite, False se excedeu"""
+    agora = _time.time()
+    _rate_store[ip] = [t for t in _rate_store[ip] if agora - t < janela]
+    if len(_rate_store[ip]) >= max_req:
+        return False
+    _rate_store[ip].append(agora)
+    return True
+
+def rate_limit_response():
+    return jsonify({
+        'erro': 'Muitas requisições. Aguarde alguns minutos antes de tentar novamente.',
+        'rate_limited': True
+    }), 429
+
 # HELPERS
 def get_ip():
     return request.headers.get('X-Forwarded-For', request.remote_addr or 'desconhecido').split(',')[0].strip()
@@ -199,10 +283,49 @@ def validar_sessao():
         return u and not u.bloqueado and u.session_token == sid
     except: return False
 
+
+# ────────────────────────────────────────────────────────────
+# LOG DE SEGURANÇA — alertas e auditoria
+# ────────────────────────────────────────────────────────────
+def log_seguranca(evento, email='', ip='', detalhe='', nivel='INFO'):
+    """Log estruturado de eventos de segurança"""
+    import json as _json
+    entrada = {
+        'timestamp': datetime.utcnow().isoformat(),
+        'nivel': nivel,
+        'evento': evento,
+        'email': email,
+        'ip': ip,
+        'detalhe': detalhe[:500] if detalhe else ''
+    }
+    print(f'[SEGURANCA] {_json.dumps(entrada, ensure_ascii=False)}')
+    # Alertas críticos
+    if nivel == 'CRITICO':
+        print(f'[ALERTA CRITICO] {evento} | Email: {email} | IP: {ip} | {detalhe}')
+
+def log_tentativa_suspeita(email, ip, motivo):
+    """Registra e alerta sobre tentativas suspeitas"""
+    log_seguranca('TENTATIVA_SUSPEITA', email=email, ip=ip, detalhe=motivo, nivel='AVISO')
+    # Verificar se o IP tentou muitas contas diferentes (credential stuffing)
+    try:
+        tentativas_ip = LogAcesso.query.filter_by(
+            ip=ip, sucesso=False
+        ).filter(
+            LogAcesso.criado_em >= datetime.utcnow() - timedelta(hours=1)
+        ).count()
+        if tentativas_ip >= 20:
+            log_seguranca('POSSIVEL_ATAQUE_FORCA_BRUTA', ip=ip,
+                detalhe=f'{tentativas_ip} falhas na ultima hora', nivel='CRITICO')
+    except: pass
+
 # AUTENTICAÇÃO
 @app.route('/api/auth/registro', methods=['POST'])
 def registro():
-    data = request.json
+    # Rate limiting: max 5 registros por IP por hora
+    ip = get_ip()
+    if not check_rate_limit(ip, max_req=5, janela=3600):
+        return rate_limit_response()
+    data = request.json or {}
     if not data.get('email') or not data.get('senha') or not data.get('nome'):
         return jsonify({'erro': 'Dados incompletos'}), 400
     if Usuario.query.filter_by(email=data['email']).first():
@@ -235,7 +358,11 @@ def registro():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.json
+    # Rate limiting: max 10 tentativas de login por IP por minuto
+    ip = get_ip()
+    if not check_rate_limit(ip, max_req=10, janela=60):
+        return rate_limit_response()
+    data = request.json or {}
     u = Usuario.query.filter_by(email=data.get('email','')).first()
     if not u:
         return jsonify({'erro': 'Credenciais invalidas'}), 401
@@ -251,9 +378,11 @@ def login():
             u.tentativas_login = 0
             db.session.commit()
             registrar_acesso(u.id, u.email, False)
+            log_tentativa_suspeita(u.email, ip, f'Conta bloqueada apos 5 tentativas')
             return jsonify({'erro': 'Muitas tentativas. Bloqueado por 15 minutos.'}), 403
         db.session.commit()
         registrar_acesso(u.id, u.email, False)
+        log_tentativa_suspeita(u.email, ip, f'Senha incorreta tentativa {u.tentativas_login}')
         return jsonify({'erro': f'Credenciais invalidas. Tentativa {u.tentativas_login} de 5.'}), 401
     sid = str(uuid.uuid4())
     u.session_token = sid
@@ -279,9 +408,14 @@ def gerar_sae():
     u.plano_ativo()
     if u.plano == 'gratuito':
         return jsonify({'erro': 'Seu período gratuito expirou. Assine o Plano Pro por R$ 67,00/mês para continuar.', 'limite': True, 'expirado': True}), 403
-    data = request.json
+    # Rate limiting: max 30 SAEs por minuto por usuário
+    ip = get_ip()
+    uid_str = get_jwt_identity()
+    if not check_rate_limit(f'sae_{uid_str}', max_req=30, janela=60):
+        return rate_limit_response()
+    data = request.json or {}
     tipo = data.get('tipo', 'evolucao')
-    pac = data.get('paciente', {})
+    pac = sanitizar_pac(data.get('paciente', {}))
     texto = _gerar_ia(tipo, pac)
     if not texto:
         return jsonify({'erro': 'Erro na IA'}), 500
@@ -360,8 +494,12 @@ def trocar_senha():
 
 @app.route('/api/auth/recuperar-senha', methods=['POST'])
 def recuperar_senha():
+    # Rate limiting: max 3 recuperações por IP por hora
+    ip = get_ip()
+    if not check_rate_limit(f'recup_{ip}', max_req=3, janela=3600):
+        return rate_limit_response()
     import secrets, string
-    data = request.json
+    data = request.json or {}
     email = data.get('email','').lower().strip()
     u = Usuario.query.filter_by(email=email).first()
     if u:
@@ -374,6 +512,10 @@ def recuperar_senha():
 # WEBHOOK HOTMART
 @app.route('/api/webhook/hotmart', methods=['POST'])
 def webhook_hotmart():
+    # Rate limiting básico no webhook
+    ip = get_ip()
+    if not check_rate_limit(f'webhook_{ip}', max_req=20, janela=60):
+        return rate_limit_response()
     tok = os.environ.get('HOTMART_WEBHOOK_TOKEN', '')
     if tok and request.headers.get('X-Hotmart-Webhook-Token','') != tok:
         return jsonify({'erro': 'Token invalido'}), 401
@@ -484,6 +626,35 @@ def excluir_usuario(secret, email):
     db.session.delete(u)
     db.session.commit()
     return f'Usuario {email} excluido!'
+
+
+@app.route('/api/admin/seguranca/<secret>')
+def admin_seguranca(secret):
+    """Painel de segurança — IPs suspeitos e tentativas recentes"""
+    if not check_admin(secret): return 'Sem permissao', 403
+    from collections import Counter
+    ultima_hora = datetime.utcnow() - timedelta(hours=1)
+    ultimas_24h = datetime.utcnow() - timedelta(hours=24)
+    # Falhas recentes
+    falhas_1h = LogAcesso.query.filter(
+        LogAcesso.sucesso==False,
+        LogAcesso.criado_em>=ultima_hora
+    ).all()
+    # IPs com mais falhas
+    ips_suspeitos = Counter(l.ip for l in falhas_1h).most_common(10)
+    # Total últimas 24h
+    total_24h = LogAcesso.query.filter(LogAcesso.criado_em>=ultimas_24h).count()
+    falhas_24h = LogAcesso.query.filter(
+        LogAcesso.sucesso==False, LogAcesso.criado_em>=ultimas_24h
+    ).count()
+    return jsonify({
+        'falhas_ultima_hora': len(falhas_1h),
+        'falhas_24h': falhas_24h,
+        'total_acessos_24h': total_24h,
+        'ips_suspeitos': [{'ip': ip, 'tentativas': n} for ip, n in ips_suspeitos],
+        'usuarios_bloqueados': Usuario.query.filter_by(bloqueado=True).count(),
+        'status': 'ok'
+    })
 
 @app.route('/api/admin/logs-acesso/<secret>')
 def logs_acesso(secret):
@@ -928,118 +1099,897 @@ def buscar_cid():
 
 # IA — MAPEAMENTO CLÍNICO E GERAÇÃO DE DOCUMENTOS
 # ────────────────────────────────────────────────────────────
-def _mapear_nanda_por_patologia(diag_completo):
-    """Mapeia diagnóstico médico → NANDA prioritário + cuidados específicos.
-    Resolve o problema de diagnósticos genéricos iguais para todos os pacientes."""
+
+# ────────────────────────────────────────────────────────────
+# BANCO DE PRESCRIÇÕES DE ENFERMAGEM POR CID-10
+# Cada patologia tem itens clínicos específicos e individualizados
+# Usado para enriquecer o prompt da IA com cuidados reais
+# ────────────────────────────────────────────────────────────
+PRESCRICOES_POR_CID = {
+
+    # ── DENGUE ──────────────────────────────────────────────
+    'dengue_classica': {
+        'cids': ['a90','dengue clássica','dengue classica','febre dengue'],
+        'classificacao': 'Dengue sem sinais de alarme (Tipo A/B)',
+        'itens': [
+            '1. Monitorar sinais vitais (PA, FC, FR, T°, SpO2) a cada 4 horas ou conforme prescrição',
+            '2. Avaliar e registrar nível de consciência e estado geral',
+            '3. Monitorar temperatura corporal e administrar antitérmico conforme prescrição (PARACETAMOL — NUNCA AAS ou ibuprofeno)',
+            '4. Incentivar hidratação oral: oferecer 60ml/kg/dia se tolerado (água, soro caseiro, sucos sem corante)',
+            '5. Avaliar aceitação da dieta e hidratação oral a cada refeição',
+            '6. Monitorar sinais de sangramento: petéquias, equimoses, epistaxe, gengivorragia, hematêmese, melena',
+            '7. Realizar e registrar balanço hídrico rigoroso (ingesta e diurese)',
+            '8. Monitorar diurese: volume, frequência e características',
+            '9. Avaliar dor com escala visual analógica (EVA) e administrar analgésico conforme prescrição',
+            '10. Observar e registrar náuseas, vômitos e sintomas gastrointestinais',
+            '11. Verificar resultado de plaquetas e hematócrito conforme solicitação médica',
+            '12. Orientar o paciente e família sobre sinais de alarme: dor abdominal intensa, vômitos persistentes, sangramento, sonolência excessiva',
+            '13. Manter repouso relativo no leito durante o período febril',
+            '14. Registrar evolução de enfermagem com dados objetivos a cada turno',
+            '15. Comunicar ao médico qualquer alteração clínica imediatamente',
+        ],
+        'alertas': 'ATENÇÃO: Vigiar sinais de alarme — dor abdominal intensa, vômitos persistentes, acúmulo de líquidos, sangramento, letargia, aumento do hematócrito com queda rápida de plaquetas',
+    },
+
+    'dengue_alarme': {
+        'cids': ['a97.1','dengue sinais de alarme','dengue tipo b','dengue com sinais'],
+        'classificacao': 'Dengue com sinais de alarme (Tipo C)',
+        'itens': [
+            '1. Monitorar sinais vitais (PA, FC, FR, T°, SpO2) a cada 1 hora — atenção para hipotensão e taquicardia',
+            '2. Avaliar perfusão periférica: TEC, temperatura das extremidades, pulso periférico a cada hora',
+            '3. Manter acesso venoso periférico (AVP) calibroso pérvio — verificar e registrar a cada turno',
+            '4. Administrar hidratação venosa endovenosa conforme prescrição médica: soluções cristaloides (SF 0,9% ou Ringer Lactato)',
+            '5. Realizar e registrar balanço hídrico rigoroso HORÁRIO (ingesta EV + oral x diurese)',
+            '6. Monitorar diurese HORÁRIA — meta mínima 0,5ml/kg/hora — comunicar oligúria imediatamente',
+            '7. Monitorar ativamente sinais de choque: hipotensão, taquicardia, enchimento capilar lentificado, alteração de consciência',
+            '8. Monitorar sinais de sangramento: petéquias, equimoses, sangramento em locais de punção, hematêmese, melena, hematúria',
+            '9. Monitorar nível de consciência (Escala de Glasgow) a cada hora',
+            '10. Verificar resultados laboratoriais: plaquetas, hematócrito, hemoglobina, coagulograma — registrar e comunicar alterações',
+            '11. Administrar antitérmico conforme prescrição (PARACETAMOL — NUNCA AAS ou ibuprofeno)',
+            '12. Avaliar e controlar dor com EVA — administrar analgésico conforme prescrição',
+            '13. Monitorar sinais de extravasamento plasmático: edema, derrame pleural, ascite',
+            '14. Observar e registrar manifestações hemorrágicas espontâneas ou em locais de punção',
+            '15. Manter repouso absoluto no leito',
+            '16. Comunicar IMEDIATAMENTE ao médico: deterioração clínica, queda de PA, oligúria, sinais de sangramento ativo',
+            '17. Registrar evolução de enfermagem detalhada a cada turno com todos os parâmetros',
+            '18. Preparar material para expansão volêmica de emergência',
+        ],
+        'alertas': 'CRITICAMENTE IMPORTANTE: Dengue com sinais de alarme requer monitoramento intensivo. Vigilância contínua para choque e sangramento. Comunicar médico imediatamente ante qualquer deterioração.',
+    },
+
+    'dengue_grave': {
+        'cids': ['a91','a97.2','dengue hemorrágica','dengue grave','dengue tipo d','dengue tipo c'],
+        'classificacao': 'Dengue grave / Dengue hemorrágica (Tipo D)',
+        'itens': [
+            '1. Monitorar sinais vitais CONTÍNUOS ou a cada 30 minutos — manter PA sistólica >90mmHg',
+            '2. Avaliar perfusão periférica a cada 30 minutos: TEC, temperatura extremidades, cianose',
+            '3. Manter 2 acessos venosos calibrosos ou acesso venoso central conforme prescrição',
+            '4. Administrar expansão volêmica agressiva conforme prescrição (cristaloide 20ml/kg em 15-30min se choque)',
+            '5. Monitorar diurese HORÁRIA rigorosa — meta >0,5ml/kg/h — instalar SVD se necessário',
+            '6. Realizar balanço hídrico HORÁRIO rigoroso',
+            '7. Monitorar nível de consciência com Escala de Glasgow a cada 30 minutos',
+            '8. Vigilância intensa para sangramento ativo: mucosas, locais de punção, abdome, SNC',
+            '9. Contraindicado: AAS, AINEs, injeções intramusculares, anticoagulantes',
+            '10. Administrar hemoderivados conforme prescrição médica (plaquetas, plasma)',
+            '11. Monitorar sinais de SARA: SpO2, FR, padrão respiratório — O2 suplementar conforme prescrição',
+            '12. Avaliar abdome: dor, distensão, hepatomegalia dolorosa a cada turno',
+            '13. Monitorar exames laboratoriais seriados: HT, Hb, plaquetas, coagulograma, lactato, gasometria',
+            '14. Manter repouso absoluto — elevar cabeceira 30° se dispneia',
+            '15. Comunicar IMEDIATAMENTE ao médico qualquer deterioração clínica',
+            '16. Registrar evolução detalhada a cada turno — incluir todos os parâmetros hemodinâmicos',
+            '17. Preparar material para IOT e suporte ventilatório se necessário',
+            '18. Suporte emocional ao paciente e família — orientar sobre gravidade e conduta',
+        ],
+        'alertas': 'URGÊNCIA: Dengue grave/hemorrágica. Risco de vida. Monitoramento contínuo. UTI se instável.',
+    },
+
+    # ── RESPIRATÓRIO ────────────────────────────────────────
+    'asma_crise': {
+        'cids': ['j45','j46','asma','broncoespas','crise asmat'],
+        'classificacao': 'Asma — Crise broncoespástica',
+        'itens': [
+            '1. Posicionar paciente em Fowler 45° ou posição de conforto para respirar',
+            '2. Monitorar SpO2 contínua — meta >95% — iniciar O2 suplementar se SpO2 <92%',
+            '3. Administrar broncodilatador inalatório (salbutamol) conforme prescrição — registrar resposta',
+            '4. Monitorar FR, padrão respiratório e uso de musculatura acessória a cada 30 minutos',
+            '5. Auscultar campos pulmonares antes e após broncodilatador — registrar achados',
+            '6. Administrar corticoide EV/VO conforme prescrição médica',
+            '7. Manter acesso venoso pérvio para medicação de emergência',
+            '8. Avaliar e controlar fator desencadeante da crise',
+            '9. Monitorar FC e PA — broncodilatador pode causar taquicardia',
+            '10. Avaliar nível de ansiedade e oferecer suporte emocional — ansiedade piora broncoespasmo',
+            '11. Preparar material para nebulização e IOT em caso de deterioração',
+            '12. Orientar sobre técnica correta de uso do inalador após a crise',
+            '13. Registrar evolução respiratória a cada turno com dados objetivos',
+            '14. Comunicar médico imediatamente se piora ou não resposta à medicação',
+        ],
+        'alertas': 'Vigilância para status asmaticus. Preparar IOT se SpO2 <88% ou cansaço extremo.',
+    },
+
+    'dpoc_exac': {
+        'cids': ['j44','dpoc','doença pulmonar obstrutiva'],
+        'classificacao': 'DPOC com exacerbação',
+        'itens': [
+            '1. Posicionar em semi-Fowler 30-45° para otimizar ventilação',
+            '2. Administrar O2 de forma CONTROLADA — meta SpO2 88-92% (risco de retenção de CO2)',
+            '3. Monitorar SpO2, FR e padrão respiratório continuamente',
+            '4. Atentar para sinais de hipercapnia: sonolência, confusão, cefaleia — comunicar médico',
+            '5. Administrar broncodilatador nebulizado conforme prescrição',
+            '6. Realizar fisioterapia respiratória: técnica de respiração com lábios franzidos, drenagem postural',
+            '7. Incentivar tosse dirigida para eliminar secreções',
+            '8. Auscultar campos pulmonares a cada turno — registrar sibilos, roncos, crepitações',
+            '9. Monitorar gasometria arterial conforme solicitação médica',
+            '10. Manter acesso venoso pérvio para corticoide e ATB EV se prescritos',
+            '11. Monitorar sinais vitais a cada 2 horas',
+            '12. Avaliar nível de consciência e orientação temporal/espacial a cada turno',
+            '13. Orientar paciente sobre cessação do tabagismo',
+            '14. Registrar evolução respiratória detalhada a cada turno',
+        ],
+        'alertas': 'ATENÇÃO: O2 controlado — hiperóxia pode suprimir drive respiratório hipóxico. Meta SpO2 88-92%.',
+    },
+
+    'pneumonia_tto': {
+        'cids': ['j18','j15','j12','pneumonia'],
+        'classificacao': 'Pneumonia — tratamento hospitalar',
+        'itens': [
+            '1. Elevar cabeceira 30-45° para facilitar expansão pulmonar e prevenir aspiração',
+            '2. Monitorar SpO2 contínua — administrar O2 suplementar se SpO2 <94%',
+            '3. Administrar antibioticoterapia EV rigorosamente no horário prescrito',
+            '4. Monitorar temperatura a cada 4 horas — administrar antitérmico conforme prescrição',
+            '5. Auscultar campos pulmonares a cada turno — registrar crepitações, broncofonias',
+            '6. Realizar fisioterapia respiratória para mobilização de secreções',
+            '7. Incentivar expectoração e hidratação oral adequada',
+            '8. Monitorar exames laboratoriais: hemograma, PCR, culturas — registrar resultados',
+            '9. Manter hidratação venosa conforme balanço hídrico e prescrição',
+            '10. Avaliar dor pleurítica — administrar analgésico conforme prescrição',
+            '11. Monitorar sinais vitais a cada 4 horas',
+            '12. Coletar amostras para cultura conforme prescrição médica antes do ATB',
+            '13. Avaliar evolução clínica: febre, dispneia, produção de escarro',
+            '14. Registrar evolução de enfermagem a cada turno',
+            '15. Comunicar médico se piora clínica ou não resposta ao ATB em 48-72h',
+        ],
+        'alertas': 'Atenção para sinais de deterioração: piora da SpO2, sepse, derrame pleural.',
+    },
+
+    # ── CARDIOVASCULAR ──────────────────────────────────────
+    'iam_tto': {
+        'cids': ['i21','i22','infarto','iam','supra de st'],
+        'classificacao': 'IAM — fase aguda',
+        'itens': [
+            '1. Manter repouso absoluto no leito nas primeiras 12-24 horas',
+            '2. Monitoração cardíaca contínua — ECG contínuo — registrar arritmias',
+            '3. Manter 2 acessos venosos calibrosos pérvios',
+            '4. Avaliar e controlar dor torácica com EVA — administrar analgésico conforme prescrição',
+            '5. Administrar antiagregantes plaquetários e anticoagulantes conforme prescrição e horário',
+            '6. Realizar ECG seriado conforme prescrição médica',
+            '7. Coletar enzimas cardíacas (CK-MB, Troponina) conforme prescrição',
+            '8. Monitorar PA e FC a cada 1 hora na fase aguda',
+            '9. Administrar O2 se SpO2 <95% — avaliar necessidade contínua',
+            '10. Monitorar sinais de complicações: arritmias, ICC, choque cardiogênico',
+            '11. Manter paciente em NPO se indicado para cateterismo',
+            '12. Avaliar perfusão periférica: TEC, temperatura de extremidades, diurese',
+            '13. Controle rigoroso de diurese — atenção para oligúria (ICC)',
+            '14. Oferecer suporte emocional — ambiente calmo e tranquilo',
+            '15. Orientar paciente sobre importância do repouso e comunicar qualquer dor',
+            '16. Registrar evolução cardíaca detalhada a cada turno',
+        ],
+        'alertas': 'Vigilância contínua para: arritmias graves, choque cardiogênico, extensão do infarto.',
+    },
+
+    'icc_descomp': {
+        'cids': ['i50','insuficiência cardíaca','icc'],
+        'classificacao': 'ICC descompensada',
+        'itens': [
+            '1. Posicionar em Fowler 45° ou ortopneia conforme tolerância',
+            '2. Elevar MMII 30° para retorno venoso — exceto se hipotensão',
+            '3. Monitorar PA, FC, FR e SpO2 a cada 2 horas',
+            '4. Pesar paciente diariamente em jejum — registrar e comunicar ganho >1kg/dia',
+            '5. Controle rigoroso de diurese HORÁRIA — meta conforme prescrição médica',
+            '6. Realizar balanço hídrico rigoroso — registrar TODA ingesta e excreta',
+            '7. Restringir ingesta hídrica conforme prescrição médica',
+            '8. Administrar diurético EV rigorosamente no horário',
+            '9. Monitorar eletrólitos séricos — atenção para hipocalemia com diuréticos',
+            '10. Avaliar edema de MMII: grau, extensão, cacifo — registrar diariamente',
+            '11. Auscultar campos pulmonares: crepitações basais, sibilos',
+            '12. Restringir sódio na dieta — orientar paciente e família',
+            '13. Monitorar sinais de hipoperfusão: alteração de consciência, oligúria, cianose',
+            '14. Administrar O2 se SpO2 <94%',
+            '15. Registrar evolução cardíaca e respiratória a cada turno',
+        ],
+        'alertas': 'Vigilância para edema agudo de pulmão. Comunicar médico se piora respiratória ou oligúria.',
+    },
+
+    # ── SEPSE ───────────────────────────────────────────────
+    'sepse_tto': {
+        'cids': ['a41','r57.2','sepse','choque séptico'],
+        'classificacao': 'Sepse / Choque séptico — Bundle',
+        'itens': [
+            '1. Monitorar sinais vitais HORÁRIOS: PA, FC, FR, T°, SpO2 — registrar tendências',
+            '2. Avaliar perfusão periférica horária: TEC, temperatura extremidades, nível de consciência',
+            '3. Manter 2 acessos venosos calibrosos — garantir infusão de volume e antibióticos',
+            '4. COLETAR HEMOCULTURAS (2 pares) ANTES do primeiro antibiótico — não atrasar ATB',
+            '5. Administrar antibioticoterapia de amplo espectro na PRIMEIRA HORA (Bundle Sepse)',
+            '6. Iniciar reposição volêmica: cristaloide 30ml/kg em até 3 horas conforme prescrição',
+            '7. Monitorar DIURESE HORÁRIA — meta >0,5ml/kg/h — instalar SVD se necessário',
+            '8. Realizar balanço hídrico rigoroso HORÁRIO',
+            '9. Monitorar lactato sérico seriado conforme prescrição',
+            '10. Avaliar nível de consciência com Glasgow a cada hora',
+            '11. Monitorar exames laboratoriais: hemograma, PCR, lactato, creatinina, bilirrubinas',
+            '12. Administrar vasopressores (noradrenalina) conforme prescrição se hipotensão refratária',
+            '13. Controlar temperatura: antitérmico se T>38,5°C, aquecimento se hipotermia',
+            '14. Avaliar necessidade de suporte ventilatório — preparar material para IOT',
+            '15. Registrar TODOS os parâmetros do Bundle Sepse e horários',
+            '16. Comunicar médico IMEDIATAMENTE qualquer deterioração hemodinâmica',
+        ],
+        'alertas': 'URGÊNCIA: Bundle Sepse — antibiótico na 1ª hora é meta obrigatória. Colher hemoculturas ANTES.',
+    },
+
+    # ── DIABETES ────────────────────────────────────────────
+    'diabetes_tto': {
+        'cids': ['e10','e11','e13','e14','diabetes','cetoacidose','hiperglicemia'],
+        'classificacao': 'Diabetes mellitus descompensado / Cetoacidose',
+        'itens': [
+            '1. Monitorar glicemia capilar conforme prescrição (ex: 2/2h ou 6/6h)',
+            '2. Administrar insulina conforme protocolo institucional e prescrição médica',
+            '3. Avaliar e registrar sinais de hipoglicemia: sudorese fria, tremores, confusão, taquicardia',
+            '4. Avaliar e registrar sinais de hiperglicemia: poliúria, polidipsia, náuseas, hálito cetônico',
+            '5. Monitorar diurese: volume e frequência — atenção para poliúria',
+            '6. Realizar balanço hídrico rigoroso — repor perdas conforme prescrição',
+            '7. Monitorar eletrólitos: potássio sérico (insulinoterapia causa hipocalemia)',
+            '8. Inspecionar extremidades diariamente: lesões, eritema, temperatura',
+            '9. Realizar cuidados com feridas diabéticas conforme protocolo de curativos',
+            '10. Administrar hidratação venosa conforme prescrição (SF 0,9% na CAD)',
+            '11. Monitorar gasometria e cetonemia se cetoacidose',
+            '12. Avaliar nível de consciência a cada turno',
+            '13. Orientar sobre dieta hipoglicídica e importância da adesão ao tratamento',
+            '14. Registrar evolução metabólica com valores de glicemia a cada turno',
+            '15. Comunicar médico se glicemia <70mg/dL ou >300mg/dL',
+        ],
+        'alertas': 'Vigilância para hipoglicemia grave (<40mg/dL) e cetoacidose. Comunicar médico imediatamente.',
+    },
+
+    # ── RENAL ────────────────────────────────────────────────
+    'ira_tto': {
+        'cids': ['n17','insuficiência renal aguda','ira'],
+        'classificacao': 'Insuficiência Renal Aguda',
+        'itens': [
+            '1. Monitorar diurese HORÁRIA — registrar volume, cor e características',
+            '2. Instalar SVD se necessário para controle preciso de diurese',
+            '3. Realizar balanço hídrico RIGOROSO — registrar toda ingesta e excreta',
+            '4. Pesar paciente diariamente em jejum — comunicar variações >1kg',
+            '5. Restringir ingesta hídrica e de potássio conforme prescrição',
+            '6. Monitorar PA a cada 2-4 horas',
+            '7. Monitorar eletrólitos: hipercalemia (K>6,5 — URGÊNCIA cardíaca)',
+            '8. Avaliar sinais de hipercalemia: fraqueza muscular, arritmias, paresia',
+            '9. Monitorar nível de ureia e creatinina conforme solicitação',
+            '10. Cuidados com acesso para diálise (cateter, FAV): curativo estéril, permeabilidade',
+            '11. Administrar diurético EV se prescrito — avaliar resposta diurética',
+            '12. Evitar medicamentos nefrotóxicos — alertar equipe',
+            '13. Monitorar sinais de edema agudo de pulmão: dispneia, crepitações',
+            '14. Avaliar nível de consciência — uremia pode causar encefalopatia',
+            '15. Registrar evolução renal com valores laboratoriais a cada turno',
+        ],
+        'alertas': 'Hipercalemia >6,5 mEq/L é emergência cardíaca. Comunicar médico imediatamente.',
+    },
+}
+
+
+def _obter_prescricao_por_cid(diag_completo, queixas=''):
+    """
+    Busca prescrição clínica específica para o CID/diagnóstico.
+    Retorna lista de itens clínicos individualizados + alertas.
+    Dengue Tipo C recebe tratamento especial com vigilância intensiva.
+    """
     d = diag_completo.lower()
-    # RESPIRATÓRIO
-    if any(x in d for x in ['asma','crise asmat','broncoespas','j45','j46','status asmat']):
-        return {'nanda1':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
-                'nanda2':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
-                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-                'plano':'posição Fowler 45°, broncodilatadores conforme prescrição, oximetria contínua (meta SpO2>95%), ausculta pulmonar 2/2h, nebulização conforme prescrição, observar uso musculatura acessória, evitar fatores desencadeantes, inaloterapia',
-                'noc':'Estado respiratório: ventilação (0403) SpO2>95%; Controle de sintomas (1608); Nível de ansiedade (1211)'}
-    if any(x in d for x in ['dpoc','doença pulmonar obstrutiva','j44','j43','enfisema']):
-        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
-                'nanda2':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
-                'nanda3':'Intolerância à atividade (NANDA 00092) — Domínio 4, Classe 4',
-                'plano':'posição semi-Fowler 30-45°, O2 controlado (atenção retenção CO2 meta SpO2 88-92%), fisioterapia respiratória, respiração com lábios franzidos, monitorar sonolência/confusão (retenção CO2), nebulização com broncodilatador',
-                'noc':'Estado respiratório: troca gasosa (0402) SpO2 88-92%; Tolerância à atividade (0005); Autocontrole DPOC (3200)'}
-    if any(x in d for x in ['pneumonia','j18','j15','j12']):
-        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
-                'nanda2':'Hipertermia (NANDA 00007) — Domínio 11, Classe 6',
-                'nanda3':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
-                'plano':'cabeceira 30-45°, antibioticoterapia rigorosa no horário, controle temperatura 4/4h, hidratação, incentivar expectoração, fisioterapia respiratória, coleta culturas conforme prescrição',
-                'noc':'Estado respiratório: troca gasosa (0402); Termorregulação (0800); Controle infecção (1924)'}
-    if any(x in d for x in ['insuficiência respiratória','j96','sara','sdra']):
-        return {'nanda1':'Troca de gases prejudicada (NANDA 00030) — Domínio 4, Classe 4',
-                'nanda2':'Padrão respiratório ineficaz (NANDA 00032) — Domínio 4, Classe 4',
-                'nanda3':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
-                'plano':'monitorar gasometria e oximetria, cabeceira 30-45°, O2 conforme prescrição, preparar material IOT, aspiração vias aéreas se necessário, monitorar nível consciência',
-                'noc':'Estado respiratório: troca gasosa (0402); Permeabilidade vias aéreas (0410); Nível consciência (0912)'}
-    # CARDIOVASCULAR
-    if any(x in d for x in ['infarto','iam','i21','supra de st','iamsst']):
-        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
-                'nanda2':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
-                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-                'plano':'repouso absoluto 12-24h, monitoração cardíaca contínua, acesso venoso calibroso, controle da dor (EVA), administrar antiagregantes/anticoagulantes, ECG seriado, enzimas cardíacas conforme horário, O2 se SpO2<95%',
-                'noc':'Estado cardíaco (0414); Nível de dor (2102); Nível de ansiedade (1211)'}
-    if any(x in d for x in ['insuficiência cardíaca','icc','i50']):
-        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
-                'nanda2':'Excesso de volume de líquidos (NANDA 00026) — Domínio 2, Classe 5',
-                'nanda3':'Intolerância à atividade (NANDA 00092) — Domínio 4, Classe 4',
-                'plano':'MMII elevados 30°, restrição hídrica conforme prescrição, diurese rigorosa (balanço hídrico), pesagem diária, monitorar edema/crepitações, restrição sódio, O2 se SpO2<95%',
-                'noc':'Efetividade bomba cardíaca (0400); Equilíbrio hídrico (0601); Tolerância atividade (0005)'}
-    if any(x in d for x in ['hipertensão','has','i10','crise hipertensiva','pressão alta']):
-        return {'nanda1':'Risco de perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
-                'nanda2':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
-                'nanda3':'Deficiência de conhecimento (NANDA 00126) — Domínio 5, Classe 4',
-                'plano':'monitorar PA ambos os membros, repouso ambiente calmo, anti-hipertensivos conforme prescrição, monitorar sinais neurológicos, restrição sódio, orientar adesão ao tratamento',
-                'noc':'Estado neurológico (0909); Nível de dor (2102); Conhecimento: controle doença crônica (1847)'}
-    if any(x in d for x in ['fibrilação atrial','fa ','i48','flutter']):
-        return {'nanda1':'Débito cardíaco diminuído (NANDA 00029) — Domínio 4, Classe 4',
-                'nanda2':'Risco de perfusão tissular ineficaz (NANDA 00204) — Domínio 4, Classe 4',
-                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-                'plano':'monitoração cardíaca contínua, controle FC e PA, anticoagulação conforme prescrição, cardioversão se indicada, monitorar sinais tromboembolismo, repouso relativo',
-                'noc':'Estado cardíaco (0414); Perfusão tissular periférica (0407); Nível ansiedade (1211)'}
-    # NEUROLÓGICO
-    if any(x in d for x in ['avc','acidente vascular','i63','i64','i61','derrame']):
-        return {'nanda1':'Perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
-                'nanda2':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
-                'nanda3':'Mobilidade física prejudicada (NANDA 00085) — Domínio 4, Classe 2',
-                'plano':'cabeceira 30°, Glasgow 2/2h, avaliação pupilas/força/fala, posicionamento anti-contraturas, fisioterapia motora precoce, teste deglutição antes dieta oral, profilaxia TVP',
-                'noc':'Perfusão tissular cerebral (0406); Estado neurológico (0909); Mobilidade (0208)'}
-    if any(x in d for x in ['tce','traumatismo crânio','s06','trauma cranioence']):
-        return {'nanda1':'Capacidade de recuperação intracraniana diminuída (NANDA 00049) — Domínio 11, Classe 2',
-                'nanda2':'Risco de perfusão tissular cerebral ineficaz (NANDA 00201) — Domínio 4, Classe 4',
-                'nanda3':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
-                'plano':'cabeceira 30°, Glasgow 1/1h, pupilas fotorreativas, PA rigorosa (evitar hipotensão), sinais herniação cerebral, restrição hídrica se prescrito, ambiente calmo estímulos mínimos',
-                'noc':'Estado neurológico: consciência (0912); Perfusão tissular cerebral (0406); Estado respiratório (0403)'}
-    if any(x in d for x in ['epilepsia','convuls','g40','g41','status epilept']):
-        return {'nanda1':'Risco de lesão (NANDA 00035) — Domínio 11, Classe 2',
-                'nanda2':'Risco de aspiração (NANDA 00039) — Domínio 11, Classe 2',
-                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-                'plano':'proteção lateral durante crise, não conter movimentos, decúbito lateral após crise, O2 disponível, monitorar pós-ictal, anticonvulsivante conforme prescrição, grades elevadas',
-                'noc':'Controle do risco (1902); Estado respiratório (0403); Nível ansiedade (1211)'}
-    # METABÓLICO / ENDÓCRINO
-    if any(x in d for x in ['diabetes','dm ','e11','e10','glicemia','hiperglicemia','hipoglicemia','cetoacidose']):
-        return {'nanda1':'Nível de glicemia instável (NANDA 00179) — Domínio 2, Classe 4',
-                'nanda2':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
-                'nanda3':'Deficiência de conhecimento (NANDA 00126) — Domínio 5, Classe 4',
-                'plano':'glicemia capilar 6/6h, insulina conforme protocolo, sinais hipo/hiperglicemia, inspeção extremidades diária, cuidados com feridas, orientar dieta adequada',
-                'noc':'Nível de glicemia (2300); Controle risco infeccioso (1924); Conhecimento: controle DM (1820)'}
-    if any(x in d for x in ['sepse','a41','choque séptico','r57','séptico']):
-        return {'nanda1':'Perfusão tissular ineficaz periférica (NANDA 00204) — Domínio 4, Classe 4',
-                'nanda2':'Hipertermia (NANDA 00007) — Domínio 11, Classe 6',
-                'nanda3':'Risco de choque (NANDA 00205) — Domínio 11, Classe 2',
-                'plano':'SVs 1/1h, diurese rigorosa meta>0.5ml/kg/h, culturas antes ATB, ATB dentro do prazo (bundle sepse), acesso calibroso, reposição volemia, lactato seriado, nível consciência',
-                'noc':'Perfusão tissular periférica (0407); Termorregulação (0800); Estado circulatório (0401)'}
-    # RENAL
-    if any(x in d for x in ['insuficiência renal','n17','n18','ira ','irc ','renal aguda','renal crônica','diálise']):
-        return {'nanda1':'Eliminação urinária prejudicada (NANDA 00016) — Domínio 3, Classe 1',
-                'nanda2':'Excesso de volume de líquidos (NANDA 00026) — Domínio 2, Classe 5',
-                'nanda3':'Risco de desequilíbrio eletrolítico (NANDA 00195) — Domínio 2, Classe 5',
-                'plano':'diurese horária rigorosa, balanço hídrico, restrição hídrica e potássio conforme prescrição, pesagem diária, eletrólitos, sinais hipercalemia (arritmias), cuidados acesso diálise se presente',
-                'noc':'Eliminação urinária (0503); Equilíbrio hídrico (0601); Equilíbrio eletrolítico (0606)'}
-    # GASTROINTESTINAL
-    if any(x in d for x in ['pancreatite','k85']):
-        return {'nanda1':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
-                'nanda2':'Nutrição desequilibrada: menor que as necessidades (NANDA 00002) — Domínio 2, Classe 1',
-                'nanda3':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
-                'plano':'jejum conforme prescrição, controle da dor (EVA), reposição volêmica, monitorar amilase/lipase, posição confortável (joelhos fletidos), eletrólitos, nutrição enteral se indicada',
-                'noc':'Nível de dor (2102); Estado nutricional (1004); Controle infecção (1924)'}
-    if any(x in d for x in ['hemorragia digestiva','k92','melena','hematêmese']):
-        return {'nanda1':'Perfusão tissular ineficaz periférica (NANDA 00204) — Domínio 4, Classe 4',
-                'nanda2':'Risco de choque (NANDA 00205) — Domínio 11, Classe 2',
-                'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-                'plano':'acesso venoso calibroso, reposição volêmica rigorosa, monitorar PA/FC, jejum absoluto, preparar para endoscopia, monitorar hematócrito/hemoglobina seriados, decúbito dorsal',
-                'noc':'Estado circulatório (0401); Controle risco (1902); Nível ansiedade (1211)'}
-    # DEFAULT
-    return {'nanda1':'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
-            'nanda2':'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
-            'nanda3':'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
-            'plano':'monitorar sinais vitais frequentemente, administrar medicamentos conforme prescrição, observar evolução clínica, manter conforto e segurança',
-            'noc':'Nível de dor (2102); Controle do risco (1902); Nível de ansiedade (1211)'}
+    q = queixas.lower()
+
+    # Dengue — classificação por gravidade (prioridade máxima)
+    if any(x in d for x in ['dengue','a90','a91','a97']):
+        # Verificar classificação de gravidade
+        if any(x in d+q for x in ['tipo c','tipo d','grave','hemorrágica','hemorragica','choque',
+                                    'a91','a97.2','sangramento ativo','plaquetas','trombocitopenia']):
+            return PRESCRICOES_POR_CID['dengue_grave']
+        elif any(x in d+q for x in ['sinais de alarme','tipo b','a97.1','dor abdominal intensa',
+                                     'vômitos persistentes','letargia','oligúria']):
+            return PRESCRICOES_POR_CID['dengue_alarme']
+        else:
+            return PRESCRICOES_POR_CID['dengue_classica']
+
+    # Busca nas demais patologias
+    for chave, dados in PRESCRICOES_POR_CID.items():
+        if chave.startswith('dengue'): continue  # dengue já tratada acima
+        for termo in dados['cids']:
+            if termo in d:
+                return dados
+
+    return None  # Não encontrado — usar prompt genérico da IA
+
+
+
+# ────────────────────────────────────────────────────────────
+# BANCO NANDA-I 2024-2026 — Associação CID-10 → NANDA
+# Estrutura: nanda1-5 (prioritários), fatores, plano, noc
+# Individualizado por CID + quadro clínico do paciente
+# ────────────────────────────────────────────────────────────
+
+# Banco estruturado: cada entrada tem até 5 diagnósticos NANDA
+# com fatores relacionados, características definidoras e NOC
+NANDA_POR_CID = {
+    # ── DOENÇAS INFECCIOSAS / TROPICAIS ─────────────────────
+    'dengue': {
+        'cids': ['a90','a91','a97','dengue','febre dengue'],
+        'diagnosticos': [
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'processo infeccioso pelo vírus Dengue','evidenciado':'temperatura >38.5°C, calafrios, pele quente'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'processo inflamatório viral — mialgia e artralgia','evidenciado':'relato de dor, fácies de dor, EVA >3'},
+            {'codigo':'00028','nome':'Risco de volume de líquidos deficiente','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'perda hídrica por febre e vômitos, extravasamento plasmático','evidenciado':'febre persistente, náuseas, vômitos'},
+            {'codigo':'00206','nome':'Risco de sangramento','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'trombocitopenia por infecção viral','evidenciado':'plaquetas reduzidas, petéquias, prova do laço positiva'},
+            {'codigo':'00093','nome':'Fadiga','dominio':'4 — Atividade/Repouso','classe':'3 — Equilíbrio de energia',
+             'relacionado':'estado hipermetabólico da infecção viral','evidenciado':'relato de cansaço extremo, prostração'},
+        ],
+        'plano':'hidratação oral/EV rigorosa, controle temperatura 4/4h, monitorar plaquetas, observar sinais de alarme (dor abdominal intensa, vômitos persistentes, sangramentos), repouso relativo, paracetamol (NUNCA AAS/ibuprofeno), balanço hídrico, prova do laço',
+        'noc':'Termorregulação (0800) meta T<37.8°C; Estado hídrico (0602); Controle do risco de sangramento (1922)'
+    },
+    'chikungunya': {
+        'cids': ['a92','chikungunya'],
+        'diagnosticos': [
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'processo inflamatório articular pelo vírus Chikungunya','evidenciado':'artralgia intensa, limitação de movimento, EVA >5'},
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'processo infeccioso viral','evidenciado':'febre >38.5°C, calafrios'},
+            {'codigo':'00085','nome':'Mobilidade física prejudicada','dominio':'4 — Atividade/Repouso','classe':'2 — Atividade/Exercício',
+             'relacionado':'artralgia e artrite aguda','evidenciado':'dificuldade de deambulação, rigidez articular'},
+            {'codigo':'00093','nome':'Fadiga','dominio':'4 — Atividade/Repouso','classe':'3 — Equilíbrio de energia',
+             'relacionado':'processo infeccioso e dor crônica','evidenciado':'relato de cansaço, prostração'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre a doença e prevenção','evidenciado':'perguntas frequentes, comportamento inadequado'},
+        ],
+        'plano':'analgesia conforme prescrição, repouso articular, fisioterapia precoce, hidratação, controle de temperatura, orientar sobre cronicidade da artralgia, NUNCA AAS',
+        'noc':'Nível de dor (2102); Mobilidade (0208); Termorregulação (0800)'
+    },
+    'zika': {
+        'cids': ['a92.8','zika'],
+        'diagnosticos': [
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'infecção viral pelo Zika vírus','evidenciado':'febre baixa, exantema'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'processo inflamatório viral','evidenciado':'cefaleia, mialgia, artralgia'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'risco de complicações neurológicas e em gestantes','evidenciado':'expressão de preocupação, inquietação'},
+        ],
+        'plano':'hidratação, analgesia, repouso, orientar gestantes sobre risco de microcefalia, acompanhamento pré-natal rigoroso se gestante',
+        'noc':'Termorregulação (0800); Nível de ansiedade (1211); Nível de dor (2102)'
+    },
+    # ── RESPIRATÓRIO ────────────────────────────────────────
+    'asma': {
+        'cids': ['j45','j46','asma','broncoespas','crise asmat','status asmat'],
+        'diagnosticos': [
+            {'codigo':'00032','nome':'Padrão respiratório ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'broncoespasmo e inflamação das vias aéreas','evidenciado':'dispneia, sibilos, uso de musculatura acessória'},
+            {'codigo':'00030','nome':'Troca de gases prejudicada','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'desequilíbrio ventilação-perfusão','evidenciado':'SpO2 reduzida, dispneia, ansiedade'},
+            {'codigo':'00039','nome':'Risco de aspiração','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'reflexo de tosse alterado durante crise','evidenciado':'crise asmática grave, nível de consciência alterado'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'dificuldade respiratória e medo','evidenciado':'expressão de medo, agitação, taquicardia'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre uso correto de dispositivos inalatórios','evidenciado':'técnica incorreta de inalação'},
+        ],
+        'plano':'posição Fowler 45°, broncodilatadores conforme prescrição, oximetria contínua meta SpO2>95%, nebulização, ausculta 2/2h, evitar fatores desencadeantes, técnica de respiração com lábios franzidos',
+        'noc':'Estado respiratório: ventilação (0403) SpO2>95%; Controle de sintomas (1608); Nível de ansiedade (1211)'
+    },
+    'dpoc': {
+        'cids': ['j44','j43','dpoc','doença pulmonar obstrutiva','enfisema'],
+        'diagnosticos': [
+            {'codigo':'00030','nome':'Troca de gases prejudicada','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'destruição do parênquima pulmonar e aprisionamento de ar','evidenciado':'SpO2 88-92%, dispneia, cianose labial'},
+            {'codigo':'00032','nome':'Padrão respiratório ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'obstrução crônica ao fluxo aéreo e fadiga da musculatura respiratória','evidenciado':'uso musculatura acessória, taquipneia, barrel chest'},
+            {'codigo':'00092','nome':'Intolerância à atividade','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'desequilíbrio entre oferta e demanda de O2','evidenciado':'dispneia ao esforço, fadiga, incapacidade de realizar AVDs'},
+            {'codigo':'00155','nome':'Risco de quedas','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'hipoxemia e fraqueza muscular','evidenciado':'tontura, fraqueza, uso de O2 suplementar'},
+            {'codigo':'00078','nome':'Gerenciamento ineficaz da saúde','dominio':'1 — Promoção da saúde','classe':'2 — Gerenciamento da saúde',
+             'relacionado':'complexidade do regime terapêutico e tabagismo','evidenciado':'falha na adesão ao tratamento, tabagismo ativo'},
+        ],
+        'plano':'semi-Fowler 30-45°, O2 controlado meta SpO2 88-92% (CUIDADO retenção CO2), fisioterapia respiratória, respiração com lábios franzidos, nebulização broncodilatadora, monitorar sonolência/confusão',
+        'noc':'Estado respiratório: troca gasosa (0402); Tolerância à atividade (0005); Autocontrole DPOC (3200)'
+    },
+    'pneumonia': {
+        'cids': ['j18','j15','j12','j14','j13','pneumonia'],
+        'diagnosticos': [
+            {'codigo':'00030','nome':'Troca de gases prejudicada','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'processo inflamatório alveolar com exsudato','evidenciado':'SpO2 reduzida, dispneia, crepitações à ausculta'},
+            {'codigo':'00031','nome':'Limpeza ineficaz das vias aéreas','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'secreção excessiva e tosse ineficaz','evidenciado':'roncos, estertores, tosse produtiva'},
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'processo infeccioso bacteriano/viral','evidenciado':'febre >38.5°C, calafrios, sudorese'},
+            {'codigo':'00032','nome':'Padrão respiratório ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'dor pleurítica e fraqueza muscular','evidenciado':'taquipneia, respiração superficial'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'procedimentos invasivos e imunossupressão','evidenciado':'dispositivos invasivos, leucocitose'},
+        ],
+        'plano':'cabeceira 30-45°, ATB rigorosa no horário, controle temperatura 4/4h, fisioterapia respiratória, incentivar expectoração, hidratação, oximetria contínua, coleta de culturas',
+        'noc':'Troca gasosa (0402); Permeabilidade vias aéreas (0410); Termorregulação (0800)'
+    },
+    'insuf_resp': {
+        'cids': ['j96','sara','sdra','insuficiência respiratória'],
+        'diagnosticos': [
+            {'codigo':'00030','nome':'Troca de gases prejudicada','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'falência da membrana alvéolo-capilar','evidenciado':'SpO2 crítica, gasometria alterada, cianose'},
+            {'codigo':'00032','nome':'Padrão respiratório ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'fadiga da musculatura respiratória','evidenciado':'taquipneia >30rpm, uso intenso musculatura acessória'},
+            {'codigo':'00039','nome':'Risco de aspiração','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'nível de consciência reduzido e intubação','evidenciado':'rebaixamento de consciência, IOT'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'dispneia intensa e sensação de morte iminente','evidenciado':'agitação, taquicardia, expressão de medo'},
+        ],
+        'plano':'monitorar gasometria e oximetria, cabeceira 30-45°, O2 alto fluxo, preparar material IOT, aspiração vias aéreas, monitorar consciência, posição prona se indicada',
+        'noc':'Estado respiratório: troca gasosa (0402); Permeabilidade vias aéreas (0410); Nível consciência (0912)'
+    },
+    # ── CARDIOVASCULAR ──────────────────────────────────────
+    'iam': {
+        'cids': ['i21','i22','infarto','iam','supra de st','iamsst'],
+        'diagnosticos': [
+            {'codigo':'00029','nome':'Débito cardíaco diminuído','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'necrose miocárdica e disfunção ventricular','evidenciado':'hipotensão, taquicardia, alteração ECG'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'isquemia miocárdica','evidenciado':'dor precordial em aperto, irradiação para membro superior esquerdo, EVA >7'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'ameaça à vida e ambiente da UTI/UCC','evidenciado':'expressão de medo, agitação'},
+            {'codigo':'00204','nome':'Perfusão tissular periférica ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'débito cardíaco reduzido','evidenciado':'extremidades frias, pulso fraco, cianose de extremidades'},
+            {'codigo':'00206','nome':'Risco de sangramento','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'uso de anticoagulantes e antiagregantes','evidenciado':'terapia anticoagulante em curso'},
+        ],
+        'plano':'repouso absoluto 12-24h, monitoração cardíaca contínua, acesso venoso calibroso, controle da dor EVA, antiagregantes/anticoagulantes no horário, ECG seriado, enzimas cardíacas, O2 se SpO2<95%',
+        'noc':'Estado cardíaco (0414); Nível de dor (2102); Nível de ansiedade (1211)'
+    },
+    'icc': {
+        'cids': ['i50','insuficiência cardíaca','icc'],
+        'diagnosticos': [
+            {'codigo':'00029','nome':'Débito cardíaco diminuído','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'disfunção sistólica/diastólica ventricular','evidenciado':'dispneia, edema MMII, B3, turgência jugular'},
+            {'codigo':'00026','nome':'Excesso de volume de líquidos','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'mecanismos compensatórios de retenção hidrossalina','evidenciado':'edema MMII, crepitações pulmonares, ganho de peso'},
+            {'codigo':'00092','nome':'Intolerância à atividade','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'desequilíbrio entre oferta e demanda de O2','evidenciado':'dispneia aos pequenos esforços, fadiga'},
+            {'codigo':'00032','nome':'Padrão respiratório ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'congestão pulmonar','evidenciado':'ortopneia, dispneia paroxística noturna'},
+            {'codigo':'00155','nome':'Risco de quedas','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'hipotensão postural e fraqueza muscular','evidenciado':'uso de diuréticos, tontura'},
+        ],
+        'plano':'MMII elevados 30°, restrição hídrica conforme prescrição, diurese rigorosa balanço hídrico, pesagem diária, monitorar edema/crepitações, restrição sódio, O2 se SpO2<95%',
+        'noc':'Efetividade bomba cardíaca (0400); Equilíbrio hídrico (0601); Tolerância atividade (0005)'
+    },
+    'has': {
+        'cids': ['i10','i11','hipertensão','has','pressão alta','crise hipertensiva'],
+        'diagnosticos': [
+            {'codigo':'00201','nome':'Risco de perfusão tissular cerebral ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'pressão arterial elevada','evidenciado':'PA >180/110mmHg, cefaleia, tontura'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'vasoespasmo cerebral','evidenciado':'cefaleia occipital intensa, EVA >5'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre adesão ao tratamento','evidenciado':'abandono da medicação, comportamentos de risco'},
+            {'codigo':'00078','nome':'Gerenciamento ineficaz da saúde','dominio':'1 — Promoção da saúde','classe':'2 — Gerenciamento da saúde',
+             'relacionado':'complexidade do regime terapêutico','evidenciado':'PA não controlada, falha na adesão'},
+        ],
+        'plano':'monitorar PA ambos os membros, repouso ambiente calmo, anti-hipertensivos conforme prescrição, monitorar sinais neurológicos, restrição sódio, orientar adesão ao tratamento',
+        'noc':'Estado neurológico (0909); Nível de dor (2102); Conhecimento: controle da doença crônica (1847)'
+    },
+    'avc': {
+        'cids': ['i60','i61','i63','i64','avc','acidente vascular','derrame'],
+        'diagnosticos': [
+            {'codigo':'00201','nome':'Perfusão tissular cerebral ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'oclusão/ruptura vascular cerebral','evidenciado':'déficit neurológico focal, Glasgow alterado'},
+            {'codigo':'00039','nome':'Risco de aspiração','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'disfagia e reflexo de tosse reduzido','evidenciado':'deglutição prejudicada, nível de consciência alterado'},
+            {'codigo':'00085','nome':'Mobilidade física prejudicada','dominio':'4 — Atividade/Repouso','classe':'2 — Atividade/Exercício',
+             'relacionado':'dano neuromuscular','evidenciado':'hemiplegia/hemiparesia, espasticidade'},
+            {'codigo':'00011','nome':'Constipação','dominio':'3 — Eliminação/Troca','classe':'2 — Função gastrointestinal',
+             'relacionado':'imobilidade e hidratação inadequada','evidenciado':'ausência de evacuação >3 dias'},
+            {'codigo':'00108','nome':'Déficit no autocuidado para banho','dominio':'4 — Atividade/Repouso','classe':'5 — Autocuidado',
+             'relacionado':'déficit neuromuscular','evidenciado':'incapacidade de realizar higiene corporal'},
+        ],
+        'plano':'cabeceira 30°, Glasgow 2/2h, avaliação pupilas/força/fala, posicionamento anti-contraturas, fisioterapia motora precoce, teste deglutição antes dieta oral, profilaxia TVP, fonoaudiologia',
+        'noc':'Perfusão tissular cerebral (0406); Estado neurológico (0909); Mobilidade (0208)'
+    },
+    # ── NEUROLÓGICO ─────────────────────────────────────────
+    'tce': {
+        'cids': ['s06','tce','traumatismo cranio','trauma cranioence'],
+        'diagnosticos': [
+            {'codigo':'00049','nome':'Capacidade de recuperação intracraniana diminuída','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'edema cerebral traumático','evidenciado':'Glasgow reduzido, cefaleia intensa, vômitos'},
+            {'codigo':'00201','nome':'Risco de perfusão tissular cerebral ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'hipertensão intracraniana','evidenciado':'alteração pupilares, Cushing reflex'},
+            {'codigo':'00039','nome':'Risco de aspiração','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'nível de consciência reduzido','evidenciado':'Glasgow <10, reflexo de tosse diminuído'},
+            {'codigo':'00155','nome':'Risco de quedas','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'confusão e agitação pós-TCE','evidenciado':'desorientação, agitação psicomotora'},
+        ],
+        'plano':'cabeceira 30°, Glasgow 1/1h, pupilas, PA rigorosa evitar hipotensão, sinais herniação, restrição hídrica se prescrito, grades elevadas, ambiente calmo, profilaxia convulsão',
+        'noc':'Estado neurológico: consciência (0912); Perfusão tissular cerebral (0406); Controle do risco (1902)'
+    },
+    'epilepsia': {
+        'cids': ['g40','g41','epilepsia','convuls','status epilept'],
+        'diagnosticos': [
+            {'codigo':'00035','nome':'Risco de lesão','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'atividade convulsiva súbita','evidenciado':'história de convulsões, ausência de medicação'},
+            {'codigo':'00039','nome':'Risco de aspiração','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'perda de consciência durante crise','evidenciado':'rebaixamento de consciência pós-ictal'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'medo de nova crise e imprevisibilidade','evidenciado':'expressão de preocupação, isolamento'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre manejo da crise','evidenciado':'acompanhantes sem conhecimento de primeiros socorros'},
+        ],
+        'plano':'grades elevadas, ambiente protegido, anticonvulsivante no horário, decúbito lateral após crise, O2 disponível, NÃO conter movimentos, monitorar pós-ictal, orientar família',
+        'noc':'Controle do risco (1902); Estado respiratório (0403); Nível ansiedade (1211)'
+    },
+    # ── METABÓLICO / ENDÓCRINO ──────────────────────────────
+    'diabetes': {
+        'cids': ['e10','e11','e13','e14','diabetes','dm ','glicemia','hiperglicemia','hipoglicemia','cetoacidose'],
+        'diagnosticos': [
+            {'codigo':'00179','nome':'Nível de glicemia instável','dominio':'2 — Nutrição','classe':'4 — Metabolismo',
+             'relacionado':'deficiência ou resistência à insulina','evidenciado':'glicemia capilar alterada, poliúria, polidipsia'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'imunossupressão por hiperglicemia','evidenciado':'hiperglicemia persistente, feridas de difícil cicatrização'},
+            {'codigo':'00226','nome':'Risco de perfusão tissular periférica ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'neuropatia e vasculopatia diabética','evidenciado':'diminuição de sensibilidade, pulsos reduzidos'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre autocuidado e dieta','evidenciado':'alimentação inadequada, não realização de glicemia capilar'},
+            {'codigo':'00193','nome':'Autogerenciamento ineficaz da saúde','dominio':'1 — Promoção da saúde','classe':'2 — Gerenciamento da saúde',
+             'relacionado':'complexidade do regime terapêutico','evidenciado':'HbA1c elevada, falha no uso de insulina'},
+        ],
+        'plano':'glicemia capilar 6/6h, insulina conforme protocolo, monitorar hipo/hiperglicemia, inspecionar pés/extremidades diariamente, cuidados com feridas, orientar dieta e exercício',
+        'noc':'Nível de glicemia (2300); Controle risco infeccioso (1924); Conhecimento: controle DM (1820)'
+    },
+    'sepse': {
+        'cids': ['a41','r57.2','sepse','choque séptico','séptico'],
+        'diagnosticos': [
+            {'codigo':'00204','nome':'Perfusão tissular periférica ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'vasodilatação periférica e hipovolemia relativa','evidenciado':'hipotensão, extremidades frias, TEC>3seg'},
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'processo infeccioso sistêmico','evidenciado':'temperatura >38.5°C ou hipotermia <36°C'},
+            {'codigo':'00205','nome':'Risco de choque','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'infecção grave e disfunção orgânica','evidenciado':'lactato elevado, PA limítrofe, oligúria'},
+            {'codigo':'00030','nome':'Troca de gases prejudicada','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'edema pulmonar e vasoplegia','evidenciado':'taquipneia, SpO2 reduzida'},
+            {'codigo':'00002','nome':'Nutrição desequilibrada: menor que as necessidades','dominio':'2 — Nutrição','classe':'1 — Ingestão',
+             'relacionado':'hipermetabolismo do estado séptico','evidenciado':'catabolismo elevado, perda de peso'},
+        ],
+        'plano':'SVs 1/1h, diurese meta>0.5ml/kg/h, culturas antes ATB, ATB dentro do prazo (bundle sepse), acesso calibroso, reposição volêmica 30ml/kg, lactato seriado, noradrenalina se prescrita',
+        'noc':'Perfusão tissular periférica (0407); Termorregulação (0800); Estado circulatório (0401)'
+    },
+    # ── RENAL ────────────────────────────────────────────────
+    'renal': {
+        'cids': ['n17','n18','ira','irc','insuficiência renal','diálise','renal aguda','renal crônica'],
+        'diagnosticos': [
+            {'codigo':'00016','nome':'Eliminação urinária prejudicada','dominio':'3 — Eliminação/Troca','classe':'1 — Função urinária',
+             'relacionado':'disfunção renal aguda/crônica','evidenciado':'oligúria/anúria, creatinina elevada, ureia aumentada'},
+            {'codigo':'00026','nome':'Excesso de volume de líquidos','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'comprometimento dos mecanismos regulatórios renais','evidenciado':'edema, hipertensão, dispneia'},
+            {'codigo':'00195','nome':'Risco de desequilíbrio eletrolítico','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'falência da regulação eletrolítica renal','evidenciado':'hipercalemia, hiperfosfatemia'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'uremia e procedimentos invasivos','evidenciado':'relato de dor, fácies de dor'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'imunossupressão e acesso para diálise','evidenciado':'cateter de diálise, imunossupressão'},
+        ],
+        'plano':'diurese horária rigorosa, balanço hídrico, restrição hídrica/potássio conforme prescrição, pesagem diária, eletrólitos seriados, sinais hipercalemia (arritmias), cuidados acesso diálise',
+        'noc':'Eliminação urinária (0503); Equilíbrio hídrico (0601); Equilíbrio eletrolítico (0606)'
+    },
+    # ── GASTROINTESTINAL ────────────────────────────────────
+    'pancreatite': {
+        'cids': ['k85','pancreatite'],
+        'diagnosticos': [
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'inflamação pancreática e irritação peritoneal','evidenciado':'dor epigástrica intensa em faixa, EVA >8, vômitos'},
+            {'codigo':'00002','nome':'Nutrição desequilibrada: menor que as necessidades','dominio':'2 — Nutrição','classe':'1 — Ingestão',
+             'relacionado':'jejum prolongado e hipermetabolismo','evidenciado':'jejum, náuseas, perda de peso'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'necrose pancreática e procedimentos invasivos','evidenciado':'febre, leucocitose, cateter EV'},
+            {'codigo':'00026','nome':'Excesso de volume de líquidos','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'sequestro de líquidos no terceiro espaço','evidenciado':'edema, hipoalbuminemia'},
+        ],
+        'plano':'jejum conforme prescrição, analgesia EVA, reposição volêmica rigorosa, monitorar amilase/lipase, posição confortável joelhos fletidos, nutrição enteral se indicada, controle glicêmico',
+        'noc':'Nível de dor (2102); Estado nutricional (1004); Controle infecção (1924)'
+    },
+    'hemorragia_dig': {
+        'cids': ['k92','k25','k26','melena','hematêmese','hemorragia digestiva'],
+        'diagnosticos': [
+            {'codigo':'00204','nome':'Perfusão tissular periférica ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'hipovolemia por sangramento ativo','evidenciado':'hipotensão, taquicardia, palidez, TEC>3seg'},
+            {'codigo':'00205','nome':'Risco de choque','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'perda volêmica aguda','evidenciado':'melena/hematêmese ativa, hemoglobina em queda'},
+            {'codigo':'00206','nome':'Risco de sangramento','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'lesão vascular gastrointestinal','evidenciado':'sangramento ativo, coagulopatia'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'ameaça à vida e procedimentos invasivos','evidenciado':'agitação, medo'},
+        ],
+        'plano':'acesso venoso calibroso, reposição volêmica, jejum absoluto, monitorar PA/FC, preparar para endoscopia, Hb/Ht seriados, decúbito dorsal, inibidor de bomba de prótons',
+        'noc':'Estado circulatório (0401); Controle risco (1902); Nível ansiedade (1211)'
+    },
+    # ── ONCOLÓGICO ──────────────────────────────────────────
+    'cancer': {
+        'cids': ['c18','c34','c50','c61','c67','c80','c91','c92','z51','neoplasia','câncer','tumor','leucemia','linfoma'],
+        'diagnosticos': [
+            {'codigo':'00093','nome':'Fadiga','dominio':'4 — Atividade/Repouso','classe':'3 — Equilíbrio de energia',
+             'relacionado':'processo neoplásico e efeitos da quimioterapia/radioterapia','evidenciado':'relato de cansaço extremo, incapacidade para AVDs'},
+            {'codigo':'00002','nome':'Nutrição desequilibrada: menor que as necessidades','dominio':'2 — Nutrição','classe':'1 — Ingestão',
+             'relacionado':'anorexia, náuseas e hipermetabolismo neoplásico','evidenciado':'perda de peso >10%, albumina baixa, ingestão reduzida'},
+            {'codigo':'00132','nome':'Dor aguda/crônica','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'invasão tumoral e neuropatia por quimioterapia','evidenciado':'EVA >5, relato de dor, uso de analgésicos'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'imunossupressão por quimioterapia e neutropenia','evidenciado':'neutropenia, mucosites, cateter venoso'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'diagnóstico de câncer e prognóstico incerto','evidenciado':'expressão de medo, insônia, choro'},
+        ],
+        'plano':'protocolo de neutropenia febril se indicado, analgesia escalonada OMS, nutrição enteral/parenteral se necessário, cuidados com mucosite, higiene rigorosa, apoio emocional e espiritual, oncologia social',
+        'noc':'Estado nutricional (1004); Controle da dor (1605); Nível de ansiedade (1211)'
+    },
+    # ── ORTOPÉDICO / TRAUMA ─────────────────────────────────
+    'fratura': {
+        'cids': ['s72','s82','s52','s42','s32','s22','fratura','ortopédico','artroplastia','z96.6'],
+        'diagnosticos': [
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'lesão musculoesquelética e espasmo muscular','evidenciado':'EVA >5, proteção da área lesada, limitação de movimento'},
+            {'codigo':'00085','nome':'Mobilidade física prejudicada','dominio':'4 — Atividade/Repouso','classe':'2 — Atividade/Exercício',
+             'relacionado':'dor, imobilização e perda de força muscular','evidenciado':'incapacidade de movimentar membro, dispositivo de imobilização'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'exposição óssea (fratura exposta) ou cirurgia','evidenciado':'ferida cirúrgica, fratura exposta'},
+            {'codigo':'00291','nome':'Risco de trombose venosa profunda','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'imobilidade e lesão vascular','evidenciado':'imobilização de membro, cirurgia ortopédica'},
+            {'codigo':'00155','nome':'Risco de quedas','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'imobilidade, dor e uso de analgésicos opioides','evidenciado':'mobilidade reduzida, uso de dispositivos de apoio'},
+        ],
+        'plano':'imobilização adequada, analgesia EVA, profilaxia TVP (HBPM + meias compressivas), fisioterapia precoce, cuidados com ferida cirúrgica, mobilização progressiva, grades elevadas',
+        'noc':'Nível de dor (2102); Mobilidade (0208); Controle do risco TVP (1934)'
+    },
+    'queimadura': {
+        'cids': ['t20','t21','t22','t23','t24','t25','t31','queimadura'],
+        'diagnosticos': [
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'lesão térmica das terminações nervosas','evidenciado':'EVA elevada, expressão de dor, choro'},
+            {'codigo':'00027','nome':'Déficit de volume de líquidos','dominio':'2 — Nutrição','classe':'5 — Hidratação',
+             'relacionado':'perda de líquidos pela área queimada e edema de terceiro espaço','evidenciado':'hipotensão, taquicardia, oligúria'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'perda da barreira cutânea protetora','evidenciado':'área cruenta exposta, queimadura >20% SCQ'},
+            {'codigo':'00046','nome':'Integridade tissular prejudicada','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'lesão térmica direta','evidenciado':'necrose tecidual, vesículas, eritema'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'dor intensa, desfiguramento e hospitalização','evidenciado':'agitação, medo, choro'},
+        ],
+        'plano':'reposição volêmica Parkland (4ml/kg/%SCQ nas 24h), analgesia potente, curativo estéril, profilaxia infecção, nutrição hipercalórica precoce, fisioterapia, apoio psicológico',
+        'noc':'Estado hídrico (0602); Integridade tissular (1101); Controle infecção (1924)'
+    },
+    # ── OBSTÉTRICO ──────────────────────────────────────────
+    'gestante': {
+        'cids': ['o10','o14','o15','o20','o21','o24','o42','o60','o80','o82','gestante','gravidez','eclâmpsia','pré-eclâmpsia'],
+        'diagnosticos': [
+            {'codigo':'00206','nome':'Risco de sangramento','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'processo gestacional e complicações obstétricas','evidenciado':'sangramento vaginal, placenta prévia'},
+            {'codigo':'00201','nome':'Risco de perfusão tissular cerebral ineficaz','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'hipertensão gestacional e eclâmpsia','evidenciado':'PA >140/90mmHg, cefaleia, escotomas'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'complicações gestacionais e risco ao feto','evidenciado':'preocupação com o bebê, medo do parto'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'contrações uterinas e processo do parto','evidenciado':'EVA variável, contrações regulares'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'rotura de membranas e procedimentos obstétricos','evidenciado':'rotura de membranas, procedimentos invasivos'},
+        ],
+        'plano':'monitoração fetal contínua, PA frequente, anti-hipertensivo se prescrito, magnésio se eclâmpsia, decúbito lateral esquerdo, sulfato de magnésio para prevenção de convulsões, preparo para parto',
+        'noc':'Estado circulatório materno (0401); Nível de ansiedade (1211); Controle do risco (1902)'
+    },
+    # ── PSIQUIÁTRICO ────────────────────────────────────────
+    'psiquiatrico': {
+        'cids': ['f20','f30','f31','f32','f33','f40','f41','f43','f60','f10','f11','psiquiátrico','esquizofrenia','depressão','mania','ansiedade','transtorno'],
+        'diagnosticos': [
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento/Tolerância ao estresse','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'ameaça à integridade do self e situações estressoras','evidenciado':'agitação, taquicardia, inquietação, verbalização de medo'},
+            {'codigo':'00150','nome':'Risco de suicídio','dominio':'11 — Segurança/Proteção','classe':'3 — Violência',
+             'relacionado':'transtorno mental grave e ideação suicida','evidenciado':'verbalização de ideação, tentativas anteriores'},
+            {'codigo':'00054','nome':'Isolamento social','dominio':'12 — Conforto','classe':'3 — Conforto social',
+             'relacionado':'alteração do estado mental e estigma','evidenciado':'isolamento, recusa de contato, comportamento retraído'},
+            {'codigo':'00051','nome':'Comunicação verbal prejudicada','dominio':'5 — Percepção/Cognição','classe':'5 — Comunicação',
+             'relacionado':'distúrbio psíquico e efeitos de psicofármacos','evidenciado':'fala desorganizada, pensamento tangencial'},
+            {'codigo':'00079','nome':'Não adesão','dominio':'10 — Princípios da vida','classe':'3 — Congruência entre valores/crenças/ações',
+             'relacionado':'falta de insight sobre a doença','evidenciado':'abandono da medicação, comportamento de risco'},
+        ],
+        'plano':'ambiente terapêutico seguro (retirar objetos cortantes), observação contínua se risco de suicídio, medicação no horário, abordar com comunicação terapêutica, envolver família, psicologia/psiquiatria',
+        'noc':'Autocontrole da ansiedade (1402); Controle do pensamento distorcido (1403); Nível de ansiedade (1211)'
+    },
+    # ── TIREÓIDE ────────────────────────────────────────────
+    'hipotireoidismo': {
+        'cids': ['e03','hipotireoidismo'],
+        'diagnosticos': [
+            {'codigo':'00093','nome':'Fadiga','dominio':'4 — Atividade/Repouso','classe':'3 — Equilíbrio de energia',
+             'relacionado':'redução do metabolismo basal','evidenciado':'cansaço extremo, sonolência excessiva, bradicardia'},
+            {'codigo':'00011','nome':'Constipação','dominio':'3 — Eliminação/Troca','classe':'2 — Função gastrointestinal',
+             'relacionado':'peristaltismo reduzido por hipometabolismo','evidenciado':'ausência de evacuação, distensão abdominal'},
+            {'codigo':'00007','nome':'Hipotermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'redução da termogênese','evidenciado':'T<36°C, intolerância ao frio, pele fria e seca'},
+        ],
+        'plano':'monitorar temperatura, levotiroxina conforme prescrição, hidratação, dieta rica em fibras, orientar sobre adesão ao tratamento, evitar exposição ao frio',
+        'noc':'Tolerância à atividade (0005); Eliminação intestinal (0501); Termorregulação (0800)'
+    },
+    'hipertireoidismo': {
+        'cids': ['e05','hipertireoidismo','tireotoxicose','basedow'],
+        'diagnosticos': [
+            {'codigo':'00029','nome':'Débito cardíaco diminuído','dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+             'relacionado':'taquicardia e arritmias por excesso hormonal','evidenciado':'FC>100bpm, fibrilação atrial'},
+            {'codigo':'00093','nome':'Fadiga','dominio':'4 — Atividade/Repouso','classe':'3 — Equilíbrio de energia',
+             'relacionado':'hipermetabolismo','evidenciado':'fraqueza muscular, intolerância ao exercício'},
+            {'codigo':'00007','nome':'Hipertermia','dominio':'11 — Segurança/Proteção','classe':'6 — Termorregulação',
+             'relacionado':'aumento da termogênese','evidenciado':'sudorese excessiva, temperatura elevada, intolerância ao calor'},
+        ],
+        'plano':'monitoração cardíaca, beta-bloqueador conforme prescrição, antitireoidiano no horário, ambiente fresco, repouso, nutrição hipercalórica, observar crise tireotóxica',
+        'noc':'Estado cardíaco (0414); Tolerância à atividade (0005); Termorregulação (0800)'
+    },
+    # ── DERMATOLÓGICO / PELE ────────────────────────────────
+    'lesao_pressao': {
+        'cids': ['l89','lesão por pressão','úlcera de pressão','escara'],
+        'diagnosticos': [
+            {'codigo':'00046','nome':'Integridade tissular prejudicada','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'pressão prolongada e isquemia tecidual','evidenciado':'solução de continuidade da pele, necrose'},
+            {'codigo':'00047','nome':'Integridade da pele prejudicada','dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+             'relacionado':'umidade, fricção e pressão','evidenciado':'eritema não branqueável, maceração'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'solução de continuidade da pele','evidenciado':'ferida aberta, sinais de infecção'},
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'exposição de terminações nervosas','evidenciado':'relato de dor na ferida, EVA'},
+        ],
+        'plano':'mudança de decúbito 2/2h, colchão piramidal/pneumático, curativo conforme protocolo, hidratação da pele perilesional, nutrição adequada (proteínas/zinco/vitamina C), registro fotográfico, escala Braden',
+        'noc':'Integridade tissular (1101); Cicatrização de feridas (1103); Controle do risco (1902)'
+    },
+}
+
+def _mapear_nanda_por_patologia(diag_completo):
+    """
+    Mapeia diagnóstico médico/CID-10 → banco NANDA-I 2024-2026 individualizado.
+    Retorna dict com nanda1-5, plano e noc específicos para a patologia.
+    Cada paciente recebe diagnósticos baseados no CID e quadro clínico real.
+    """
+    d = diag_completo.lower()
+
+    # Buscar no banco estruturado
+    for chave, dados in NANDA_POR_CID.items():
+        for termo in dados['cids']:
+            if termo in d:
+                diags = dados['diagnosticos']
+                return {
+                    'nanda1': f"{diags[0]['nome']} (NANDA {diags[0]['codigo']}) — {diags[0]['dominio']}",
+                    'nanda2': f"{diags[1]['nome']} (NANDA {diags[1]['codigo']}) — {diags[1]['dominio']}" if len(diags)>1 else '',
+                    'nanda3': f"{diags[2]['nome']} (NANDA {diags[2]['codigo']}) — {diags[2]['dominio']}" if len(diags)>2 else '',
+                    'nanda4': f"{diags[3]['nome']} (NANDA {diags[3]['codigo']}) — {diags[3]['dominio']}" if len(diags)>3 else '',
+                    'nanda5': f"{diags[4]['nome']} (NANDA {diags[4]['codigo']}) — {diags[4]['dominio']}" if len(diags)>4 else '',
+                    'diagnosticos_completos': diags,
+                    'plano': dados['plano'],
+                    'noc': dados['noc'],
+                    'patologia_identificada': chave
+                }
+
+    # DEFAULT clínico — quando não identifica patologia específica
+    return {
+        'nanda1': 'Dor aguda (NANDA 00132) — Domínio 12, Classe 1',
+        'nanda2': 'Risco de infecção (NANDA 00004) — Domínio 11, Classe 1',
+        'nanda3': 'Ansiedade (NANDA 00146) — Domínio 9, Classe 2',
+        'nanda4': 'Deficiência de conhecimento (NANDA 00126) — Domínio 5, Classe 4',
+        'nanda5': '',
+        'diagnosticos_completos': [],
+        'plano': 'monitorar sinais vitais, administrar medicamentos conforme prescrição, observar evolução clínica, manter conforto e segurança, orientar paciente e família',
+        'noc': 'Nível de dor (2102); Controle do risco (1902); Nível de ansiedade (1211)',
+        'patologia_identificada': 'default'
+    }
+
+
+def _montar_prompt_prescricao(p, diag_completo, nc, ctx, dispositivos, pendencias, nanda_selecionados=''):
+    """
+    Monta prompt de prescrição individualizado baseado no banco clínico.
+    Para Dengue: classifica automaticamente por gravidade (A/B/C/D).
+    Para todas as patologias: usa itens clínicos específicos do banco.
+    """
+    # Buscar banco de prescrições específico para este CID
+    banco = _obter_prescricao_por_cid(diag_completo, p.get('queixas',''))
+
+    if banco:
+        # Temos prescrições clínicas específicas no banco
+        itens_banco = "\n".join(banco['itens'])
+        classificacao = banco.get('classificacao','')
+        alertas = banco.get('alertas','')
+
+        return f"""Você é enfermeiro(a) especialista em SAE. Complete a PRESCRIÇÃO DE ENFERMAGEM abaixo com base nos dados reais do paciente.
+{ctx}
+
+DADOS DO PACIENTE:
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnóstico Médico: {diag_completo}
+Classificação: {classificacao}
+Sinais Vitais: {p.get('sv')}
+Queixas/Estado Clínico: {p.get('queixas')}
+Dispositivos: {dispositivos or p.get('exames','')}
+Alergias: {p.get('alergias','')}
+Diagnóstico NANDA Prioritário: {nc['nanda1']}
+{'DIAGNÓSTICOS NANDA SELECIONADOS PELO ENFERMEIRO: ' + nanda_selecionados if nanda_selecionados else ''}
+
+{alertas}
+
+INSTRUÇÃO: Use os itens base abaixo e PERSONALIZE com os dados reais do paciente (SVs, queixas, exames, dispositivos).
+Adicione horários específicos. Remova itens não aplicáveis. Adicione itens clínicos relevantes para este paciente específico.
+NUNCA gere texto genérico igual para todos os pacientes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRESCRIÇÃO DE ENFERMAGEM
+Data: ___/___/______ Turno: ( )Manhã ( )Tarde ( )Noite
+Paciente: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnóstico: {diag_completo} — {classificacao}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DIAGNÓSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
+1. {nc['nanda1']}
+   Relacionado a: [personalizar com dados reais]
+   Evidenciado por: [usar SVs e queixas reais: {p.get('sv')} / {p.get('queixas')}]
+2. {nc['nanda2']}
+
+PRESCRIÇÕES BASE (personalize com dados do paciente):
+{itens_banco}
+
+PERSONALIZAÇÕES OBRIGATÓRIAS para {p.get('nome')}:
+- Adaptar frequências de monitoramento aos SVs atuais: {p.get('sv')}
+- Incluir cuidados específicos para dispositivos: {dispositivos or p.get('exames','')}
+- Relacionar com queixas do paciente: {p.get('queixas')}
+- Adicionar no mínimo 2 itens personalizados baseados no quadro clínico acima
+
+PENDÊNCIAS DO TURNO: {pendencias}
+
+RESULTADOS ESPERADOS (NOC): {nc['noc']}
+
+Enfermeiro(a): _________________________ COREN: _________"""
+
+    else:
+        # Patologia não mapeada — prompt genérico melhorado
+        return f"""Você é enfermeiro(a) especialista em SAE. Gere PRESCRIÇÃO DE ENFERMAGEM individualizada.
+{ctx}
+
+DADOS DO PACIENTE:
+Nome: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnóstico Médico: {diag_completo}
+Sinais Vitais: {p.get('sv')}
+Queixas: {p.get('queixas')}
+Dispositivos: {dispositivos or p.get('exames','')}
+Alergias: {p.get('alergias','')}
+Diagnóstico NANDA: {nc['nanda1']}
+{'Diagnósticos NANDA selecionados: ' + nanda_selecionados if nanda_selecionados else ''}
+Pendências: {pendencias}
+
+Intervenções base para {diag_completo}: {nc['plano']}
+
+INSTRUÇÃO: Gere MÍNIMO 14 itens INDIVIDUALIZADOS para ESTE paciente específico.
+Use os dados reais acima. NUNCA repita texto igual para pacientes diferentes.
+Inclua horários específicos. Relacione cada item ao quadro clínico real.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRESCRIÇÃO DE ENFERMAGEM
+Data: ___/___/______ Turno: ( )Manhã ( )Tarde ( )Noite
+Paciente: {p.get('nome')} | Leito: {p.get('leito')}
+Diagnóstico: {diag_completo}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DIAGNÓSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
+1. {nc['nanda1']}
+   Relacionado a: [fator específico de {diag_completo}]
+   Evidenciado por: [dados reais: {p.get('queixas')}]
+2. {nc['nanda2']}
+
+PRESCRIÇÃO — CUIDADOS INDIVIDUALIZADOS PARA {p.get('nome')} / {diag_completo.upper()}:
+[Gere mínimo 14 itens numerados, individualizados com horários específicos]
+
+RESULTADOS ESPERADOS (NOC): {nc['noc']}
+
+Enfermeiro(a): _________________________ COREN: _________"""
+
 
 def _gerar_ia(tipo, p):
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
@@ -1051,11 +2001,16 @@ def _gerar_ia(tipo, p):
     diag_medico   = p.get('diagnostico', '')
     cid_codigo    = p.get('cid_codigo', '')
     diag_completo = f"{diag_medico}{' ('+cid_codigo+')' if cid_codigo else ''}".strip()
-    dispositivos  = p.get('dispositivos', '')
-    pendencias    = p.get('pendencias', '')
+    dispositivos       = p.get('dispositivos', '')
+    pendencias         = p.get('pendencias', '')
+    nanda_selecionados = p.get('nanda_selecionados', '')
 
     # Mapeamento clínico — garante NANDA e plano específicos por patologia
     nc = _mapear_nanda_por_patologia(diag_completo)
+    # Se o enfermeiro já selecionou diagnósticos manualmente, priorizar
+    if nanda_selecionados:
+        nc['nanda1'] = nanda_selecionados.split('\n')[0] if nanda_selecionados else nc['nanda1']
+        nc['nanda_manual'] = nanda_selecionados
 
     prompts = {
         'evolucao': f"""Você é enfermeiro(a) especialista em SAE. Gere EVOLUÇÃO SOAP para o paciente abaixo.
@@ -1093,35 +2048,7 @@ NOC: {nc['noc']}
 
 Enfermeiro(a): _________________________ COREN: _________""",
 
-        'prescricao': f"""Você é enfermeiro(a) especialista. Gere PRESCRIÇÃO DE ENFERMAGEM individualizada para o diagnóstico informado.
-{ctx}
-PACIENTE: {p.get('nome')} | LEITO: {p.get('leito')}
-DIAGNÓSTICO MÉDICO: {diag_completo}
-DIAGNÓSTICO DE ENFERMAGEM (NANDA): {nc['nanda1']}
-SINAIS VITAIS: {p.get('sv')}
-QUEIXAS: {p.get('queixas')}
-DISPOSITIVOS: {dispositivos or p.get('exames','')}
-ALERGIAS: {p.get('alergias','')}
-PENDÊNCIAS DO TURNO: {pendencias}
-
-PRESCRIÇÃO DE ENFERMAGEM
-Data: ___/___/______ Turno: ( )Manhã ( )Tarde ( )Noite
-Paciente: {p.get('nome')} | Leito: {p.get('leito')}
-Diagnóstico Médico: {diag_completo}
-
-DIAGNÓSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
-1. {nc['nanda1']}
-   Relacionado a: [fator específico de {diag_completo}]
-   Evidenciado por: [dados clínicos reais: {p.get('queixas')}]
-2. {nc['nanda2']}
-   Relacionado a: [...] | Evidenciado por: [...]
-
-PRESCRIÇÃO — CUIDADOS ESPECÍFICOS PARA {diag_completo.upper()}:
-[Baseado em: {nc['plano']} — expanda em MÍNIMO 14 itens numerados com horários específicos, usando dados reais do paciente]
-
-RESULTADOS ESPERADOS (NOC): {nc['noc']}
-
-Enfermeiro(a): _________________________ COREN: _________""",
+        'prescricao': _montar_prompt_prescricao(p, diag_completo, nc, ctx, dispositivos, pendencias, nanda_selecionados),
 
         'passagem': f"""Você é enfermeiro(a) especialista. Gere PASSAGEM DE PLANTÃO com os modelos SBAR e FAST HUG.
 {ctx}
@@ -1390,21 +2317,186 @@ def excluir_pendencia(pid):
     db.session.commit()
     return jsonify({'ok':True})
 
+
 # ────────────────────────────────────────────────────────────
-# ESCALA DE FUGULIN
+# MÓDULO DIAGNÓSTICO DE ENFERMAGEM — NANDA-I 2024-2026
 # ────────────────────────────────────────────────────────────
-@app.route('/api/escores/fugulin-calcular', methods=['POST'])
+
+@app.route('/api/nanda/sugerir', methods=['POST'])
 @jwt_required()
-def fugulin_calcular():
-    if not validar_sessao(): return jsonify({'erro':'Sessao invalida.','sessao_invalida':True}),401
-    data = request.json
-    scores = data.get('scores',{})
-    total = sum(int(v) for v in scores.values() if str(v).isdigit())
-    if total<=9:   cls,cor='Cuidados Mínimos (PCM)','verde'
-    elif total<=12: cls,cor='Cuidados Intermediários (PCI)','amarelo'
-    elif total<=18: cls,cor='Cuidados Semi-Intensivos (PCSI)','laranja'
-    else:           cls,cor='Cuidados Intensivos (UTI)','vermelho'
-    return jsonify({'total':total,'classificacao':cls,'cor':cor,'itens_max':27})
+def nanda_sugerir():
+    """
+    Retorna diagnósticos NANDA sugeridos com base no CID-10 e diagnóstico médico.
+    Individualizado por paciente — nunca retorna lista fixa genérica.
+    """
+    if not validar_sessao():
+        return jsonify({'erro': 'Sessao invalida.', 'sessao_invalida': True}), 401
+    data = request.json or {}
+    diagnostico = data.get('diagnostico', '')
+    cid_codigo  = data.get('cid_codigo', '')
+    queixas     = data.get('queixas', '')
+    dispositivos= data.get('dispositivos', '')
+    diag_completo = f"{diagnostico} {cid_codigo}".strip()
+
+    nc = _mapear_nanda_por_patologia(diag_completo)
+    diags = nc.get('diagnosticos_completos', [])
+
+    # Se não encontrou pelo banco, monta lista do default
+    if not diags:
+        diags = [
+            {'codigo':'00132','nome':'Dor aguda','dominio':'12 — Conforto','classe':'1 — Conforto físico',
+             'relacionado':'processo patológico atual','evidenciado':'relato de dor, fácies de dor'},
+            {'codigo':'00004','nome':'Risco de infecção','dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+             'relacionado':'procedimentos invasivos e doença de base','evidenciado':'dispositivos invasivos, imunossupressão'},
+            {'codigo':'00146','nome':'Ansiedade','dominio':'9 — Enfrentamento','classe':'2 — Respostas de enfrentamento',
+             'relacionado':'ameaça ao estado de saúde','evidenciado':'expressão de preocupação, agitação'},
+            {'codigo':'00126','nome':'Deficiência de conhecimento','dominio':'5 — Percepção/Cognição','classe':'4 — Cognição',
+             'relacionado':'falta de informação sobre doença e tratamento','evidenciado':'perguntas frequentes, comportamento inadequado'},
+        ]
+
+    # Adicionar diagnósticos extras baseados em dispositivos
+    extras = []
+    disp = dispositivos.lower()
+    codigos_existentes = [d['codigo'] for d in diags]
+
+    if any(x in disp for x in ['svd','sonda vesical','cateter vesical']):
+        if '00016' not in codigos_existentes:
+            extras.append({'codigo':'00016','nome':'Eliminação urinária prejudicada',
+                'dominio':'3 — Eliminação/Troca','classe':'1 — Função urinária',
+                'relacionado':'sonda vesical de demora','evidenciado':'SVD instalada, diurese monitorada'})
+    if any(x in disp for x in ['tot','tubo orotraqueal','traqueostomia','vm ','ventilação mecânica']):
+        if '00031' not in codigos_existentes:
+            extras.append({'codigo':'00031','nome':'Limpeza ineficaz das vias aéreas',
+                'dominio':'4 — Atividade/Repouso','classe':'4 — Respostas cardiovasculares/pulmonares',
+                'relacionado':'via aérea artificial e secreção aumentada','evidenciado':'TOT/traqueostomia, aspiração necessária'})
+    if any(x in disp for x in ['avp','picc','cicc','ficc','cateter venoso']):
+        if '00004' not in codigos_existentes:
+            extras.append({'codigo':'00004','nome':'Risco de infecção',
+                'dominio':'11 — Segurança/Proteção','classe':'1 — Infecção',
+                'relacionado':'acesso vascular invasivo','evidenciado':'cateter venoso instalado'})
+    if any(x in disp for x in ['sonda enteral','sonda gástrica','sne','sng']):
+        if '00039' not in codigos_existentes:
+            extras.append({'codigo':'00039','nome':'Risco de aspiração',
+                'dominio':'11 — Segurança/Proteção','classe':'2 — Lesão física',
+                'relacionado':'sonda enteral e refluxo','evidenciado':'SNE/SNG instalada'})
+
+    todos = diags + extras
+    patologia = nc.get('patologia_identificada', 'não identificada')
+
+    return jsonify({
+        'diagnosticos': todos,
+        'patologia_identificada': patologia,
+        'plano_sugerido': nc.get('plano', ''),
+        'noc_sugerido': nc.get('noc', ''),
+        'total': len(todos),
+        'fonte': 'NANDA-I 2024-2026'
+    })
+
+
+@app.route('/api/nanda/banco', methods=['GET'])
+@jwt_required()
+def nanda_banco():
+    """Retorna lista completa de diagnósticos NANDA disponíveis para inclusão manual"""
+    if not validar_sessao():
+        return jsonify({'erro': 'Sessao invalida.', 'sessao_invalida': True}), 401
+    # Lista completa NANDA-I 2024-2026 para busca manual
+    banco_completo = [
+        {'codigo':'00001','nome':'Desobstrução ineficaz das vias aéreas'},
+        {'codigo':'00002','nome':'Nutrição desequilibrada: menor que as necessidades'},
+        {'codigo':'00003','nome':'Nutrição desequilibrada: maior que as necessidades'},
+        {'codigo':'00004','nome':'Risco de infecção'},
+        {'codigo':'00007','nome':'Hipertermia'},
+        {'codigo':'00008','nome':'Hipotermia'},
+        {'codigo':'00011','nome':'Constipação'},
+        {'codigo':'00013','nome':'Diarreia'},
+        {'codigo':'00014','nome':'Incontinência fecal'},
+        {'codigo':'00016','nome':'Eliminação urinária prejudicada'},
+        {'codigo':'00019','nome':'Incontinência urinária funcional'},
+        {'codigo':'00026','nome':'Excesso de volume de líquidos'},
+        {'codigo':'00027','nome':'Déficit de volume de líquidos'},
+        {'codigo':'00028','nome':'Risco de volume de líquidos deficiente'},
+        {'codigo':'00029','nome':'Débito cardíaco diminuído'},
+        {'codigo':'00030','nome':'Troca de gases prejudicada'},
+        {'codigo':'00031','nome':'Limpeza ineficaz das vias aéreas'},
+        {'codigo':'00032','nome':'Padrão respiratório ineficaz'},
+        {'codigo':'00035','nome':'Risco de lesão'},
+        {'codigo':'00039','nome':'Risco de aspiração'},
+        {'codigo':'00040','nome':'Síndrome do desuso, risco de'},
+        {'codigo':'00044','nome':'Integridade tissular prejudicada'},
+        {'codigo':'00046','nome':'Integridade da pele prejudicada'},
+        {'codigo':'00047','nome':'Risco de integridade da pele prejudicada'},
+        {'codigo':'00048','nome':'Desobstrução das vias aéreas ineficaz'},
+        {'codigo':'00049','nome':'Capacidade de recuperação intracraniana diminuída'},
+        {'codigo':'00051','nome':'Comunicação verbal prejudicada'},
+        {'codigo':'00054','nome':'Isolamento social'},
+        {'codigo':'00055','nome':'Desempenho de papel ineficaz'},
+        {'codigo':'00059','nome':'Disfunção sexual'},
+        {'codigo':'00060','nome':'Processos familiares interrompidos'},
+        {'codigo':'00062','nome':'Risco de comprometimento de vínculo'},
+        {'codigo':'00078','nome':'Gerenciamento ineficaz da saúde'},
+        {'codigo':'00079','nome':'Não adesão'},
+        {'codigo':'00085','nome':'Mobilidade física prejudicada'},
+        {'codigo':'00086','nome':'Mobilidade no leito prejudicada'},
+        {'codigo':'00088','nome':'Deambulação prejudicada'},
+        {'codigo':'00092','nome':'Intolerância à atividade'},
+        {'codigo':'00093','nome':'Fadiga'},
+        {'codigo':'00095','nome':'Insônia'},
+        {'codigo':'00100','nome':'Manutenção ineficaz da saúde'},
+        {'codigo':'00102','nome':'Déficit no autocuidado para alimentação'},
+        {'codigo':'00108','nome':'Déficit no autocuidado para banho'},
+        {'codigo':'00109','nome':'Déficit no autocuidado para vestir-se'},
+        {'codigo':'00110','nome':'Déficit no autocuidado para higiene íntima'},
+        {'codigo':'00118','nome':'Imagem corporal perturbada'},
+        {'codigo':'00119','nome':'Autoestima cronicamente baixa'},
+        {'codigo':'00120','nome':'Autoestima situacionalmente baixa'},
+        {'codigo':'00124','nome':'Desesperança'},
+        {'codigo':'00125','nome':'Impotência'},
+        {'codigo':'00126','nome':'Deficiência de conhecimento'},
+        {'codigo':'00128','nome':'Confusão aguda'},
+        {'codigo':'00129','nome':'Confusão crônica'},
+        {'codigo':'00130','nome':'Processos de pensamento perturbados'},
+        {'codigo':'00131','nome':'Memória prejudicada'},
+        {'codigo':'00132','nome':'Dor aguda'},
+        {'codigo':'00133','nome':'Dor crônica'},
+        {'codigo':'00134','nome':'Náusea'},
+        {'codigo':'00137','nome':'Luto'},
+        {'codigo':'00138','nome':'Risco de violência direcionada a outros'},
+        {'codigo':'00140','nome':'Risco de violência autoprovocada'},
+        {'codigo':'00146','nome':'Ansiedade'},
+        {'codigo':'00147','nome':'Ansiedade ante a morte'},
+        {'codigo':'00148','nome':'Medo'},
+        {'codigo':'00150','nome':'Risco de suicídio'},
+        {'codigo':'00155','nome':'Risco de quedas'},
+        {'codigo':'00160','nome':'Disposição para controle aumentado da saúde'},
+        {'codigo':'00161','nome':'Disposição para nutrição aumentada'},
+        {'codigo':'00168','nome':'Estilo de vida sedentário'},
+        {'codigo':'00179','nome':'Nível de glicemia instável'},
+        {'codigo':'00193','nome':'Autogerenciamento ineficaz da saúde'},
+        {'codigo':'00195','nome':'Risco de desequilíbrio eletrolítico'},
+        {'codigo':'00197','nome':'Motilidade gastrointestinal disfuncional'},
+        {'codigo':'00200','nome':'Risco de débito cardíaco diminuído'},
+        {'codigo':'00201','nome':'Risco de perfusão tissular cerebral ineficaz'},
+        {'codigo':'00202','nome':'Risco de perfusão tissular renal ineficaz'},
+        {'codigo':'00203','nome':'Risco de perfusão tissular gastrointestinal ineficaz'},
+        {'codigo':'00204','nome':'Perfusão tissular periférica ineficaz'},
+        {'codigo':'00205','nome':'Risco de choque'},
+        {'codigo':'00206','nome':'Risco de sangramento'},
+        {'codigo':'00207','nome':'Risco de integridade vascular intravenosa prejudicada'},
+        {'codigo':'00208','nome':'Disposição para controle aumentado da saúde'},
+        {'codigo':'00213','nome':'Risco de trauma vascular'},
+        {'codigo':'00219','nome':'Risco de olho seco'},
+        {'codigo':'00220','nome':'Risco de termorregulação ineficaz'},
+        {'codigo':'00226','nome':'Risco de perfusão tissular periférica ineficaz'},
+        {'codigo':'00228','nome':'Risco de perfusão tissular periférica ineficaz'},
+        {'codigo':'00230','nome':'Síndrome da dor crônica'},
+        {'codigo':'00253','nome':'Regulação do humor prejudicada'},
+        {'codigo':'00255','nome':'Síndrome de abstinência aguda de substâncias'},
+        {'codigo':'00291','nome':'Risco de trombose venosa profunda'},
+        {'codigo':'00293','nome':'Risco de úlcera por pressão'},
+        {'codigo':'00304','nome':'Risco de queda em adultos'},
+        {'codigo':'00307','nome':'Risco de lesão por posicionamento perioperatório'},
+    ]
+    return jsonify(banco_completo)
 
 # ROTAS ESTATICAS
 @app.route('/favicon.ico')
