@@ -407,6 +407,29 @@ textarea.ci{min-height:90px}
             <span onclick="limparCID()" style="cursor:pointer;font-size:16px;margin-left:8px;color:var(--cinza3)">✕</span>
           </div>
         </div>
+        <!-- Painel NANDA interativo -->
+        <div id="nanda-painel" style="display:none;margin-top:12px;background:var(--azul3);border:1.5px solid var(--azul2);border-radius:var(--r2);padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+            <div style="font-size:14px;font-weight:700;color:var(--azul)">🧠 Diagnósticos NANDA sugeridos <span id="nanda-count" style="font-size:11px;font-weight:400;color:var(--cinza3)"></span></div>
+            <div style="display:flex;gap:6px">
+              <button onclick="sugerirNANDA()" style="background:var(--azul);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">↻ Atualizar</button>
+              <button onclick="adicionarTodosNanda()" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">+ Todos</button>
+            </div>
+          </div>
+          <div id="nanda-sugeridos" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+            <div style="font-size:13px;color:var(--cinza3)">Selecione o diagnóstico médico acima para ver sugestões automáticas</div>
+          </div>
+          <div style="border-top:1px solid var(--cinza2);padding-top:10px;margin-top:4px">
+            <div style="font-size:12px;font-weight:600;color:var(--cinza3);margin-bottom:6px">Diagnósticos selecionados:</div>
+            <div id="nanda-selecionados" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px">
+              <div style="font-size:12px;color:var(--cinza3)">Nenhum selecionado</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <input type="text" id="nanda-manual-input" class="ci" placeholder="Adicionar diagnóstico manualmente..." style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter')adicionarNandaManual()">
+            <button onclick="adicionarNandaManual()" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;cursor:pointer;white-space:nowrap">+ Adicionar</button>
+          </div>
+        </div>
         <div class="cg"><label class="cl">Alergias e comorbidades</label><input type="text" id="p-aler" class="ci" placeholder="Ex: alérgico dipirona, DM tipo 2, IRC"></div>
         <div class="bnav"><button class="bav" onclick="av(2)" style="flex:1">Próximo →</button></div>
       </div>
@@ -1260,6 +1283,12 @@ function resetar(){
   STEP=1;TIPO='evolucao';TIPOS=[];
   ['p-nome','p-leito','p-diag','p-aler','a-sv','a-ex','a-obs'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const eq=document.getElementById('a-eq');if(eq)eq.value='';
+  // Limpar módulo NANDA ao iniciar nova SAE
+  _nandaSelecionados = [];
+  document.getElementById('p-cid-codigo') && (document.getElementById('p-cid-codigo').value='');
+  const pnl = document.getElementById('nanda-painel'); if(pnl) pnl.style.display='none';
+  const sel = document.getElementById('cid-selecionado'); if(sel) sel.style.display='none';
+  renderNandaSelecionados();
   document.querySelectorAll('.ob').forEach(b=>b.classList.remove('on'));
   document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('alerta-clinico').classList.remove('show');
@@ -1347,7 +1376,8 @@ async function gerar(){
     obs:document.getElementById('a-obs').value,
     cid_codigo:(document.getElementById('p-cid-codigo')||{value:''}).value,
     dispositivos:dispositivosLocal.filter(d=>d.ativo).map(d=>d.nome).join(', '),
-    pendencias:pendenciasLocal.filter(p=>!p.resolvida).map(p=>p.descricao).join(' | ')
+    pendencias:pendenciasLocal.filter(p=>!p.resolvida).map(p=>p.descricao).join(' | '),
+    nanda_selecionados:getNandaSelecionadosTexto()
   };
 
   // Gerar cada documento selecionado em sequência
@@ -1366,9 +1396,14 @@ async function gerar(){
       });
       const d=await r.json();
       if(d.limite){clearInterval(iv);mostrarPlanos();return;}
-      if(r.ok) texto=d.texto;
-    }catch(e){}
-    if(!texto) texto=template(t,pac);
+      if(r.ok && d.texto) texto=d.texto;
+      else if(d.erro) console.warn('SAE Fácil API erro:', d.erro);
+    }catch(e){ console.warn('SAE Fácil fetch erro:', e); }
+    // Fallback: Motor clínico dinâmico offline (usa dados reais do paciente)
+    if(!texto){
+      texto = template(t, pac);
+      toast('⚠️ Usando modo offline — resultado baseado nos dados informados', 'warn');
+    }
     textosGerados.push(texto);
   }
 
@@ -1428,109 +1463,328 @@ function verificarAlertas(pac){
   return alertas;
 }
 
-// TEMPLATES OFFLINE
-function template(tipo,p){
-  const dt=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  if(tipo==='evolucao') return `EVOLUÇÃO DE ENFERMAGEM
-Data/Hora: ${dt}
-Paciente: ${p.nome} | Leito: ${p.leito}
-Diagnóstico médico: ${p.diagnostico}
+// ════════════════════════════════════════════════════════════
+// MOTOR CLÍNICO DINÂMICO — SAE Fácil
+// Gera conteúdo DIFERENTE para cada paciente baseado no CID
+// Usado como fallback quando IA não responde
+// ════════════════════════════════════════════════════════════
+function _obterContextoClinico(p) {
+  const d = ((p.diagnostico||'') + ' ' + (p.cid_codigo||'')).toLowerCase();
+  const q = (p.queixas||'').toLowerCase();
 
-S - SUBJETIVO:
-${p.queixas||'Paciente refere queixas conforme avaliação clínica.'} Alergias: ${p.alergias||'Nega alergias conhecidas'}.
+  if (/dengue|a90|a91|a97/.test(d)) {
+    const grave = /tipo [cd]|grave|hemorrágic|hemorragic|choque|a91|a97\.2|sangramento ativo|plaqueta/.test(d+q);
+    const alarme = /sinais de alarme|tipo b|a97\.1|dor abdominal intensa|vomito persist|oligur/.test(d+q);
+    if (grave) return {especialidade:'Dengue Grave/Hemorrágica',classificacao:'Dengue Tipo D — UTI',
+      nanda1:'Perfusão tissular periférica ineficaz (NANDA 00204)',dom1:'Domínio 4, Classe 4',rel1:'vasodilatação periférica e extravasamento plasmático',
+      nanda2:'Risco de choque (NANDA 00205)',dom2:'Domínio 11, Classe 2',rel2:'trombocitopenia grave e sangramento ativo',
+      nanda3:'Risco de sangramento (NANDA 00206)',dom3:'Domínio 11, Classe 2',rel3:'plaquetopenia severa por infecção viral',
+      nanda4:'Hipertermia (NANDA 00007) | R/A: processo infeccioso viral grave',
+      plano:['Monitorar SVs CONTÍNUOS ou a cada 30min — meta PA sistólica >90mmHg','Avaliar perfusão periférica a cada 30min: TEC, extremidades, cianose','Expandir volemia AGRESSIVA conforme prescrição (cristaloide 20ml/kg se choque)','Monitorar diurese HORÁRIA — meta >0,5ml/kg/h — instalar SVD','Balanço hídrico HORÁRIO rigoroso','Vigilância INTENSA sangramento: mucosas, locais punção, SNC','CONTRAINDICADO: AAS, AINEs, IM — usar somente PARACETAMOL','Hemoderivados (plaquetas, plasma) conforme prescrição','SpO2 contínua — O2 se indicado','Comunicar IMEDIATAMENTE médico ante qualquer deterioração'],
+      recomendacoes:['Monitoração contínua hemodinâmica','Vigilância de sangramento ativo','Reposição volêmica agressiva','Comunicar deterioração imediatamente'],
+      prescricao:['Monitorar SVs CONTÍNUOS ou a cada 30min','Manter 2 acessos venosos calibrosos','Diurese HORÁRIA rigorosa — SVD se necessário','Balanço hídrico HORÁRIO','Vigiar sangramentos: mucosas, punções, abdome, SNC','PROIBIDO: AAS, AINEs, injeções IM','Hemoderivados conforme prescrição','SpO2 contínua','Comunicar deterioração imediatamente'],
+      noc:'Estado circulatório (0401); Termorregulação (0800); Controle risco sangramento (1922)',
+      alerta:'URGÊNCIA: Dengue grave. Risco de vida. NUNCA AAS. UTI se instável.'};
+    if (alarme) return {especialidade:'Dengue com Sinais de Alarme',classificacao:'Dengue Tipo C — vigilância intensiva',
+      nanda1:'Risco de volume de líquidos deficiente (NANDA 00028)',dom1:'Domínio 2, Classe 5',rel1:'extravasamento plasmático e perda hídrica por febre/vômitos',
+      nanda2:'Risco de sangramento (NANDA 00206)',dom2:'Domínio 11, Classe 2',rel2:'trombocitopenia progressiva por infecção viral',
+      nanda3:'Hipertermia (NANDA 00007)',dom3:'Domínio 11, Classe 6',rel3:'processo infeccioso viral pelo Dengue',
+      nanda4:'Dor aguda (NANDA 00132) | R/A: processo inflamatório viral — mialgia/artralgia',
+      plano:['Monitorar SVs a cada 1 hora — atenção para hipotensão e taquicardia','Avaliar perfusão periférica HORÁRIA: TEC, temperatura extremidades','Manter AVP calibroso pérvio — verificar cada turno','Hidratação EV (SF 0,9% ou Ringer Lactato) conforme prescrição','Balanço hídrico HORÁRIO (ingesta EV + oral x diurese)','Diurese HORÁRIA — meta mínima 0,5ml/kg/h','Vigilância ATIVA sinais choque: hipotensão, taquicardia, TEC lentificado','Monitorar sangramentos: petéquias, gengivorragia, locais punção','Plaquetas e hematócrito conforme solicitação — registrar tendência','NUNCA AAS ou ibuprofeno — usar PARACETAMOL','Comunicar IMEDIATAMENTE médico: queda PA, oligúria, sangramento ativo'],
+      recomendacoes:['Hidratação EV rigorosa','Monitorar plaquetas seriadas','Vigilância de choque','NUNCA AAS — somente Paracetamol'],
+      prescricao:['Monitorar SVs a cada 1 hora','Manter AVP calibroso pérvio','Hidratação EV conforme prescrição','Balanço hídrico HORÁRIO','Diurese HORÁRIA — meta 0,5ml/kg/h','Vigilância de choque: hipotensão, taquicardia, TEC','Monitorar sangramentos','Plaquetas e hematócrito conforme solicitação','NUNCA AAS — PARACETAMOL conforme prescrição','Repouso relativo no leito','Comunicar IMEDIATAMENTE deterioração'],
+      noc:'Estado hídrico (0602); Controle risco sangramento (1922); Termorregulação (0800)',
+      alerta:'Dengue Tipo C — sinais de alarme. Risco de choque. NUNCA AAS ou ibuprofeno.'};
+    return {especialidade:'Dengue Clássica',classificacao:'Dengue Tipo A/B — cuidados de suporte',
+      nanda1:'Hipertermia (NANDA 00007)',dom1:'Domínio 11, Classe 6',rel1:'processo infeccioso viral pelo Dengue',
+      nanda2:'Dor aguda (NANDA 00132)',dom2:'Domínio 12, Classe 1',rel2:'processo inflamatório viral — mialgia, artralgia, cefaleia',
+      nanda3:'Risco de volume de líquidos deficiente (NANDA 00028)',dom3:'Domínio 2, Classe 5',rel3:'perda hídrica por febre e náuseas/vômitos',
+      nanda4:'Fadiga (NANDA 00093) | R/A: estado hipermetabólico da infecção viral',
+      plano:['Monitorar temperatura a cada 4h — PARACETAMOL se Tax ≥38°C (NUNCA AAS)','Incentivar hidratação oral: 60ml/kg/dia (água, soro caseiro, sucos)','Monitorar sangramentos: petéquias, equimoses, epistaxe, gengivorragia','Avaliar dor EVA — analgésico conforme prescrição','Balanço hídrico: toda ingesta e diurese','Observar náuseas e vômitos','Vigilância sinais alarme: dor abdominal intensa, vômitos persist, letargia','Repouso relativo durante período febril','Orientar sinais de alarme que exigem retorno'],
+      recomendacoes:['Hidratação oral rigorosa','Paracetamol — NUNCA AAS','Monitorar sinais de alarme','Acompanhar plaquetas'],
+      prescricao:['Temperatura a cada 4h — PARACETAMOL se Tax ≥38°C','Hidratação oral 60ml/kg/dia','Monitorar sangramentos (petéquias, equimoses)','Avaliar dor com EVA','Balanço hídrico','Observar náuseas/vômitos','Vigilância sinais de alarme','Repouso relativo','Verificar plaquetas conforme prescrição','Orientar paciente sobre sinais alarme'],
+      noc:'Termorregulação (0800); Estado hídrico (0602); Controle risco sangramento (1922)',
+      alerta:'ATENÇÃO: Nunca AAS ou ibuprofeno. Vigiar sinais de alarme que indicam progressão.'};
+  }
 
-O - OBJETIVO:
-Sinais vitais: ${p.sv||'Verificar'}.
-Sistemas avaliados: ${p.sistemas?.join(', ')||'Não informados'}.
-Exames/Procedimentos: ${p.exames||'Conforme prontuário'}.
+  if (/pneumonia|j18|j15|j12|j13|j14/.test(d)) return {especialidade:'Pneumonia',classificacao:'Pneumonia hospitalar',
+    nanda1:'Troca de gases prejudicada (NANDA 00030)',dom1:'Domínio 4, Classe 4',rel1:'processo inflamatório alveolar com exsudato',
+    nanda2:'Limpeza ineficaz das vias aéreas (NANDA 00031)',dom2:'Domínio 4, Classe 4',rel2:'secreção excessiva e tosse ineficaz',
+    nanda3:'Hipertermia (NANDA 00007)',dom3:'Domínio 11, Classe 6',rel3:'processo infeccioso bacteriano/viral',
+    nanda4:'Padrão respiratório ineficaz (NANDA 00032) | R/A: dor pleurítica e fraqueza',
+    plano:['Cabeceira 30-45° para expansão pulmonar','Oximetria contínua — O2 se SpO2 <94%','ATB EV rigorosamente no horário prescrito','Temperatura a cada 4h — antitérmico conforme prescrição','Auscultar campos pulmonares a cada turno','Fisioterapia respiratória para mobilização de secreções','Incentivar expectoração e hidratação oral','Monitorar exames: hemograma, PCR, culturas','Comunicar médico se não resposta ao ATB em 48-72h'],
+    recomendacoes:['ATB no horário rigoroso','Oximetria contínua','Fisioterapia respiratória','Monitorar resposta clínica'],
+    prescricao:['Cabeceira 30-45°','SpO2 contínua — O2 se <94%','ATB EV no horário rigoroso','Temperatura a cada 4h','Ausculta pulmonar a cada turno','Fisioterapia respiratória','Incentivar expectoração','Hidratação oral/EV conforme prescrição','Avaliar dor pleurítica com EVA','Exames: hemograma, PCR conforme solicitação'],
+    noc:'Troca gasosa (0402); Permeabilidade vias aéreas (0410); Termorregulação (0800)',alerta:'Atenção deterioração: piora SpO2, sepse, derrame pleural.'};
 
-A - AVALIAÇÃO:
-Paciente em acompanhamento para ${p.diagnostico||'diagnóstico em investigação'}. Condições clínicas avaliadas no turno. Diagnóstico de enfermagem prioritário: Dor aguda (00132) relacionada a processo patológico evidenciado por relato verbal e alterações hemodinâmicas.
+  if (/asma|j45|j46|broncoespas|crise asmat/.test(d)) return {especialidade:'Asma — Crise',classificacao:'Crise broncoespástica',
+    nanda1:'Padrão respiratório ineficaz (NANDA 00032)',dom1:'Domínio 4, Classe 4',rel1:'broncoespasmo e inflamação das vias aéreas',
+    nanda2:'Troca de gases prejudicada (NANDA 00030)',dom2:'Domínio 4, Classe 4',rel2:'desequilíbrio ventilação-perfusão',
+    nanda3:'Ansiedade (NANDA 00146)',dom3:'Domínio 9, Classe 2',rel3:'dificuldade respiratória e medo de sufocamento',
+    nanda4:'Deficiência de conhecimento (NANDA 00126) | R/A: técnica incorreta de inalador',
+    plano:['Fowler 45° ou posição de conforto','SpO2 contínua — meta >95% — O2 se <92%','Broncodilatador inalatório conforme prescrição','FR e padrão respiratório a cada 30min','Auscultar antes e após broncodilatador','Corticoide conforme prescrição','Suporte emocional — ansiedade piora broncoespasmo','Preparar IOT se deterioração'],
+    recomendacoes:['Broncodilatador imediato','SpO2 contínua >95%','Preparar IOT se necessário'],
+    prescricao:['Posição Fowler 45°','SpO2 contínua — O2 se SpO2 <92%','Broncodilatador conforme prescrição','FR e padrão respiratório a cada 30min','Ausculta antes/após broncodilatador','Corticoide conforme prescrição','Avaliar uso musculatura acessória','Suporte emocional','Preparar material para IOT','Comunicar médico se não resposta'],
+    noc:'Ventilação (0403) SpO2>95%; Controle sintomas (1608)',alerta:'Vigilância status asmaticus. IOT se SpO2 <88% ou exaustão.'};
 
-P - PLANO:
-• Monitorização contínua dos sinais vitais a cada 4 horas
-• Administrar medicamentos conforme prescrição médica
-• Avaliar intensidade da dor - escala numérica (0-10)
-• Realizar balanço hídrico rigoroso
-• Comunicar ao médico plantonista qualquer alteração clínica
-• ${p.obs||'Continuar cuidados de enfermagem prescritos'}
+  if (/dpoc|j44|j43|doença pulmonar obstrutiva|enfisema/.test(d)) return {especialidade:'DPOC Exacerbado',classificacao:'DPOC com exacerbação',
+    nanda1:'Troca de gases prejudicada (NANDA 00030)',dom1:'Domínio 4, Classe 4',rel1:'destruição parênquima e aprisionamento de ar',
+    nanda2:'Padrão respiratório ineficaz (NANDA 00032)',dom2:'Domínio 4, Classe 4',rel2:'obstrução crônica ao fluxo aéreo',
+    nanda3:'Intolerância à atividade (NANDA 00092)',dom3:'Domínio 4, Classe 4',rel3:'desequilíbrio entre oferta e demanda de O2',
+    nanda4:'Risco de quedas (NANDA 00155) | R/A: hipoxemia e fraqueza muscular',
+    plano:['Semi-Fowler 30-45°','O2 CONTROLADO — meta SpO2 88-92% (risco retenção CO2)','SpO2 e FR contínuos','Sinais hipercapnia: sonolência, confusão, cefaleia','Broncodilatador nebulizado','Fisioterapia: respiração lábios franzidos','Tosse dirigida para eliminar secreções','Gasometria conforme solicitação'],
+    recomendacoes:['O2 controlado meta 88-92%','Vigilância hipercapnia','Fisioterapia respiratória'],
+    prescricao:['Semi-Fowler 30-45°','O2 CONTROLADO meta SpO2 88-92%','SpO2 e FR contínuos','Vigiar hipercapnia: sonolência, confusão','Broncodilatador nebulizado conforme prescrição','Fisioterapia respiratória','Tosse dirigida','Gasometria conforme prescrição','Monitorar SVs a cada 2h'],
+    noc:'Troca gasosa (0402) SpO2 88-92%; Tolerância atividade (0005)',alerta:'ATENÇÃO: O2 controlado — hiperóxia suprime drive respiratório. Meta 88-92%.'};
 
-Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
-Assinatura: _______________________________`;
+  if (/infarto|iam|i21|i22|supra de st|iamsst/.test(d)) return {especialidade:'IAM — Fase Aguda',classificacao:'Infarto Agudo do Miocárdio',
+    nanda1:'Débito cardíaco diminuído (NANDA 00029)',dom1:'Domínio 4, Classe 4',rel1:'necrose miocárdica e disfunção ventricular',
+    nanda2:'Dor aguda (NANDA 00132)',dom2:'Domínio 12, Classe 1',rel2:'isquemia miocárdica — dor precordial em aperto',
+    nanda3:'Ansiedade (NANDA 00146)',dom3:'Domínio 9, Classe 2',rel3:'ameaça à vida e ambiente da UCO',
+    nanda4:'Perfusão tissular periférica ineficaz (NANDA 00204) | R/A: débito cardíaco reduzido',
+    plano:['Repouso absoluto 12-24h','Monitoração cardíaca CONTÍNUA','2 acessos venosos calibrosos','EVA — analgésico conforme prescrição','Antiagregantes/anticoagulantes no horário','ECG seriado','Enzimas cardíacas no horário','PA e FC a cada 1h','O2 se SpO2 <95%','Ambiente calmo e suporte emocional'],
+    recomendacoes:['Repouso absoluto','Monitoração cardíaca contínua','Anticoagulantes no horário','Controle da dor'],
+    prescricao:['Repouso absoluto no leito','Monitoração cardíaca contínua','2 acessos venosos pérvios','Dor EVA — analgésico conforme prescrição','Antiagregantes/anticoagulantes no horário','ECG seriado conforme prescrição','Enzimas cardíacas conforme horário','PA e FC a cada 1h','O2 se SpO2 <95%','Diurese — atenção oligúria','Ambiente calmo — suporte emocional'],
+    noc:'Estado cardíaco (0414); Nível de dor (2102)',alerta:'Vigilância: arritmias graves, choque cardiogênico, extensão do infarto.'};
 
-  if(tipo==='prescricao') return `PRESCRIÇÃO DE ENFERMAGEM
-Data/Hora: ${dt}
-Paciente: ${p.nome} | Leito: ${p.leito} | Diagnóstico: ${p.diagnostico}
+  if (/insuficiência cardíaca|icc|i50/.test(d)) return {especialidade:'ICC Descompensada',classificacao:'Insuficiência Cardíaca Congestiva',
+    nanda1:'Débito cardíaco diminuído (NANDA 00029)',dom1:'Domínio 4, Classe 4',rel1:'disfunção sistólica/diastólica ventricular',
+    nanda2:'Excesso de volume de líquidos (NANDA 00026)',dom2:'Domínio 2, Classe 5',rel2:'retenção hidrossalina compensatória',
+    nanda3:'Intolerância à atividade (NANDA 00092)',dom3:'Domínio 4, Classe 4',rel3:'desequilíbrio oferta/demanda O2',
+    nanda4:'Padrão respiratório ineficaz (NANDA 00032) | R/A: congestão pulmonar e ortopneia',
+    plano:['Fowler 45° ou ortopneia','MMII elevados 30°','Pesar DIARIAMENTE — comunicar ganho >1kg/dia','Diurese HORÁRIA — balanço rigoroso','Restrição hídrica conforme prescrição','Diurético EV no horário','Avaliar edema MMII diariamente','Auscultar crepitações e sibilos'],
+    recomendacoes:['Pesagem diária','Balanço hídrico rigoroso','Restrição hídrica','Diurético no horário'],
+    prescricao:['Fowler 45° ou ortopneia','MMII elevados 30°','Pesar diariamente em jejum','Diurese HORÁRIA','Balanço hídrico rigoroso','Restrição hídrica conforme prescrição','Diurético EV no horário','Avaliar edema MMII','Auscultar campos pulmonares','Restrição de sódio na dieta'],
+    noc:'Efetividade bomba cardíaca (0400); Equilíbrio hídrico (0601)',alerta:'Vigilância edema agudo pulmão. Comunicar piora respiratória ou oligúria.'};
 
-01. Verificar e registrar sinais vitais a cada 4 horas (PA, FC, FR, SpO2, Tax)
-02. Monitorizar nível de consciência - Escala de Glasgow
-03. Realizar balanço hídrico rigoroso - registrar toda ingesta e eliminação
-04. Verificar permeabilidade do acesso venoso - avaliar sinais flogísticos
-05. Administrar medicamentos conforme prescrição médica nos horários corretos
-06. Avaliar dor - escala numérica (0-10) a cada turno
-07. Higiene oral 3x/dia e higiene corporal conforme protocolo institucional
-08. Mudança de decúbito a cada 2 horas - prevenção de UPP (Braden)
-09. Orientar paciente e familiar sobre diagnóstico e cuidados
-10. Comunicar ao médico plantonista imediatamente qualquer alteração
-11. Registrar evolução e intercorrências em prontuário eletrônico
+  if (/sepse|a41|r57|choque séptico/.test(d)) return {especialidade:'Sepse / Bundle 1h',classificacao:'Sepse — protocolo de 1 hora',
+    nanda1:'Perfusão tissular periférica ineficaz (NANDA 00204)',dom1:'Domínio 4, Classe 4',rel1:'vasodilatação periférica e hipovolemia relativa',
+    nanda2:'Hipertermia (NANDA 00007)',dom2:'Domínio 11, Classe 6',rel2:'processo infeccioso sistêmico grave',
+    nanda3:'Risco de choque (NANDA 00205)',dom3:'Domínio 11, Classe 2',rel3:'infecção grave com disfunção orgânica',
+    nanda4:'Troca de gases prejudicada (NANDA 00030) | R/A: edema pulmonar e vasoplegia',
+    plano:['SVs HORÁRIOS','HEMOCULTURAS (2 pares) ANTES do ATB','ATB amplo espectro na PRIMEIRA HORA','Cristaloide 30ml/kg em até 3h','Diurese HORÁRIA — meta >0,5ml/kg/h — SVD','Balanço hídrico HORÁRIO','Lactato seriado','Glasgow horário','Noradrenalina se hipotensão refratária'],
+    recomendacoes:['ATB na 1ª hora — meta obrigatória','Hemoculturas ANTES do ATB','Reposição volêmica 30ml/kg','Lactato seriado'],
+    prescricao:['SVs HORÁRIOS','Hemoculturas ANTES do ATB','ATB amplo espectro na 1ª hora','Cristaloide 30ml/kg/3h','Diurese HORÁRIA — SVD se necessário','Balanço hídrico HORÁRIO','Lactato seriado','Glasgow horário','Noradrenalina se hipotensão conforme prescrição','Comunicar deterioração imediatamente'],
+    noc:'Perfusão tissular (0407); Termorregulação (0800); Estado circulatório (0401)',alerta:'URGÊNCIA: Bundle Sepse — ATB na 1ª hora é meta. Hemoculturas ANTES do antibiótico.'};
 
-Observações: ${p.obs||'Nenhuma'}
+  if (/diabetes|e10|e11|dm |cetoacidose|hiperglicemia|hipoglicemia/.test(d)) return {especialidade:'Diabetes Mellitus',classificacao:'Diabetes descompensado',
+    nanda1:'Nível de glicemia instável (NANDA 00179)',dom1:'Domínio 2, Classe 4',rel1:'deficiência ou resistência à insulina',
+    nanda2:'Risco de infecção (NANDA 00004)',dom2:'Domínio 11, Classe 1',rel2:'imunossupressão por hiperglicemia',
+    nanda3:'Risco de perfusão tissular periférica ineficaz (NANDA 00226)',dom3:'Domínio 4, Classe 4',rel3:'neuropatia e vasculopatia diabética',
+    nanda4:'Deficiência de conhecimento (NANDA 00126) | R/A: falta de informação sobre autocuidado',
+    plano:['Glicemia capilar conforme prescrição (2/2h ou 6/6h)','Insulina conforme protocolo','Sinais HIPOGLICEMIA: sudorese fria, tremores, confusão','Sinais HIPERGLICEMIA: poliúria, polidipsia, hálito cetônico','Diurese e balanço hídrico','Potássio sérico — insulinoterapia causa hipocalemia','Inspecionar extremidades DIARIAMENTE','Cuidados com feridas diabéticas'],
+    recomendacoes:['Glicemia rigorosa','Insulina conforme protocolo','Inspecionar extremidades','Orientar autocuidado'],
+    prescricao:['Glicemia capilar conforme prescrição','Insulina conforme protocolo','Monitorar hipoglicemia: sudorese, tremores, confusão','Monitorar hiperglicemia: poliúria, polidipsia','Balanço hídrico','Potássio sérico — vigilância hipocalemia','Inspecionar extremidades diariamente','Cuidados com feridas','Orientar dieta e exercício','Comunicar glicemia <70 ou >300mg/dL'],
+    noc:'Nível glicemia (2300); Controle risco infeccioso (1924)',alerta:'Glicemia <70mg/dL ou >300mg/dL — comunicar médico imediatamente.'};
 
-Enfermeiro(a): ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
-Assinatura: _______________________________`;
+  if (/hipertensão|has|i10|i11|pressão alta|crise hipertensiva/.test(d)) return {especialidade:'HAS / Crise Hipertensiva',classificacao:'Hipertensão arterial sistêmica',
+    nanda1:'Risco de perfusão tissular cerebral ineficaz (NANDA 00201)',dom1:'Domínio 4, Classe 4',rel1:'pressão arterial elevada com risco de lesão orgânica',
+    nanda2:'Dor aguda (NANDA 00132)',dom2:'Domínio 12, Classe 1',rel2:'vasoespasmo cerebral — cefaleia occipital',
+    nanda3:'Deficiência de conhecimento (NANDA 00126)',dom3:'Domínio 5, Classe 4',rel3:'falta de informação sobre adesão ao tratamento',
+    nanda4:'Gerenciamento ineficaz da saúde (NANDA 00078) | R/A: abandono da medicação',
+    plano:['PA em AMBOS os membros — registrar tendência','Repouso com ambiente calmo','Anti-hipertensivo conforme prescrição','Sinais neurológicos: cefaleia, tontura, visão','Restrição de sódio','Orientar adesão ao tratamento','SVs a cada 1-2h na crise'],
+    recomendacoes:['PA monitorada rigorosa','Anti-hipertensivo no horário','Ambiente calmo','Orientar adesão'],
+    prescricao:['PA em ambos os membros a cada 1-2h','Repouso no leito — ambiente calmo','Anti-hipertensivo conforme prescrição','Monitorar sinais neurológicos','Restrição de sódio na dieta','Orientar adesão ao tratamento','Controle dor/cefaleia com EVA','SVs completos a cada 2h'],
+    noc:'Estado neurológico (0909); Nível dor (2102)',alerta:'PA >180/120mmHg com sintomas = emergência. Comunicar médico imediatamente.'};
 
-  if(tipo==='passagem') return `PASSAGEM DE PLANTÃO - MÉTODO SBAR
-Data/Hora: ${dt}
-Paciente: ${p.nome} | Leito: ${p.leito}
+  if (/avc|acidente vascular|i60|i61|i63|i64|derrame/.test(d)) return {especialidade:'AVC',classificacao:'Acidente Vascular Cerebral',
+    nanda1:'Perfusão tissular cerebral ineficaz (NANDA 00201)',dom1:'Domínio 4, Classe 4',rel1:'oclusão ou ruptura vascular cerebral',
+    nanda2:'Risco de aspiração (NANDA 00039)',dom2:'Domínio 11, Classe 2',rel2:'disfagia e reflexo de tosse reduzido',
+    nanda3:'Mobilidade física prejudicada (NANDA 00085)',dom3:'Domínio 4, Classe 2',rel3:'dano neuromuscular — hemiplegia/hemiparesia',
+    nanda4:'Déficit no autocuidado para banho (NANDA 00108) | R/A: déficit neuromuscular',
+    plano:['Cabeceira 30° — não fletir pescoço','Glasgow a cada 2h — pupilas e força','Teste deglutição ANTES de dieta oral','Posicionamento anti-contraturas','Fisioterapia motora PRECOCE','Profilaxia TVP: HBPM + meias compressivas','PA rigorosa — evitar hipotensão'],
+    recomendacoes:['Cabeceira 30°','Teste deglutição','Fisioterapia precoce','Profilaxia TVP'],
+    prescricao:['Cabeceira 30° — não fletir pescoço','Glasgow a cada 2h','Avaliação pupilas e força motora','Teste deglutição antes de qualquer dieta','Posicionamento anti-contraturas','Fisioterapia motora precoce','Profilaxia TVP','PA rigorosa — comunicar hipotensão','Fonoaudiologia se disfagia','Registrar evolução neurológica a cada turno'],
+    noc:'Perfusão tissular cerebral (0406); Estado neurológico (0909)',alerta:'Evitar hipotensão — reduz perfusão. Sinais herniação = emergência.'};
 
-S - SITUAÇÃO:
-Paciente com ${p.diagnostico||'diagnóstico conforme prontuário'}. ${p.queixas||'Sem queixas relatadas no período.'}
+  if (/insuficiência renal|n17|n18|ira |irc |diálise|renal aguda|renal crônica/.test(d)) return {especialidade:'Insuficiência Renal',classificacao:'IRA/IRC — disfunção renal',
+    nanda1:'Eliminação urinária prejudicada (NANDA 00016)',dom1:'Domínio 3, Classe 1',rel1:'disfunção renal aguda ou crônica',
+    nanda2:'Excesso de volume de líquidos (NANDA 00026)',dom2:'Domínio 2, Classe 5',rel2:'comprometimento da regulação renal',
+    nanda3:'Risco de desequilíbrio eletrolítico (NANDA 00195)',dom3:'Domínio 2, Classe 5',rel3:'falência da regulação eletrolítica renal',
+    nanda4:'Risco de infecção (NANDA 00004) | R/A: imunossupressão e acesso para diálise',
+    plano:['Diurese HORÁRIA rigorosa','SVD se necessário','Balanço hídrico rigoroso','Pesar diariamente — comunicar variações >1kg','Restrição hídrica e potássio conforme prescrição','Potássio sérico — hipercalemia >6,5 = URGÊNCIA','Cuidados acesso diálise: curativo estéril'],
+    recomendacoes:['Diurese horária','Balanço hídrico','Monitorar potássio','Cuidados com acesso diálise'],
+    prescricao:['Diurese HORÁRIA rigorosa','SVD se necessário para controle preciso','Balanço hídrico rigoroso','Pesar diariamente em jejum','Restrição hídrica conforme prescrição','Restrição de potássio na dieta','Potássio sérico — hipercalemia >6,5 = urgência','Cuidados acesso diálise: curativo estéril, permeabilidade','Monitorar eletrólitos conforme solicitação','Evitar medicamentos nefrotóxicos'],
+    noc:'Eliminação urinária (0503); Equilíbrio hídrico (0601); Equilíbrio eletrolítico (0606)',alerta:'Hipercalemia >6,5 mEq/L = emergência cardíaca. Comunicar médico imediatamente.'};
 
-B - BACKGROUND:
-Internado em ${p.leito||'leito informado'}. Diagnóstico: ${p.diagnostico}. Alergias: ${p.alergias||'Nega'}. Sinais vitais: ${p.sv||'estáveis'}.
-
-A - AVALIAÇÃO:
-Paciente ${p.queixas?'com as queixas descritas':'estável'} no período. Sistemas avaliados: ${p.sistemas?.join(', ')||'conforme rotina'}. Exames: ${p.exames||'conforme prontuário'}.
-
-R - RECOMENDAÇÃO:
-• Manter monitorização dos sinais vitais
-• Observar evolução do quadro clínico
-• Continuar prescrições vigentes
-• Atentar para: ${p.obs||'cuidados de rotina'}
-
-PENDÊNCIAS DO TURNO:
-□ Verificar resultados de exames pendentes
-□ Confirmar procedimentos agendados
-
-Enf. que passa: ${U?.nome||'_______________'} | COREN: ${U?.coren||'_______________'}
-Assinatura: _______________________________`;
-
-  return `DIAGNOSTICOS DE ENFERMAGEM - NANDA-I 2024-2026
-Data: ${dt}
-Paciente: ${p.nome} | Diagnostico medico: ${p.diagnostico}
-
-DIAGNOSTICO 1: Dor aguda (NANDA 00132)
-Dominio 12 - Conforto | Classe 1 - Conforto fisico
-Relacionado a: agentes lesivos fisicos/biologicos
-Evidenciado por: autorrelato de dor, expressao facial, comportamento de protecao
-
-DIAGNOSTICO 2: Risco de infeccao (NANDA 00004)
-Dominio 11 - Seguranca | Classe 1 - Infeccao
-Fator de risco: procedimentos invasivos, defesas primarias inadequadas
-
-DIAGNOSTICO 3: Mobilidade fisica prejudicada (NANDA 00085)
-Dominio 4 - Atividade | Classe 2 - Atividade/Exercicio
-Relacionado a: dor, fraqueza muscular
-Evidenciado por: limitacao de amplitude de movimento
-
-DIAGNOSTICO 4: Deficit de conhecimento (NANDA 00126)
-Dominio 5 - Percepcao | Classe 4 - Cognicao
-Relacionado a: falta de exposicao a informacao
-Evidenciado por: verbalizacao de duvidas sobre o processo de doenca
-
-Enfermeiro(a): \${U?.nome||'_______________'} | COREN: \${U?.coren||'_______________'}
-Assinatura: _______________________________`;
+  // DEFAULT DINÂMICO — usa dados reais do paciente
+  const diag = p.diagnostico || 'diagnóstico em avaliação';
+  const sv_info = p.sv ? ` | SVs: ${p.sv}` : '';
+  return {especialidade: diag, classificacao: 'Cuidados clínicos individualizados',
+    nanda1: 'Dor aguda (NANDA 00132)',dom1:'Domínio 12, Classe 1',
+    rel1: `processo patológico — ${diag}`,
+    nanda2: 'Risco de infecção (NANDA 00004)',dom2:'Domínio 11, Classe 1',
+    rel2: 'procedimentos invasivos e doença de base',
+    nanda3: 'Ansiedade (NANDA 00146)',dom3:'Domínio 9, Classe 2',
+    rel3: `ameaça ao estado de saúde por ${diag}`,
+    nanda4: 'Deficiência de conhecimento (NANDA 00126) | R/A: falta de informação sobre doença e tratamento',
+    plano: [
+      `Monitorar SVs conforme protocolo${sv_info}`,
+      'Administrar medicamentos conforme prescrição médica',
+      'Avaliar e controlar dor com EVA a cada turno',
+      'Realizar balanço hídrico rigoroso',
+      p.dispositivos ? `Cuidados com dispositivos: ${p.dispositivos}` : 'Verificar permeabilidade de acessos venosos',
+      'Orientar paciente e família sobre diagnóstico e cuidados',
+      p.queixas ? `Monitorar e registrar: ${p.queixas}` : 'Observar evolução clínica do turno',
+      'Comunicar médico qualquer alteração imediatamente',
+    ],
+    recomendacoes:['Monitorização dos SVs','Medicamentos no horário','Avaliar dor com EVA','Comunicar alterações'],
+    prescricao: [
+      `Monitorar SVs conforme protocolo`,
+      'Administrar medicamentos no horário prescrito',
+      'Avaliar dor com EVA a cada turno',
+      'Balanço hídrico rigoroso',
+      p.dispositivos ? `Cuidados com: ${p.dispositivos}` : 'Verificar acessos venosos',
+      'Higiene oral e corporal conforme protocolo',
+      'Orientar paciente e família',
+      'Registrar evolução no prontuário',
+      'Comunicar alterações clínicas imediatamente',
+    ],
+    noc:'Nível de dor (2102); Controle do risco (1902); Nível de ansiedade (1211)',
+    alerta: ''};
 }
+
+// TEMPLATES OFFLINE — dinâmicos por CID e dados reais do paciente
+function template(tipo, p){
+  const dt = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const enf = U?.nome || '_______________';
+  const coren = U?.coren || '_______________';
+  const ctx = _obterContextoClinico(p);
+
+  if(tipo==='evolucao') return (
+`EVOLUÇÃO DE ENFERMAGEM
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito}
+Diagnóstico médico: ${p.diagnostico}${p.cid_codigo ? ' ('+p.cid_codigo+')' : ''}
+
+S — SUBJETIVO:
+${p.queixas||'Paciente em acompanhamento clínico.'} Alergias: ${p.alergias||'Nega alergias conhecidas'}.
+
+O — OBJETIVO:
+Sinais vitais: ${p.sv||'Verificar conforme protocolo'}.
+Sistemas avaliados: ${p.sistemas?.join(', ')||'Conforme avaliação clínica'}.
+Dispositivos: ${p.dispositivos||p.exames||'Conforme prontuário'}.
+
+A — AVALIAÇÃO (${ctx.especialidade}):
+1. ${ctx.nanda1}
+   Relacionado a: ${ctx.rel1}
+   Evidenciado por: ${p.queixas||'sinais e sintomas avaliados no turno'}
+2. ${ctx.nanda2}
+   Relacionado a: ${ctx.rel2}
+   Evidenciado por: alterações clínicas identificadas | SVs: ${p.sv||'verificar'}
+3. ${ctx.nanda3}
+   Relacionado a: ${ctx.rel3}
+
+P — PLANO NIC (${ctx.especialidade.toUpperCase()}):
+${ctx.plano.map((item,i)=>'• '+item).join('\n')}
+${p.obs ? '• Obs: '+p.obs : ''}
+
+NOC: ${ctx.noc}
+${ctx.alerta ? '\n⚠️ ALERTA: '+ctx.alerta : ''}
+Enfermeiro(a): ${enf} | COREN: ${coren}
+Assinatura: _______________________________`
+  );
+
+  if(tipo==='prescricao') return (
+`PRESCRIÇÃO DE ENFERMAGEM
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito}
+Diagnóstico: ${p.diagnostico}${p.cid_codigo ? ' ('+p.cid_codigo+')' : ''}
+Classificação: ${ctx.classificacao}
+
+DIAGNÓSTICOS DE ENFERMAGEM (NANDA-I 2024-2026):
+1. ${ctx.nanda1} | R/A: ${ctx.rel1}
+2. ${ctx.nanda2} | R/A: ${ctx.rel2}
+
+PRESCRIÇÕES — ${ctx.especialidade.toUpperCase()}:
+${ctx.prescricao.map((item,i)=>(i+1).toString().padStart(2,'0')+'. '+item).join('\n')}
+
+${p.dispositivos ? 'DISPOSITIVOS: '+p.dispositivos : ''}
+${p.pendencias ? 'PENDÊNCIAS: '+p.pendencias : ''}
+${ctx.alerta ? '\n⚠️ ALERTA CLÍNICO: '+ctx.alerta : ''}
+
+Observações: ${p.obs||'Conforme avaliação clínica'}
+Enfermeiro(a): ${enf} | COREN: ${coren}
+Assinatura: _______________________________`
+  );
+
+  if(tipo==='passagem') return (
+`PASSAGEM DE PLANTÃO — SBAR + FAST HUG
+Data/Hora: ${dt}
+Paciente: ${p.nome} | Leito: ${p.leito}
+
+━━━ SBAR ━━━
+S — SITUAÇÃO:
+Paciente com ${p.diagnostico}${p.cid_codigo?' ('+p.cid_codigo+')':''}. ${p.queixas||'Evolução clínica conforme prontuário.'}
+
+B — BACKGROUND:
+Leito: ${p.leito}. Alergias: ${p.alergias||'Nega'}. SVs: ${p.sv||'verificar'}.
+Dispositivos: ${p.dispositivos||p.exames||'conforme prontuário'}.
+Sistemas: ${p.sistemas?.join(', ')||'avaliados no turno'}.
+
+A — AVALIAÇÃO (${ctx.especialidade}):
+Diagnóstico prioritário: ${ctx.nanda1}
+R/A: ${ctx.rel1}
+${p.queixas ? 'Estado atual: '+p.queixas : 'Paciente em acompanhamento.'}
+
+R — RECOMENDAÇÕES:
+${ctx.recomendacoes.map(r=>'• '+r).join('\n')}
+${p.pendencias ? '• Pendências: '+p.pendencias : ''}
+${ctx.alerta ? '⚠️ ALERTA: '+ctx.alerta : ''}
+
+━━━ FAST HUG ━━━
+F — Feeding: Avaliar via e aceitação da dieta
+A — Analgesia: Avaliar dor (EVA) e medicação prescrita
+S — Sedação: Verificar se aplicável
+T — Thrombus: Profilaxia TVP conforme prescrição
+H — HOB: Cabeceira elevada 30-45° se indicado
+U — Úlcera: Protetor gástrico conforme prescrição
+G — Glicemia: ${p.sv&&p.sv.toLowerCase().includes('gli')?p.sv:'Monitorar conforme protocolo'}
+
+Pendências:
+${p.pendencias ? p.pendencias.split('|').map(pend=>'□ '+pend.trim()).join('\n') : '□ Verificar exames pendentes\n□ Confirmar procedimentos agendados'}
+
+Enf. que passa: ${enf} | COREN: ${coren}
+Assinatura: _______________________________`
+  );
+
+  // NANDA
+  return (
+`DIAGNÓSTICOS DE ENFERMAGEM — NANDA-I 2024-2026
+Data: ${dt}
+Paciente: ${p.nome} | Diagnóstico médico: ${p.diagnostico}${p.cid_codigo?' ('+p.cid_codigo+')':''}
+Classificação: ${ctx.classificacao}
+
+DIAGNÓSTICO 1 — PRIORIDADE ALTA
+Nome: ${ctx.nanda1}
+Domínio/Classe: ${ctx.dom1}
+Relacionado a: ${ctx.rel1}
+Evidenciado por: ${p.queixas||'sinais e sintomas avaliados no turno'}
+
+DIAGNÓSTICO 2 — PRIORIDADE MÉDIA
+Nome: ${ctx.nanda2}
+Domínio/Classe: ${ctx.dom2}
+Relacionado a: ${ctx.rel2}
+Evidenciado por: alterações clínicas identificadas | SVs: ${p.sv||'verificar'}
+
+DIAGNÓSTICO 3 — PRIORIDADE MÉDIA
+Nome: ${ctx.nanda3}
+Domínio/Classe: ${ctx.dom3}
+Relacionado a: ${ctx.rel3}
+
+DIAGNÓSTICO 4 — PRIORIDADE BAIXA
+${ctx.nanda4}
+
+INTERVENÇÕES NIC — ${ctx.especialidade.toUpperCase()}:
+${ctx.plano.slice(0,6).map((item,i)=>(i+1)+'. '+item).join('\n')}
+
+RESULTADOS NOC: ${ctx.noc}
+${ctx.alerta ? '\n⚠️ ALERTA CLÍNICO: '+ctx.alerta : ''}
+Enfermeiro(a): ${enf} | COREN: ${coren}
+Assinatura: _______________________________`
+  );
+}
+
 
 // AÇÕES
 function copiar(){navigator.clipboard.writeText(document.getElementById('res-txt').textContent).then(()=>toast('Copiado! 📋','ok'));}
@@ -2004,6 +2258,16 @@ function calcFugulin(){
 // ────────────────────────────────────────────────────────────
 let dispositivosLocal = JSON.parse(localStorage.getItem('sae_dispositivos')||'[]');
 
+
+// ── HELPER FETCH AUTENTICADO ─────────────────────────────
+async function fetchAuth(url, opts={}){
+  if(!opts.headers) opts.headers = {};
+  opts.headers['Authorization'] = `Bearer ${U?.token||''}`;
+  if(url.startsWith('/')) url = API + url;
+  return fetch(url, opts);
+}
+
+
 function abrirModalDispositivo(){
   document.getElementById('disp-pac').value='';
   document.getElementById('disp-select').value='';
@@ -2189,6 +2453,10 @@ function selecionarCID(codigo,descricao){
   sel.style.display='flex';
   fecharCID();
   toast('CID-10 selecionado: '+codigo,'ok');
+  // Mostrar painel NANDA e buscar sugestões automaticamente
+  const painel = document.getElementById('nanda-painel');
+  if(painel) painel.style.display='block';
+  setTimeout(()=>sugerirNANDA(), 300);
 }
 function fecharCID(){
   const el=document.getElementById('cid-lista');
@@ -2200,6 +2468,162 @@ function limparCID(){
   document.getElementById('cid-selecionado').style.display='none';
   fecharCID();
 }
+
+
+// ────────────────────────────────────────────────────────────
+// MÓDULO DIAGNÓSTICO NANDA-I 2024-2026 — Interativo
+// Sugestão automática por CID + inclusão manual livre
+// ────────────────────────────────────────────────────────────
+let _nandaSelecionados = []; // diagnósticos selecionados pelo enfermeiro
+
+async function sugerirNANDA(){
+  const diag = document.getElementById('p-diag')?.value || '';
+  const cid  = document.getElementById('p-cid-codigo')?.value || '';
+  const queixas = document.getElementById('a-eq')?.value || '';
+  const dispositivos = dispositivosLocal.filter(d=>d.ativo).map(d=>d.nome).join(', ');
+
+  if(!diag && !cid){
+    toast('Preencha o diagnóstico médico primeiro','err');
+    return;
+  }
+
+  const el = document.getElementById('nanda-sugeridos');
+  if(!el) return;
+  el.innerHTML = '<div style="font-size:13px;color:var(--cinza3)">Buscando diagnósticos...</div>';
+
+  try {
+    const r = await fetch(`${API}/api/nanda/sugerir`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':`Bearer ${U?.token||''}`},
+      body: JSON.stringify({diagnostico:diag, cid_codigo:cid, queixas, dispositivos})
+    });
+    const data = await r.json();
+
+    if(!data.diagnosticos || !data.diagnosticos.length){
+      el.innerHTML = '<div style="font-size:13px;color:var(--cinza3)">Nenhum diagnóstico encontrado para este CID</div>';
+      return;
+    }
+
+    // Renderizar sugestões com botão de adicionar
+    el.innerHTML = data.diagnosticos.map((d,i) => `
+      <div style="background:#fff;border:1px solid var(--cinza2);border-radius:8px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--azul)">
+            <span style="font-size:11px;background:var(--azul3);padding:2px 6px;border-radius:4px;margin-right:6px">NANDA ${d.codigo}</span>
+            ${d.nome}
+          </div>
+          <div style="font-size:11px;color:var(--cinza3);margin-top:3px">${d.dominio} | ${d.classe||''}</div>
+          <div style="font-size:11px;color:var(--texto);margin-top:3px">
+            <span style="color:var(--cinza3)">R/A:</span> ${d.relacionado||'—'}
+          </div>
+          <div style="font-size:11px;color:var(--texto)">
+            <span style="color:var(--cinza3)">E/P:</span> ${d.evidenciado||'—'}
+          </div>
+        </div>
+        <button onclick="adicionarNanda('${d.codigo}','${d.nome.replace(/'/g,"&#39;")}','${(d.relacionado||'').replace(/'/g,"&#39;")}','${(d.evidenciado||'').replace(/'/g,"&#39;")}')"
+          id="btn-nanda-${d.codigo}"
+          style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+          + Usar
+        </button>
+      </div>`).join('');
+
+    // Atualizar contador
+    const ct = document.getElementById('nanda-count');
+    if(ct) ct.textContent = `(${data.total} sugestões)`;
+    // Mostrar patologia identificada
+    if(data.patologia_identificada && data.patologia_identificada !== 'default'){
+      toast(`✅ ${data.total} diagnósticos NANDA para: ${data.patologia_identificada.replace(/_/g,' ').toUpperCase()}`,'ok');
+    } else {
+      toast(`🧠 ${data.total} diagnósticos NANDA sugeridos`,'ok');
+    }
+
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:13px;color:red">Erro ao buscar diagnósticos. Verifique a conexão.</div>';
+    console.error('Erro NANDA:', e);
+  }
+}
+
+function adicionarNanda(codigo, nome, relacionado, evidenciado){
+  // Verificar duplicata
+  if(_nandaSelecionados.find(n=>n.codigo===codigo)){
+    toast('Diagnóstico já adicionado','err');
+    return;
+  }
+  _nandaSelecionados.push({codigo, nome, relacionado, evidenciado});
+  renderNandaSelecionados();
+  // Desabilitar botão da sugestão
+  const btn = document.getElementById('btn-nanda-'+codigo);
+  if(btn){ btn.textContent='✓ Adicionado'; btn.style.background='var(--cinza2)'; btn.style.color='var(--cinza3)'; btn.disabled=true; }
+  toast(`NANDA ${codigo} adicionado!`,'ok');
+}
+
+function adicionarNandaManual(){
+  const input = document.getElementById('nanda-manual-input');
+  const val = input?.value.trim();
+  if(!val){ toast('Digite o diagnóstico','err'); return; }
+  const id = 'M'+Date.now();
+  _nandaSelecionados.push({codigo:id, nome:val, relacionado:'Adicionado manualmente', evidenciado:''});
+  renderNandaSelecionados();
+  input.value = '';
+  toast('Diagnóstico adicionado!','ok');
+}
+
+function removerNanda(codigo){
+  _nandaSelecionados = _nandaSelecionados.filter(n=>n.codigo!==codigo);
+  renderNandaSelecionados();
+  // Re-habilitar botão da sugestão se existir
+  const btn = document.getElementById('btn-nanda-'+codigo);
+  if(btn){ btn.textContent='+ Usar'; btn.style.background='var(--verde)'; btn.style.color='#fff'; btn.disabled=false; }
+  toast('Diagnóstico removido','ok');
+}
+
+function adicionarTodosNanda(){
+  // Adiciona todos os diagnósticos sugeridos de uma vez
+  const cards = document.querySelectorAll('#nanda-sugeridos [id^="btn-nanda-"]');
+  let adicionados = 0;
+  cards.forEach(btn => {
+    if(!btn.disabled){
+      btn.click();
+      adicionados++;
+    }
+  });
+  if(adicionados === 0) toast('Todos os diagnósticos já foram adicionados','err');
+  else toast(`${adicionados} diagnósticos adicionados!`,'ok');
+}
+
+function renderNandaSelecionados(){
+  const el = document.getElementById('nanda-selecionados');
+  if(!el) return;
+  if(!_nandaSelecionados.length){
+    el.innerHTML = '<div style="font-size:12px;color:var(--cinza3)">Nenhum selecionado</div>';
+    return;
+  }
+  el.innerHTML = _nandaSelecionados.map((n,i)=>`
+    <div style="background:#fff;border:1px solid var(--azul2);border-radius:8px;padding:8px 12px;width:100%;display:flex;align-items:flex-start;gap:8px;margin-bottom:4px">
+      <div style="background:var(--azul);color:#fff;border-radius:4px;padding:2px 6px;font-size:10px;white-space:nowrap;margin-top:2px">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--azul)">
+          <span style="font-size:11px;font-weight:400;color:var(--cinza3);margin-right:4px">NANDA ${n.codigo}</span>
+          ${n.nome}
+        </div>
+        ${n.relacionado && !n.relacionado.includes('manualmente') ? '<div style="font-size:11px;color:var(--cinza3);margin-top:2px"><b>R/A:</b> '+n.relacionado+'</div>' : ''}
+        ${n.evidenciado ? '<div style="font-size:11px;color:var(--cinza3)"><b>E/P:</b> '+n.evidenciado+'</div>' : ''}
+      </div>
+      <span onclick="removerNanda('${n.codigo}')" style="cursor:pointer;color:var(--cinza3);font-size:16px;padding:2px">✕</span>
+    </div>`).join('');
+}
+
+function getNandaSelecionadosTexto(){
+  if(!_nandaSelecionados.length) return '';
+  return _nandaSelecionados.map((n,i)=>
+    `${i+1}. ${n.nome} (NANDA ${n.codigo})` +
+    (n.relacionado && !n.relacionado.includes('manualmente') ? ` — R/A: ${n.relacionado}` : '') +
+    (n.evidenciado ? ` | E/P: ${n.evidenciado}` : '')
+  ).join('\n');
+}
+
+// Limpar diagnósticos selecionados ao iniciar nova SAE
+const _limparOriginal = typeof limparForm === 'function' ? limparForm : null;
 
 </script>
 </body>
