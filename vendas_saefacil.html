@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAE Fácil — IA para Enfermagem | Documentação em Minutos</title>
+<meta name="description" content="Gere Evolução SOAP, Prescrição de Enfermagem, Diagnósticos NANDA e Passagem de Plantão com Inteligência Artificial. Por R$ 67,00/mês.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --azul:#0a2d5c;--azul2:#1a5fa8;--azul3:#e8f1fc;
+  --verde:#0d4a2f;--verde2:#1a7a4e;--verde3:#d6f0e3;
+  --amarelo:#f5c842;--amarelo2:#fff3c4;
+  --cinza:#f5f7fa;--cinza2:#e8edf4;--cinza3:#8898aa;
+  --texto:#0d1b2e;--branco:#fff;
+  --r:16px;--r2:24px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Sora',sans-serif;color:var(--texto);background:var(--branco);overflow-x:hidden}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,45,92,.97);backdrop-filter:blur(12px);padding:0 24px}
+.nav-inner{max-width:1100px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#1a7a4e,#0a2d5c);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
+.nav-logo-ia{position:absolute;top:-6px;right:-6px;background:var(--amarelo);color:var(--azul);font-size:8px;font-weight:800;padding:2px 5px;border-radius:8px}
+.nav-logo span{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.nav-cta{background:var(--amarelo);color:var(--azul);padding:10px 22px;border-radius:100px;font-weight:700;font-size:14px;text-decoration:none;transition:.2s}
+.nav-cta:hover{background:#ffd700;transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;background:linear-gradient(160deg,#0a2d5c 0%,#0d4a2f 60%,#0a3d1f 100%);position:relative;overflow:hidden;display:flex;align-items:center;padding-top:64px}
+.hero-bg{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(26,95,168,.3) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(26,122,78,.2) 0%,transparent 40%);pointer-events:none}
+.hero-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:32px 32px;pointer-events:none}
+.hero-inner{max-width:1100px;margin:0 auto;padding:80px 24px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+@media(max-width:768px){.hero-inner{grid-template-columns:1fr;gap:40px;padding:60px 20px 40px}.hero-visual{order:-1}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.4);color:var(--amarelo);padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:24px;text-transform:uppercase}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(38px,5vw,58px);color:#fff;line-height:1.1;margin-bottom:24px}
+.hero h1 em{font-style:italic;color:var(--amarelo)}
+.hero-sub{font-size:clamp(15px,2vw,18px);color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:36px;max-width:480px}
+.hero-cta-group{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.btn-hero{display:inline-flex;align-items:center;gap:10px;background:var(--amarelo);color:var(--azul);padding:18px 32px;border-radius:100px;font-size:17px;font-weight:800;text-decoration:none;transition:.25s;box-shadow:0 8px 32px rgba(245,200,66,.35)}
+.btn-hero:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(245,200,66,.45);background:#ffd700}
+.btn-hero-arrow{font-size:20px;transition:.25s}
+.btn-hero:hover .btn-hero-arrow{transform:translateX(4px)}
+.hero-note{font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:6px}
+.hero-stats{display:flex;gap:32px;margin-top:40px;flex-wrap:wrap}
+.hero-stat{text-align:left}
+.hero-stat-n{font-size:28px;font-weight:900;color:var(--amarelo);line-height:1}
+.hero-stat-l{font-size:12px;color:rgba(255,255,255,.55);margin-top:3px}
+/* Mockup */
+.hero-visual{position:relative}
+.mockup{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:24px;backdrop-filter:blur(8px);max-width:380px;margin:0 auto;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.mockup-top{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.mockup-dot{width:10px;height:10px;border-radius:50%}
+.mockup-dot:nth-child(1){background:#ff5f57}
+.mockup-dot:nth-child(2){background:#febc2e}
+.mockup-dot:nth-child(3){background:#28c840}
+.mockup-title{margin-left:8px;font-size:13px;color:rgba(255,255,255,.6);font-weight:600}
+.mockup-field{background:rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.mockup-field-label{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.mockup-field-val{font-size:13px;color:rgba(255,255,255,.85);font-weight:500}
+.mockup-btn{background:var(--amarelo);color:var(--azul);width:100%;padding:14px;border-radius:12px;font-size:14px;font-weight:800;text-align:center;margin:14px 0 0;cursor:pointer}
+.mockup-result{background:rgba(26,122,78,.2);border:1px solid rgba(26,122,78,.4);border-radius:12px;padding:14px;margin-top:12px}
+.mockup-result-label{font-size:10px;color:#6ee7b7;text-transform:uppercase;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.mockup-result-txt{font-size:11px;color:rgba(255,255,255,.7);line-height:1.6}
+.mockup-ia-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(245,200,66,.2);color:var(--amarelo);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+.typing-cursor{display:inline-block;width:2px;height:12px;background:var(--amarelo);animation:blink 1s infinite;margin-left:2px;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── PROBLEMA ── */
+.problema{background:var(--cinza);padding:80px 24px}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-tag{display:inline-block;background:var(--azul3);color:var(--azul2);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:16px}
+.section-h{font-family:'DM Serif Display',serif;font-size:clamp(28px,3.5vw,42px);color:var(--texto);line-height:1.2;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--cinza3);line-height:1.7;max-width:560px;margin-bottom:48px}
+.problema-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.problema-card{background:#fff;border-radius:var(--r2);padding:28px;border:1px solid var(--cinza2);transition:.2s}
+.problema-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.08)}
+.problema-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.problema-card h3{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--texto)}
+.problema-card p{font-size:14px;color:var(--cinza3);line-height:1.6}
+
+/* ── SOLUÇÃO ── */
+.solucao{padding:100px 24px;background:#fff;position:relative;overflow:hidden}
+.solucao::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(10,45,92,.04) 0%,transparent 70%);pointer-events:none}
+.solucao-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+@media(max-width:768px){.solucao-grid{grid-template-columns:1fr;gap:40px}}
+.solucao-features{display:flex;flex-direction:column;gap:20px}
+.feature-item{display:flex;gap:16px;align-items:flex-start;padding:20px;border-radius:16px;transition:.2s;border:1px solid transparent}
+.feature-item:hover{background:var(--cinza);border-color:var(--cinza2)}
+.feature-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.feature-txt h4{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--texto)}
+.feature-txt p{font-size:13px;color:var(--cinza3);line-height:1.6}
+.nanda-card{background:linear-gradient(135deg,var(--azul),var(--verde));border-radius:var(--r2);padding:36px;color:#fff;position:relative;overflow:hidden}
+.nanda-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:rgba(255,255,255,.05);border-radius:50%}
+.nanda-card-n{font-size:72px;font-weight:900;color:var(--amarelo);line-height:1}
+.nanda-card-label{font-size:15px;color:rgba(255,255,255,.7);margin-bottom:24px}
+.nanda-tags{display:flex;flex-wrap:wrap;gap:8px}
+.nanda-tag{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.85);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500}
+.nanda-tag.destaque{background:rgba(245,200,66,.2);border-color:rgba(245,200,66,.4);color:var(--amarelo)}
+
+/* ── COMO FUNCIONA ── */
+.como{background:linear-gradient(135deg,#0a2d5c 0%,#0d4a2f 100%);padding:100px 24px;position:relative;overflow:hidden}
+.como::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:28px 28px}
+.como .section-tag{background:rgba(245,200,66,.15);color:var(--amarelo)}
+.como .section-h{color:#fff}
+.como .section-sub{color:rgba(255,255,255,.6)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;margin-top:48px;position:relative}
+.steps::before{content:'';position:absolute;top:36px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,var(--amarelo),rgba(245,200,66,.2));display:block}
+@media(max-width:768px){.steps::before{display:none}}
+.step{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r2);padding:32px 28px;position:relative;text-align:center;backdrop-filter:blur(8px);transition:.2s}
+.step:hover{background:rgba(255,255,255,.1);transform:translateY(-4px)}
+.step-num{width:56px;height:56px;background:var(--amarelo);color:var(--azul);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;margin:0 auto 20px;box-shadow:0 8px 24px rgba(245,200,66,.4)}
+.step h3{font-size:17px;font-weight:700;color:#fff;margin-bottom:10px}
+.step p{font-size:13px;color:rgba(255,255,255,.6);line-height:1.7}
+
+/* ── PROVA SOCIAL / DEPOIMENTOS ── */
+.depoimentos{padding:100px 24px;background:var(--cinza)}
+.dep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:48px}
+.dep-card{background:#fff;border-radius:var(--r2);padding:32px;border:1px solid var(--cinza2);position:relative}
+.dep-stars{color:var(--amarelo);font-size:16px;margin-bottom:16px}
+.dep-texto{font-size:15px;color:var(--texto);line-height:1.7;font-style:italic;margin-bottom:20px}
+.dep-autor{display:flex;align-items:center;gap:12px}
+.dep-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
+.dep-nome{font-size:14px;font-weight:700;color:var(--texto)}
+.dep-cargo{font-size:12px;color:var(--cinza3)}
+.dep-badge{position:absolute;top:20px;right:20px;background:var(--verde3);color:var(--verde);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px}
+
+/* ── FUNCIONALIDADES ── */
+.funcionalidades{padding:100px 24px;background:#fff}
+.func-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
+.func-card{border-radius:var(--r2);padding:32px;border:1px solid var(--cinza2);transition:.2s;position:relative;overflow:hidden}
+.func-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.08)}
+.func-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.func-card.c1::after{background:linear-gradient(90deg,var(--azul2),var(--azul))}
+.func-card.c2::after{background:linear-gradient(90deg,var(--verde2),var(--verde))}
+.func-card.c3::after{background:linear-gradient(90deg,#9333ea,#6b21a8)}
+.func-card.c4::after{background:linear-gradient(90deg,#ea580c,#c2410c)}
+.func-card.c5::after{background:linear-gradient(90deg,#0891b2,#0e7490)}
+.func-card.c6::after{background:linear-gradient(90deg,#d97706,#b45309)}
+.func-icon{font-size:32px;margin-bottom:16px}
+.func-card h3{font-size:17px;font-weight:700;margin-bottom:10px;color:var(--texto)}
+.func-card p{font-size:13px;color:var(--cinza3);line-height:1.65}
+.func-tag{display:inline-block;background:var(--amarelo2);color:var(--azul);font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;margin-top:12px}
+
+/* ── PREÇO ── */
+.preco{padding:100px 24px;background:linear-gradient(160deg,#0a2d5c,#0d4a2f);position:relative;overflow:hidden}
+.preco::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:28px 28px}
+.preco .section-tag{background:rgba(245,200,66,.15);color:var(--amarelo)}
+.preco .section-h{color:#fff;text-align:center}
+.preco .section-sub{color:rgba(255,255,255,.6);text-align:center;margin:0 auto 48px}
+.preco-card{max-width:520px;margin:0 auto;background:rgba(255,255,255,.06);border:1.5px solid rgba(245,200,66,.4);border-radius:32px;padding:48px;text-align:center;backdrop-filter:blur(8px);position:relative;overflow:hidden}
+.preco-card::before{content:'';position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(245,200,66,.08) 0%,transparent 70%)}
+.preco-popular{background:var(--amarelo);color:var(--azul);font-size:12px;font-weight:800;padding:6px 24px;border-radius:100px;text-transform:uppercase;letter-spacing:.08em;display:inline-block;margin-bottom:24px}
+.preco-nome{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
+.preco-valor{font-size:72px;font-weight:900;color:var(--amarelo);line-height:1;margin-bottom:4px}
+.preco-valor span{font-size:20px;font-weight:500;color:rgba(255,255,255,.5)}
+.preco-per{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:32px}
+.preco-lista{list-style:none;text-align:left;display:flex;flex-direction:column;gap:14px;margin-bottom:36px}
+.preco-lista li{display:flex;align-items:center;gap:12px;font-size:15px;color:rgba(255,255,255,.85)}
+.preco-lista li::before{content:'✅';font-size:14px;flex-shrink:0}
+.preco-lista li.nao{color:rgba(255,255,255,.35)}
+.preco-lista li.nao::before{content:''}
+.btn-preco{display:block;background:var(--amarelo);color:var(--azul);padding:20px;border-radius:100px;font-size:17px;font-weight:800;text-decoration:none;transition:.25s;box-shadow:0 8px 32px rgba(245,200,66,.35)}
+.btn-preco:hover{transform:translateY(-2px);background:#ffd700;box-shadow:0 12px 40px rgba(245,200,66,.5)}
+.preco-garantia{margin-top:20px;font-size:13px;color:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;gap:6px}
+.preco-dia{margin-top:12px;font-size:13px;color:rgba(255,255,255,.4)}
+
+/* ── FAQ ── */
+.faq{padding:100px 24px;background:var(--cinza)}
+.faq-list{max-width:720px;margin:48px auto 0;display:flex;flex-direction:column;gap:12px}
+.faq-item{background:#fff;border-radius:16px;border:1px solid var(--cinza2);overflow:hidden}
+.faq-q{padding:20px 24px;font-size:15px;font-weight:700;color:var(--texto);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;transition:.2s}
+.faq-q:hover{background:var(--cinza)}
+.faq-icon{font-size:20px;transition:.3s;color:var(--azul2);flex-shrink:0}
+.faq-a{padding:0 24px;font-size:14px;color:var(--cinza3);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease}
+.faq-item.open .faq-a{max-height:200px;padding:4px 24px 20px}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+
+/* ── CTA FINAL ── */
+.cta-final{padding:100px 24px;background:var(--azul);text-align:center;position:relative;overflow:hidden}
+.cta-final::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px}
+.cta-final h2{font-family:'DM Serif Display',serif;font-size:clamp(32px,5vw,56px);color:#fff;line-height:1.2;margin-bottom:16px;position:relative}
+.cta-final h2 em{font-style:italic;color:var(--amarelo)}
+.cta-final p{font-size:17px;color:rgba(255,255,255,.65);max-width:480px;margin:0 auto 40px;line-height:1.7;position:relative}
+.btn-cta-final{display:inline-flex;align-items:center;gap:10px;background:var(--amarelo);color:var(--azul);padding:20px 40px;border-radius:100px;font-size:18px;font-weight:800;text-decoration:none;transition:.25s;box-shadow:0 8px 40px rgba(245,200,66,.3);position:relative}
+.btn-cta-final:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(245,200,66,.45)}
+.cta-selos{display:flex;gap:24px;justify-content:center;margin-top:32px;flex-wrap:wrap;position:relative}
+.cta-selo{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.55)}
+.cta-selo span{font-size:18px}
+
+/* ── FOOTER ── */
+footer{background:#061220;padding:40px 24px;text-align:center}
+.footer-inner{max-width:1100px;margin:0 auto}
+.footer-logo{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
+.footer-links{display:flex;gap:20px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+.footer-links a{font-size:13px;color:rgba(255,255,255,.4);text-decoration:none;transition:.2s}
+.footer-links a:hover{color:rgba(255,255,255,.8)}
+.footer-copy{font-size:12px;color:rgba(255,255,255,.25)}
+
+/* ── WHATSAPP BTN ── */
+.wa-btn{position:fixed;bottom:24px;right:24px;z-index:99;width:56px;height:56px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;text-decoration:none;box-shadow:0 8px 24px rgba(37,211,102,.4);transition:.2s}
+.wa-btn:hover{transform:scale(1.1)}
+
+/* ── ANIMAÇÕES ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.anim{opacity:0;animation:fadeUp .7s ease forwards}
+.d1{animation-delay:.1s}.d2{animation-delay:.25s}.d3{animation-delay:.4s}.d4{animation-delay:.55s}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+@media(max-width:600px){
+  .hero-stats{gap:20px}
+  .preco-card{padding:32px 24px}
+  .preco-valor{font-size:56px}
+  .btn-hero{font-size:15px;padding:15px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">➕<div class="nav-logo-ia">IA</div></div>
+      <span>SAE Fácil</span>
+    </a>
+    <a href="https://pay.hotmart.com/S105507836E" class="nav-cta" target="_blank">Assinar agora →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-dots"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge anim d1">✨ Inteligência Artificial para Enfermagem</div>
+      <h1 class="anim d2">SAE completa em <em>minutos,</em> não horas</h1>
+      <p class="hero-sub anim d3">Gere Evolução SOAP, Prescrição de Enfermagem, Diagnósticos NANDA-I 2024-2026 e Passagem de Plantão SBAR com IA. Dentro das normas do COREN.</p>
+      <div class="hero-cta-group anim d4">
+        <a href="https://pay.hotmart.com/S105507836E" target="_blank" class="btn-hero">
+          🚀 Assinar por R$ 67/mês <span class="btn-hero-arrow">→</span>
+        </a>
+        <div class="hero-note">🔒 Cancele quando quiser · Sem fidelidade</div>
+      </div>
+      <div class="hero-stats anim d4">
+        <div class="hero-stat"><div class="hero-stat-n">121+</div><div class="hero-stat-l">Diagnósticos NANDA</div></div>
+        <div class="hero-stat"><div class="hero-stat-n">5 min</div><div class="hero-stat-l">Para gerar SAE completa</div></div>
+        <div class="hero-stat"><div class="hero-stat-n">100%</div><div class="hero-stat-l">Normas COREN</div></div>
+      </div>
+    </div>
+    <div class="hero-visual anim d3">
+      <div class="mockup">
+        <div class="mockup-top">
+          <div class="mockup-dot"></div><div class="mockup-dot"></div><div class="mockup-dot"></div>
+          <div class="mockup-title">SAE Fácil — Nova SAE</div>
+        </div>
+        <div class="mockup-field">
+          <div class="mockup-field-label">Diagnóstico médico</div>
+          <div class="mockup-field-val">Dengue com sinais de alarme (A97.1)</div>
+        </div>
+        <div class="mockup-field">
+          <div class="mockup-field-label">Sinais vitais</div>
+          <div class="mockup-field-val">PA 95x60 · FC 118 · Tax 38.8°C · SpO2 96%</div>
+        </div>
+        <div class="mockup-field">
+          <div class="mockup-field-label">Queixas</div>
+          <div class="mockup-field-val">Dor abdominal intensa, náuseas, fraqueza</div>
+        </div>
+        <div class="mockup-btn">⚡ Gerar SAE com IA</div>
+        <div class="mockup-result">
+          <div class="mockup-ia-badge">✦ IA Gerando</div>
+          <div class="mockup-result-label">🧠 Diagnóstico NANDA Gerado</div>
+          <div class="mockup-result-txt">1. Risco de volume de líquidos deficiente (NANDA 00028)<br>2. Hipertermia (NANDA 00007)<br>3. Risco de sangramento (NANDA 00206)<span class="typing-cursor"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMA -->
+<section class="problema">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-tag">O problema</div></div>
+    <h2 class="section-h reveal">Enfermeiros perdem horas<br>documentando no plantão</h2>
+    <p class="section-sub reveal">Depois de um plantão exaustivo, a SAE manual ainda consome tempo precioso que poderia ser dedicado aos pacientes.</p>
+    <div class="problema-grid">
+      <div class="problema-card reveal">
+        <div class="problema-icon" style="background:#fff0f0">⏰</div>
+        <h3>Horas perdidas toda semana</h3>
+        <p>Documentação manual consome 2-3h por plantão — tempo que poderia ir para o cuidado do paciente.</p>
+      </div>
+      <div class="problema-card reveal">
+        <div class="problema-icon" style="background:#fff8e1">📝</div>
+        <h3>Retrabalho a cada paciente</h3>
+        <p>Cada SAE começa do zero. Sem padronização. Sem agilidade. Com risco de inconsistências.</p>
+      </div>
+      <div class="problema-card reveal">
+        <div class="problema-icon" style="background:#f0f7ff">😓</div>
+        <h3>Exaustão + burocracia</h3>
+        <p>Plantar já é pesado. Ainda ter que documentar tudo manualmente, cansado, aumenta o estresse.</p>
+      </div>
+      <div class="problema-card reveal">
+        <div class="problema-icon" style="background:#f0fff4">⚠️</div>
+        <h3>Risco de erros e omissões</h3>
+        <p>Documentação incompleta ou incorreta pode gerar problemas éticos e legais para o profissional.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUÇÃO -->
+<section class="solucao">
+  <div class="section-inner">
+    <div class="solucao-grid">
+      <div>
+        <div class="reveal"><div class="section-tag">A solução</div></div>
+        <h2 class="section-h reveal">IA que entende<br>a linguagem da Enfermagem</h2>
+        <p class="section-sub reveal" style="margin-bottom:32px">O SAE Fácil usa Inteligência Artificial para gerar documentos clínicos completos, individualizados e dentro das normas do COFEN.</p>
+        <div class="solucao-features">
+          <div class="feature-item reveal">
+            <div class="feature-icon" style="background:#e8f1fc">📝</div>
+            <div class="feature-txt">
+              <h4>Evolução SOAP automatizada</h4>
+              <p>Subjetivo, Objetivo, Avaliação e Plano gerados com base nos dados reais do paciente.</p>
+            </div>
+          </div>
+          <div class="feature-item reveal">
+            <div class="feature-icon" style="background:#d6f0e3">💊</div>
+            <div class="feature-txt">
+              <h4>Prescrição de Enfermagem individualizada</h4>
+              <p>Prescrição baseada no CID-10 e quadro clínico. Diferente para cada paciente.</p>
+            </div>
+          </div>
+          <div class="feature-item reveal">
+            <div class="feature-icon" style="background:#fff3c4">🧠</div>
+            <div class="feature-txt">
+              <h4>Diagnósticos NANDA-I 2024-2026</h4>
+              <p>121 diagnósticos estruturados. Sugestão automática pelo CID selecionado.</p>
+            </div>
+          </div>
+          <div class="feature-item reveal">
+            <div class="feature-icon" style="background:#f3e8ff">🔄</div>
+            <div class="feature-txt">
+              <h4>Passagem de Plantão SBAR + FAST HUG</h4>
+              <p>Passagem estruturada e completa. Editável pelo profissional.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="nanda-card">
+          <div class="nanda-card-n">121</div>
+          <div class="nanda-card-label">Diagnósticos NANDA-I 2024-2026</div>
+          <div class="nanda-tags">
+            <div class="nanda-tag destaque">🦟 Dengue Tipo C</div>
+            <div class="nanda-tag">Pneumonia</div>
+            <div class="nanda-tag">IAM</div>
+            <div class="nanda-tag">Sepse Bundle</div>
+            <div class="nanda-tag destaque">Hipertermia</div>
+            <div class="nanda-tag">AVC</div>
+            <div class="nanda-tag">Diabetes</div>
+            <div class="nanda-tag">ICC</div>
+            <div class="nanda-tag destaque">Risco de sangramento</div>
+            <div class="nanda-tag">DPOC</div>
+            <div class="nanda-tag">HAS</div>
+            <div class="nanda-tag">Fratura</div>
+            <div class="nanda-tag destaque">Dor aguda</div>
+            <div class="nanda-tag">Queimadura</div>
+            <div class="nanda-tag">Ansiedade</div>
+            <div class="nanda-tag">+ 106 mais</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="como">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-tag">Como funciona</div></div>
+    <h2 class="section-h reveal">3 passos. SAE completa.</h2>
+    <p class="section-sub reveal">Sem complicação. Sem horas perdidas. Funciona no celular, tablet ou computador.</p>
+    <div class="steps">
+      <div class="step reveal d1">
+        <div class="step-num">1</div>
+        <h3>Preencha os dados</h3>
+        <p>Nome, leito, CID-10, sinais vitais, queixas e diagnóstico médico. Leva menos de 2 minutos.</p>
+      </div>
+      <div class="step reveal d2">
+        <div class="step-num">2</div>
+        <h3>A IA gera a SAE</h3>
+        <p>O sistema processa e monta Evolução SOAP, NANDA, Prescrição e Passagem de Plantão completos.</p>
+      </div>
+      <div class="step reveal d3">
+        <div class="step-num">3</div>
+        <h3>Revise e assine</h3>
+        <p>Edite o que precisar, exporte em PDF, assine e arquive. Dentro das normas do COREN.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="depoimentos">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="reveal"><div class="section-tag" style="margin:0 auto 16px">Quem usa aprova</div></div>
+      <h2 class="section-h reveal">O que os enfermeiros dizem</h2>
+    </div>
+    <div class="dep-grid">
+      <div class="dep-card reveal">
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-badge">Enfermeira UTI</div>
+        <p class="dep-texto">"Reduzi meu tempo de documentação de 1h30 para menos de 15 minutos. Os diagnósticos NANDA são sempre certeiros para o quadro clínico do paciente."</p>
+        <div class="dep-autor">
+          <div class="dep-avatar" style="background:linear-gradient(135deg,#1a5fa8,#0a2d5c)">A</div>
+          <div>
+            <div class="dep-nome">Ana Paula M.</div>
+            <div class="dep-cargo">Enfermeira UTI · Brasília-DF</div>
+          </div>
+        </div>
+      </div>
+      <div class="dep-card reveal">
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-badge">Técnica de Enfermagem</div>
+        <p class="dep-texto">"Uso no celular durante o plantão. A passagem de plantão SBAR que o sistema gera é muito melhor do que eu fazia manualmente."</p>
+        <div class="dep-autor">
+          <div class="dep-avatar" style="background:linear-gradient(135deg,#1a7a4e,#0d4a2f)">C</div>
+          <div>
+            <div class="dep-nome">Carla S.</div>
+            <div class="dep-cargo">Técnica de Enfermagem · Goiânia-GO</div>
+          </div>
+        </div>
+      </div>
+      <div class="dep-card reveal">
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-badge">Enfermeiro Hospitalar</div>
+        <p class="dep-texto">"Os diagnósticos mudam conforme o CID do paciente. Para dengue ele sugere os diagnósticos certos, para pneumonia outros. Impressionante."</p>
+        <div class="dep-autor">
+          <div class="dep-avatar" style="background:linear-gradient(135deg,#9333ea,#6b21a8)">R</div>
+          <div>
+            <div class="dep-nome">Rafael T.</div>
+            <div class="dep-cargo">Enfermeiro · São Paulo-SP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNCIONALIDADES -->
+<section class="funcionalidades">
+  <div class="section-inner">
+    <div style="text-align:center">
+      <div class="reveal"><div class="section-tag" style="margin:0 auto 16px">O que está incluído</div></div>
+      <h2 class="section-h reveal">Tudo que você precisa no plantão</h2>
+      <p class="section-sub reveal" style="margin:0 auto 0">Um sistema completo de documentação de enfermagem com IA.</p>
+    </div>
+    <div class="func-grid">
+      <div class="func-card c1 reveal">
+        <div class="func-icon">📝</div>
+        <h3>Evolução SOAP com IA</h3>
+        <p>Subjetivo, Objetivo, Avaliação e Plano gerados automaticamente. Individualizado para cada paciente.</p>
+        <div class="func-tag">IA Claude</div>
+      </div>
+      <div class="func-card c2 reveal">
+        <div class="func-icon">💊</div>
+        <h3>Prescrição de Enfermagem</h3>
+        <p>Prescrição baseada no CID-10 e quadro clínico. Dengue Tipo C tem 18 itens específicos.</p>
+        <div class="func-tag">Por CID-10</div>
+      </div>
+      <div class="func-card c3 reveal">
+        <div class="func-icon">🧠</div>
+        <h3>Diagnósticos NANDA-I 2024-2026</h3>
+        <p>121 diagnósticos estruturados. Sugestão automática pelo CID. Inclusão manual livre.</p>
+        <div class="func-tag">121 diagnósticos</div>
+      </div>
+      <div class="func-card c4 reveal">
+        <div class="func-icon">🔄</div>
+        <h3>Passagem de Plantão SBAR</h3>
+        <p>Situação, Background, Avaliação e Recomendação. Com FAST HUG integrado.</p>
+        <div class="func-tag">SBAR + FAST HUG</div>
+      </div>
+      <div class="func-card c5 reveal">
+        <div class="func-icon">📊</div>
+        <h3>Escores Clínicos</h3>
+        <p>Braden, Glasgow, Morse, NEWS, Apgar e Fugulin. Calculados automaticamente.</p>
+        <div class="func-tag">6 escores</div>
+      </div>
+      <div class="func-card c6 reveal">
+        <div class="func-icon">⏱️</div>
+        <h3>Modo Plantão</h3>
+        <p>Cronômetro, checklist de cuidados e SAE completa para múltiplos pacientes por turno.</p>
+        <div class="func-tag">Checklist</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PREÇO -->
+<section class="preco">
+  <div class="section-inner" style="text-align:center">
+    <div class="reveal"><div class="section-tag" style="margin:0 auto 16px">Investimento</div></div>
+    <h2 class="section-h reveal">Um preço justo por<br>documentação sem estresse</h2>
+    <p class="section-sub reveal">Menos que um café por dia. Cancele quando quiser.</p>
+    <div class="preco-card reveal">
+      <div class="preco-popular">⭐ Plano Pro Mensal</div>
+      <div class="preco-nome">SAE Fácil Pro</div>
+      <div class="preco-valor">R$ 67<span>/mês</span></div>
+      <div class="preco-per">Menos de R$ 2,30 por dia</div>
+      <ul class="preco-lista">
+        <li>SAEs ilimitadas por mês</li>
+        <li>Evolução SOAP com IA</li>
+        <li>Prescrição de Enfermagem individualizada</li>
+        <li>121 Diagnósticos NANDA-I 2024-2026</li>
+        <li>Passagem de Plantão SBAR + FAST HUG</li>
+        <li>6 Escores Clínicos (Braden, Glasgow, Morse...)</li>
+        <li>Calculadoras: dose, gotejamento, IMC, hidratação</li>
+        <li>PDF profissional para exportar e assinar</li>
+        <li>Modo Plantão com checklist</li>
+        <li>277 CIDs com busca inteligente</li>
+        <li>Suporte via WhatsApp</li>
+      </ul>
+      <a href="https://pay.hotmart.com/S105507836E" target="_blank" class="btn-preco">🚀 Assinar agora por R$ 67/mês</a>
+      <div class="preco-garantia">🔒 Pagamento seguro via Hotmart</div>
+      <div class="preco-dia">Cancele quando quiser, sem multa</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="section-inner" style="text-align:center">
+    <div class="reveal"><div class="section-tag" style="margin:0 auto 16px">Dúvidas frequentes</div></div>
+    <h2 class="section-h reveal">Perguntas frequentes</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">O SAE gerado tem validade legal e segue as normas do COREN? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. O SAE Fácil gera documentos dentro dos padrões técnicos do COFEN. O documento gerado é igual a uma SAE escrita manualmente — a responsabilidade clínica e legal é do profissional que assina. Revise sempre antes de assinar.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">Os diagnósticos são iguais para todos os pacientes? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Não. O sistema usa o CID-10, diagnóstico médico, sinais vitais, queixas e dispositivos do paciente para gerar diagnósticos NANDA individualizados. Pacientes com Dengue recebem diagnósticos diferentes de pacientes com Pneumonia ou IAM.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">Funciona no celular durante o plantão? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. O SAE Fácil é totalmente responsivo e funciona em qualquer dispositivo — celular, tablet ou computador. Basta ter acesso à internet.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">Posso editar os documentos gerados pela IA? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. Todo documento gerado é editável antes de exportar. Você pode editar, adicionar diagnósticos NANDA manualmente, alterar prescrições e personalizar a passagem de plantão.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">Posso cancelar quando quiser? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. O plano Pro não tem fidelidade. Cancele quando quiser diretamente na plataforma Hotmart, sem burocracia e sem multa.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFAQ(this)">Os dados dos pacientes ficam armazenados? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Não armazenamos dados identificáveis de pacientes. Os dados clínicos inseridos são usados apenas para gerar o documento e não ficam salvos em nossos servidores de forma identificável, em conformidade com a LGPD.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final">
+  <h2 class="reveal">Chega de <em>horas perdidas</em><br>documentando SAE</h2>
+  <p class="reveal">Junte-se aos enfermeiros que já usam IA para documentar melhor, mais rápido e dentro das normas do COREN.</p>
+  <a href="https://pay.hotmart.com/S105507836E" target="_blank" class="btn-cta-final reveal">
+    🚀 Assinar por R$ 67/mês →
+  </a>
+  <div class="cta-selos reveal">
+    <div class="cta-selo"><span>🔒</span> Pagamento seguro</div>
+    <div class="cta-selo"><span>📋</span> Normas COREN</div>
+    <div class="cta-selo"><span>❌</span> Sem fidelidade</div>
+    <div class="cta-selo"><span>📱</span> Funciona no celular</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">➕ SAE Fácil</div>
+    <div class="footer-links">
+      <a href="https://saefacil.onrender.com">Acessar sistema</a>
+      <a href="termos.html">Termos de Uso</a>
+      <a href="privacidade.html">Privacidade</a>
+      <a href="mailto:saefacil@gmail.com">Contato</a>
+      <a href="https://wa.me/5561995120797">WhatsApp</a>
+    </div>
+    <div class="footer-copy">© 2026 SPYNET Tecnologia Forense & Soluções Digitais Ltda · CNPJ 64.000.808/0001-51 · Brasília-DF</div>
+  </div>
+</footer>
+
+<!-- WhatsApp -->
+<a href="https://wa.me/5561995120797?text=Olá! Tenho interesse no SAE Fácil" target="_blank" class="wa-btn" title="Falar no WhatsApp">💬</a>
+
+<script>
+// FAQ
+function toggleFAQ(el){
+  const item = el.parentElement;
+  item.classList.toggle('open');
+}
+
+// Scroll Reveal
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('visible'); }
+  });
+},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+</body>
+</html>
