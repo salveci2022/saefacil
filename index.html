@@ -718,19 +718,33 @@ textarea.ci{min-height:90px}
 
     <!-- NANDA DATABASE -->
     <div id="pag-nanda-db" class="pag" style="display:none">
-      <div class="gr"><h2>📚 NANDA-I 2024-2026</h2><p>267 diagnósticos oficiais com busca por sintoma</p></div>
-      <div class="nanda-busca">
-        <span style="font-size:18px">🔍</span>
-        <input type="text" class="busca-input" placeholder="Buscar diagnóstico, sintoma ou código..." oninput="buscarNANDA(this.value)" id="nanda-search">
+      <div class="gr"><h2>📚 NANDA-I 2024-2026</h2><p>121 diagnósticos estruturados com busca inteligente por nome, código ou sintoma</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <div class="nanda-busca" style="flex:1;min-width:200px">
+          <span style="font-size:18px">🔍</span>
+          <input type="text" class="busca-input" placeholder="Buscar por nome, código NANDA ou sintoma..." oninput="buscarNANDA(this.value)" id="nanda-search">
+        </div>
+        <button class="bav" style="padding:10px 16px;font-size:13px;white-space:nowrap" onclick="adicionarDiagnosticoNANDA()">✏️ Adicionar Manual</button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="nanda-filtros">
-        <button class="etab on" onclick="filtrarDominio('',this)">Todos</button>
-        <button class="etab" onclick="filtrarDominio('Segurança',this)">Segurança</button>
-        <button class="etab" onclick="filtrarDominio('Nutrição',this)">Nutrição</button>
-        <button class="etab" onclick="filtrarDominio('Atividade',this)">Atividade</button>
-        <button class="etab" onclick="filtrarDominio('Dor',this)">Dor/Conforto</button>
-        <button class="etab" onclick="filtrarDominio('Eliminação',this)">Eliminação</button>
-        <button class="etab" onclick="filtrarDominio('Psico',this)">Psicossocial</button>
+      <div id="nanda-cid-sugestao" style="display:none;background:var(--azul3);border:1px solid var(--azul2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:700;color:var(--azul)">⚡ Sugestões automáticas para o CID selecionado</span>
+          <button onclick="document.getElementById('nanda-cid-sugestao').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--cinza3)">✕</button>
+        </div>
+        <div id="nanda-cid-lista" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="nanda-filtros">
+        <button class="etab on" onclick="filtrarDominio('',this)">Todos (121)</button>
+        <button class="etab" onclick="filtrarDominio('Promoção',this)">D1 Promoção</button>
+        <button class="etab" onclick="filtrarDominio('Nutrição',this)">D2 Nutrição</button>
+        <button class="etab" onclick="filtrarDominio('Eliminação',this)">D3 Eliminação</button>
+        <button class="etab" onclick="filtrarDominio('Atividade',this)">D4 Atividade</button>
+        <button class="etab" onclick="filtrarDominio('Percepção',this)">D5 Percepção</button>
+        <button class="etab" onclick="filtrarDominio('Autopercepção',this)">D6 Autopepcepção</button>
+        <button class="etab" onclick="filtrarDominio('Papel',this)">D7 Papel</button>
+        <button class="etab" onclick="filtrarDominio('Enfrentamento',this)">D9 Enfrentamento</button>
+        <button class="etab" onclick="filtrarDominio('Segurança',this)">D11 Segurança</button>
+        <button class="etab" onclick="filtrarDominio('Conforto',this)">D12 Conforto</button>
       </div>
       <div id="lista-nanda"></div>
     </div>
@@ -1382,6 +1396,11 @@ function ir(pag){
   if(pag==='hist') renderHist();
   if(pag==='plantao-mode') renderPlantao();
   if(pag==='perfil') carregarCamposPerfil();
+  // Ao abrir banco NANDA: renderizar lista e mostrar sugestões por CID
+  if(pag==='nanda-db'){
+    renderNANDA('');
+    setTimeout(()=>mostrarSugestoesCID(), 100);
+  }
   window.scrollTo(0,0);
 }
 function irNovaSAE(t){
@@ -2738,6 +2757,173 @@ function getNandaSelecionadosTexto(){
 
 // Limpar diagnósticos selecionados ao iniciar nova SAE
 const _limparOriginal = typeof limparForm === 'function' ? limparForm : null;
+
+
+// ════════════════════════════════════════════════════════════
+// INTEGRAÇÃO CID → NANDA_DB — Sugestões na tela de banco
+// Quando enfermeiro está na tela NANDA e tem CID selecionado,
+// mostra sugestões automáticas no topo baseadas no CID
+// ════════════════════════════════════════════════════════════
+
+// Mapeamento CID → códigos NANDA sugeridos do banco
+const CID_NANDA_MAP = {
+  // DENGUE
+  'dengue|a90|a91|a97': ['00007','00132','00028','00206','00093'],
+  // PNEUMONIA
+  'pneumonia|j18|j15|j12': ['00030','00031','00007','00032','00004'],
+  // ASMA
+  'asma|j45|j46|broncoespas': ['00032','00030','00146','00126'],
+  // DPOC
+  'dpoc|j44|j43|enfisema': ['00030','00032','00092','00155'],
+  // IAM
+  'infarto|iam|i21|i22': ['00029','00132','00146','00204','00206'],
+  // ICC
+  'insuficiência cardíaca|icc|i50': ['00029','00026','00092','00032'],
+  // HAS
+  'hipertensão|has|i10|i11|pressão alta': ['00201','00132','00126','00078'],
+  // AVC
+  'avc|acidente vascular|i63|i64': ['00201','00039','00085','00108'],
+  // SEPSE
+  'sepse|a41|r57|choque séptico': ['00204','00007','00205','00030'],
+  // DIABETES
+  'diabetes|e10|e11|dm ': ['00179','00004','00226','00126'],
+  // IRA/IRC
+  'insuficiência renal|n17|n18|ira |irc |diálise': ['00016','00026','00195','00004'],
+  // PANCREATITE
+  'pancreatite|k85': ['00132','00002','00004','00026'],
+  // HEMORRAGIA DIGESTIVA
+  'hemorragia digestiva|melena|k92': ['00204','00205','00206','00146'],
+  // TCE
+  'tce|traumatismo crânio|s06': ['00049','00201','00039','00155'],
+  // FRATURA
+  'fratura|s72|s82|ortopédico': ['00132','00085','00004','00291'],
+  // QUEIMADURA
+  'queimadura|t20|t21|t31': ['00132','00027','00004','00046'],
+  // LESÃO POR PRESSÃO
+  'lesão por pressão|úlcera de pressão|l89': ['00046','00044','00004','00132'],
+  // CÂNCER
+  'câncer|neoplasia|c80|z51': ['00093','00002','00132','00004'],
+  // ITU
+  'infecção urinária|itu|n39': ['00016','00007','00004','00194'],
+  // CHIKUNGUNYA / ZIKA
+  'chikungunya|zika|a92': ['00132','00007','00085','00093'],
+};
+
+function _sugerirNandaPorCID(diag, cid) {
+  const d = ((diag||'') + ' ' + (cid||'')).toLowerCase();
+  let codigosSugeridos = [];
+  for (const [pattern, codigos] of Object.entries(CID_NANDA_MAP)) {
+    const terms = pattern.split('|');
+    if (terms.some(t => d.includes(t))) {
+      codigosSugeridos = codigos;
+      break;
+    }
+  }
+  if (!codigosSugeridos.length) return [];
+  // Buscar os diagnósticos completos no banco
+  return codigosSugeridos
+    .map(cod => NANDA_DB.find(n => n.cod === cod))
+    .filter(Boolean);
+}
+
+function mostrarSugestoesCID() {
+  // Pega o CID da tela Nova SAE (se estiver preenchido)
+  const diag = document.getElementById('p-diag')?.value || '';
+  const cid  = document.getElementById('p-cid-codigo')?.value || '';
+  if (!diag && !cid) return;
+
+  const sugestoes = _sugerirNandaPorCID(diag, cid);
+  if (!sugestoes.length) return;
+
+  const el = document.getElementById('nanda-cid-lista');
+  const box = document.getElementById('nanda-cid-sugestao');
+  if (!el || !box) return;
+
+  box.style.display = 'block';
+  el.innerHTML = sugestoes.map(d => `
+    <div onclick="adicionarNandaDoMapa('${d.cod}','${d.nome.replace(/'/g,"&#39;")}')"
+      style="background:#fff;border:1px solid var(--azul2);border-radius:20px;padding:5px 12px;
+             font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px"
+      onmouseover="this.style.background='var(--azul3)'" onmouseout="this.style.background='#fff'">
+      <span style="color:var(--azul);font-weight:700">${d.cod}</span>
+      <span>${d.nome}</span>
+      <span style="color:var(--verde);font-weight:700">+ Usar</span>
+    </div>`).join('');
+}
+
+function adicionarNandaDoMapa(cod, nome) {
+  // Adiciona ao painel de selecionados (se existir) e ao resultado da SAE
+  if (typeof adicionarNanda === 'function') {
+    adicionarNanda(cod, nome, 'relacionado ao diagnóstico médico', '');
+    toast('✅ '+nome+' adicionado!','ok');
+  } else {
+    // Fallback: abre modal e busca
+    adicionarDiagnosticoNANDA();
+    setTimeout(()=>{
+      const input = document.getElementById('nanda-modal-search');
+      if(input){ input.value = nome; filtrarNANDAModal(nome); }
+    }, 200);
+  }
+}
+
+// Melhorar renderNANDA para mostrar botão "+ Usar na SAE" em cada card
+const _renderNANDA_orig = renderNANDA;
+function renderNANDA(filtro, dominio) {
+  const el = document.getElementById('lista-nanda');
+  if(!el) return;
+  let lista = NANDA_DB;
+  if(filtro) lista = lista.filter(d=>(d.nome+d.cod+d.dom+(d.fa||[]).join()+(d.cd||[]).join()).toLowerCase().includes(filtro.toLowerCase()));
+  if(dominio) lista = lista.filter(d=>d.dom.toLowerCase().includes(dominio.toLowerCase()));
+  if(!lista.length){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:var(--cinza3)">Nenhum diagnóstico encontrado para "'+filtro+'"</div>';
+    return;
+  }
+  // Atualizar contador
+  const ct = document.getElementById('nanda-count');
+  if(ct) ct.textContent = '('+lista.length+' de '+NANDA_DB.length+')';
+
+  el.innerHTML = lista.map(d=>`
+    <div class="nanda-item" onclick="toggleNANDA(this)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="flex:1">
+          <div class="nanda-codigo">NANDA ${d.cod}</div>
+          <div class="nanda-nome">${d.nome}</div>
+          <div class="nanda-dominio">${d.dom}</div>
+        </div>
+        <button onclick="event.stopPropagation();adicionarNandaDoMapa('${d.cod}','${d.nome.replace(/'/g,"&#39;")}')"
+          style="background:var(--verde);color:#fff;border:none;border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+          + Usar
+        </button>
+      </div>
+      <div class="nanda-detalhe">
+        <div class="nanda-sec">Definição</div>
+        <div class="nanda-txt">${d.def}</div>
+        ${d.fa&&d.fa.length?'<div class="nanda-sec">Fatores relacionados</div><div class="nanda-txt">'+d.fa.map(f=>'• '+f).join('<br>')+'</div>':''}
+        ${d.cd&&d.cd.length?'<div class="nanda-sec">Características definidoras</div><div class="nanda-txt">'+d.cd.map(c=>'• '+c).join('<br>')+'</div>':''}
+        ${d.nic&&d.nic.length?'<div class="nanda-sec">Intervenções NIC</div><div class="nanda-txt">'+d.nic.map(n=>'• '+n).join('<br>')+'</div>':''}
+        ${d.noc&&d.noc.length?'<div class="nanda-sec">Resultados NOC</div><div class="nanda-txt">'+d.noc.map(n=>'• '+n).join('<br>')+'</div>':''}
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="bav" style="flex:1;padding:10px;font-size:13px"
+            onclick="event.stopPropagation();adicionarNandaDoMapa('${d.cod}','${d.nome.replace(/'/g,"&#39;")}')">
+            ✅ Usar nesta SAE
+          </button>
+          <button class="bav" style="background:var(--cinza2);color:var(--texto);padding:10px;font-size:13px"
+            onclick="event.stopPropagation();inserirNANDA(NANDA_DB.findIndex(x=>x.cod==='${d.cod}'))">
+            📋 Inserir no documento
+          </button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// Inicializar banco ao abrir a tela NANDA
+const _irOriginalNanda = typeof ir === 'function' ? ir : null;
+document.addEventListener('DOMContentLoaded', () => {
+  // Renderizar banco NANDA na inicialização
+  if(document.getElementById('lista-nanda')) renderNANDA('');
+  // Mostrar sugestões por CID se disponível
+  mostrarSugestoesCID();
+});
 
 </script>
 </body>
