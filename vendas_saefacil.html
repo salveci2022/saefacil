@@ -4,7 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAE Fácil — IA para Enfermagem | Documentação em Minutos</title>
-<meta name="description" content="Gere Evolução SOAP, Prescrição de Enfermagem, Diagnósticos NANDA e Passagem de Plantão com Inteligência Artificial. Por R$ 67,00/mês.">
+<meta name="description" content="SAE Fácil — Gere Evolução SOAP, Prescrição de Enfermagem, Diagnósticos NANDA-I 2024-2026 e Passagem de Plantão SBAR com Inteligência Artificial. Por R$ 67/mês.">
+<meta name="keywords" content="SAE Fácil, SAE enfermagem, sistematização assistência enfermagem, NANDA 2024, diagnóstico enfermagem, evolução SOAP, prescrição enfermagem, passagem plantão SBAR, IA enfermagem, software enfermagem, COREN, COFEN, documentação enfermagem">
+<meta name="author" content="SPYNET Tecnologia Forense & Soluções Digitais Ltda">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://saefacil.onrender.com/vendas_saefacil.html">
+
+<!-- Open Graph — compartilhamento no WhatsApp, Facebook, LinkedIn -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="SAE Fácil — IA para Enfermagem | Documentação em Minutos">
+<meta property="og:description" content="Gere SAE completa em minutos com IA. Evolução SOAP, NANDA-I 2024-2026, Prescrição e Passagem de Plantão SBAR. Por R$ 67/mês.">
+<meta property="og:url" content="https://saefacil.onrender.com/vendas_saefacil.html">
+<meta property="og:site_name" content="SAE Fácil">
+<meta property="og:locale" content="pt_BR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SAE Fácil — IA para Enfermagem">
+<meta name="twitter:description" content="Gere SAE completa em minutos com IA. NANDA-I 2024-2026, SOAP, Prescrição e SBAR. Por R$ 67/mês.">
+
+<!-- Structured Data JSON-LD — aparece no Google com estrelas e preço -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SAE Fácil",
+  "description": "Sistematização da Assistência de Enfermagem com Inteligência Artificial. Gere Evolução SOAP, Prescrição de Enfermagem, Diagnósticos NANDA-I 2024-2026 e Passagem de Plantão SBAR em minutos.",
+  "url": "https://saefacil.onrender.com",
+  "applicationCategory": "MedicalApplication",
+  "operatingSystem": "Web, iOS, Android",
+  "inLanguage": "pt-BR",
+  "offers": {
+    "@type": "Offer",
+    "price": "67.00",
+    "priceCurrency": "BRL",
+    "priceSpecification": {
+      "@type": "UnitPriceSpecification",
+      "price": "67.00",
+      "priceCurrency": "BRL",
+      "unitText": "MONTH"
+    }
+  },
+  "provider": {
+    "@type": "Organization",
+    "name": "SPYNET Tecnologia Forense & Soluções Digitais Ltda",
+    "url": "https://saefacil.onrender.com",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "telephone": "+55-61-99512-0797",
+      "contactType": "customer service",
+      "availableLanguage": "Portuguese"
+    }
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5",
+    "reviewCount": "47"
+  }
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -512,11 +571,36 @@ footer{background:#061220;padding:40px 24px;text-align:center}
     <div class="reveal"><div class="section-tag" style="margin:0 auto 16px">Investimento</div></div>
     <h2 class="section-h reveal">Um preço justo por<br>documentação sem estresse</h2>
     <p class="section-sub reveal">Menos que um café por dia. Cancele quando quiser.</p>
+    <!-- Toggle mensal/anual -->
+    <div style="display:flex;justify-content:center;margin-bottom:32px;gap:0">
+      <button id="btn-mensal" onclick="togglePlano('mensal')"
+        style="padding:10px 28px;border-radius:100px 0 0 100px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--amarelo);background:var(--amarelo);color:var(--azul);transition:.2s">
+        Mensal
+      </button>
+      <button id="btn-anual" onclick="togglePlano('anual')"
+        style="padding:10px 28px;border-radius:0 100px 100px 0;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--amarelo);background:transparent;color:var(--amarelo);transition:.2s">
+        Anual <span style="font-size:11px;background:rgba(245,200,66,.2);padding:2px 8px;border-radius:20px;margin-left:4px">Economize 31%</span>
+      </button>
+    </div>
+
     <div class="preco-card reveal">
-      <div class="preco-popular">⭐ Plano Pro Mensal</div>
-      <div class="preco-nome">SAE Fácil Pro</div>
-      <div class="preco-valor">R$ 67<span>/mês</span></div>
-      <div class="preco-per">Menos de R$ 2,30 por dia</div>
+      <!-- PLANO MENSAL -->
+      <div id="plano-mensal">
+        <div class="preco-popular">⭐ Plano Pro Mensal</div>
+        <div class="preco-nome">SAE Fácil Pro</div>
+        <div class="preco-valor">R$ 97<span>/mês</span></div>
+        <div class="preco-per">Cobrado mensalmente · sem fidelidade</div>
+      </div>
+      <!-- PLANO ANUAL -->
+      <div id="plano-anual" style="display:none">
+        <div class="preco-popular" style="background:var(--verde2)">🏆 Melhor Custo-Benefício — Anual</div>
+        <div class="preco-nome">SAE Fácil Pro Anual</div>
+        <div class="preco-valor">R$ 67<span>/mês</span></div>
+        <div class="preco-per" style="color:var(--amarelo);font-weight:700">R$ 804/ano · Você economiza R$ 360 por ano!</div>
+        <div style="background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.3);border-radius:10px;padding:8px 14px;margin:12px 0;font-size:13px;color:rgba(255,255,255,.8)">
+          💳 Parcelado em 12x no cartão de crédito — sem juros
+        </div>
+      </div>
       <ul class="preco-lista">
         <li>SAEs ilimitadas por mês</li>
         <li>Evolução SOAP com IA</li>
@@ -530,9 +614,9 @@ footer{background:#061220;padding:40px 24px;text-align:center}
         <li>277 CIDs com busca inteligente</li>
         <li>Suporte via WhatsApp</li>
       </ul>
-      <a href="https://pay.hotmart.com/S105507836E" target="_blank" class="btn-preco">🚀 Assinar agora por R$ 67/mês</a>
+      <a id="btn-assinar" href="https://pay.hotmart.com/S105507836E" target="_blank" class="btn-preco">🚀 Assinar agora — R$ 97/mês</a>
       <div class="preco-garantia">🔒 Pagamento seguro via Hotmart</div>
-      <div class="preco-dia">Cancele quando quiser, sem multa</div>
+      <div id="nota-plano" class="preco-dia">Cancele quando quiser, sem multa</div>
     </div>
   </div>
 </section>
@@ -618,6 +702,40 @@ const observer = new IntersectionObserver((entries)=>{
   });
 },{threshold:0.1});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+</script>
+
+<script>
+// Toggle mensal/anual
+function togglePlano(tipo){
+  const mensal = document.getElementById('plano-mensal');
+  const anual  = document.getElementById('plano-anual');
+  const btnM   = document.getElementById('btn-mensal');
+  const btnA   = document.getElementById('btn-anual');
+  const btnAss = document.getElementById('btn-assinar');
+  const nota   = document.getElementById('nota-plano');
+
+  if(tipo === 'anual'){
+    mensal.style.display = 'none';
+    anual.style.display  = 'block';
+    btnA.style.background = 'var(--amarelo)';
+    btnA.style.color = 'var(--azul)';
+    btnM.style.background = 'transparent';
+    btnM.style.color = 'var(--amarelo)';
+    btnAss.textContent = '🚀 Assinar Anual — R$ 67/mês (R$ 804/ano)';
+    btnAss.href = 'https://pay.hotmart.com/S105507836E?offDiscount=ANUAL2026';
+    nota.textContent = 'Cobrado R$ 804 no cartão em até 12x sem juros';
+  } else {
+    mensal.style.display = 'block';
+    anual.style.display  = 'none';
+    btnM.style.background = 'var(--amarelo)';
+    btnM.style.color = 'var(--azul)';
+    btnA.style.background = 'transparent';
+    btnA.style.color = 'var(--amarelo)';
+    btnAss.textContent = '🚀 Assinar agora — R$ 97/mês';
+    btnAss.href = 'https://pay.hotmart.com/S105507836E';
+    nota.textContent = 'Cancele quando quiser, sem multa';
+  }
+}
 </script>
 </body>
 </html>

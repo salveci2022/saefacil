@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /vendas_saefacil.html
+Allow: /Manual_SAEFacil.html
+Allow: /termos.html
+Allow: /privacidade.html
+Disallow: /api/
+Disallow: /admin
+
+Sitemap: https://saefacil.onrender.com/sitemap.xml
