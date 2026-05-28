@@ -407,7 +407,7 @@ def gerar_sae():
         return jsonify({'erro': 'Conta bloqueada.'}), 403
     u.plano_ativo()
     if u.plano == 'gratuito':
-        return jsonify({'erro': 'Seu período gratuito expirou. Assine o Plano Pro por R$ 67,00/mês para continuar.', 'limite': True, 'expirado': True}), 403
+        return jsonify({'erro': 'Seu período gratuito expirou. Assine o Plano Pro por R$ 97,00/mês para continuar.', 'limite': True, 'expirado': True}), 403
     # Rate limiting: max 30 SAEs por minuto por usuário
     ip = get_ip()
     uid_str = get_jwt_identity()

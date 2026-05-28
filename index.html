@@ -357,7 +357,7 @@ textarea.ci{min-height:90px}
         <button class="btn-up" style="background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6)">Ver Pro</button>
       </div>
       <div id="banner-expirado" class="expirado-banner" onclick="assinar()" style="display:none;cursor:pointer">
-        <h3>⭐ Assine o Plano Pro — R$ 67,00/mês</h3>
+        <h3>⭐ Assine o Plano Pro — R$ 97,00/mês</h3>
         <p>Assine o Plano Pro por R$ 97,00/mês e continue usando sem limites</p>
         <button class="btn-assinar-agora" onclick="assinar()">🚀 Assinar agora — R$ 97,00/mês</button>
       </div>
@@ -366,7 +366,7 @@ textarea.ci{min-height:90px}
         <button class="btn-up">Gerenciar</button>
       </div>
       <div id="banner-gratuito" class="plano-banner" onclick="assinar()" style="display:none;background:linear-gradient(135deg,#0F4C81,#1a6b4a)">
-        <div><h3>⭐ Assine o Plano Pro</h3><p id="banner-txt2">SAEs ilimitadas por R$ 67,00/mês</p></div>
+        <div><h3>⭐ Assine o Plano Pro</h3><p id="banner-txt2">SAEs ilimitadas por R$ 97,00/mês</p></div>
         <button class="btn-up" style="background:var(--amarelo);color:#1a3a6b;border-color:var(--amarelo)">Assinar</button>
       </div>
       <div class="ac-grid">
@@ -920,7 +920,7 @@ textarea.ci{min-height:90px}
         <div class="pf-av" id="pf-av">?</div>
         <div><div class="pf-nome" id="pf-nome">...</div><div class="pf-cargo" id="pf-cargo">Enfermagem</div><div style="font-size:12px;color:var(--cinza3);margin-top:2px" id="pf-coren">COREN</div></div>
       </div>
-      <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">⭐ Pro</div><div class="pc-desc">SAEs ilimitadas • R$ 67,00/mês</div></div>
+      <div class="plano-card"><div class="pc-label">Plano atual</div><div class="pc-nome" id="pc-nome">⭐ Pro</div><div class="pc-desc">SAEs ilimitadas • R$ 97,00/mês</div></div>
 
       <!-- EDITAR PERFIL -->
       <div class="card" style="margin-bottom:14px">
@@ -1975,11 +1975,11 @@ function atualizarBannerPlano(){
     if(trialDias <= 1){
       el.classList.add('urgente');
       document.getElementById('trial-titulo').textContent = '🔴 Último dia de trial!';
-      document.getElementById('trial-txt').textContent = 'Assine agora e não perca o acesso — R$ 67,00/mês';
+      document.getElementById('trial-txt').textContent = 'Assine agora e não perca o acesso — R$ 97,00/mês';
     } else {
       el.classList.remove('urgente');
       document.getElementById('trial-titulo').textContent = `⏳ ${trialDias} dias de trial restantes`;
-      document.getElementById('trial-txt').textContent = 'Após o trial, o Plano Pro é ativado por R$ 67,00/mês';
+      document.getElementById('trial-txt').textContent = 'Após o trial, o Plano Pro é ativado por R$ 97,00/mês';
     }
   } else if(plano === 'gratuito'){
     // Mostrar sempre o banner de assinar Pro (sem mencionar gratuito)
