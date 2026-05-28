@@ -580,7 +580,7 @@ footer{background:#061220;padding:40px 24px;text-align:center}
       </button>
       <button id="btn-anual" onclick="togglePlano('anual')"
         style="padding:10px 28px;border-radius:0 100px 100px 0;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--amarelo);background:transparent;color:var(--amarelo);transition:.2s">
-        Anual <span style="font-size:11px;background:rgba(245,200,66,.2);padding:2px 8px;border-radius:20px;margin-left:4px">Economize 31%</span>
+        Anual <span style="font-size:11px;background:rgba(245,200,66,.2);padding:2px 8px;border-radius:20px;margin-left:4px">Economize 40%</span>
       </button>
     </div>
 
@@ -596,10 +596,10 @@ footer{background:#061220;padding:40px 24px;text-align:center}
       <div id="plano-anual" style="display:none">
         <div class="preco-popular" style="background:var(--verde2)">🏆 Melhor Custo-Benefício — Anual</div>
         <div class="preco-nome">SAE Fácil Pro Anual</div>
-        <div class="preco-valor">R$ 67<span>/mês</span></div>
-        <div class="preco-per" style="color:var(--amarelo);font-weight:700">R$ 804/ano · Você economiza R$ 360 por ano!</div>
+        <div class="preco-valor">R$ 57<span>/mês</span></div>
+        <div class="preco-per" style="color:var(--amarelo);font-weight:700">R$ 560/ano · Você economiza R$ 484 por ano!</div>
         <div style="background:rgba(245,200,66,.15);border:1px solid rgba(245,200,66,.3);border-radius:10px;padding:8px 14px;margin:12px 0;font-size:13px;color:rgba(255,255,255,.8)">
-          💳 Parcelado em 12x no cartão de crédito — sem juros
+          💳 12x de R$ 57,92 no cartão — sem juros
         </div>
       </div>
       <ul class="preco-lista">
@@ -722,9 +722,9 @@ function togglePlano(tipo){
     btnA.style.color = 'var(--azul)';
     btnM.style.background = 'transparent';
     btnM.style.color = 'var(--amarelo)';
-    btnAss.textContent = '🚀 Assinar Anual — R$ 67/mês (R$ 804/ano)';
+    btnAss.textContent = '🚀 Assinar Anual — 12x de R$ 57,92';
     btnAss.href = 'https://pay.hotmart.com/S105507836E?off=p8wbjy0i';
-    nota.textContent = 'Cobrado R$ 804 no cartão em até 12x sem juros';
+    nota.textContent = 'Cobrado em 12x de R$ 57,92 no cartão';
   } else {
     mensal.style.display = 'block';
     anual.style.display  = 'none';
