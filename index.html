@@ -1195,11 +1195,70 @@ const NANDA_DB = [
 ];;
 
 // INIT
+
+// TELA DE PAGAMENTO — exibida quando plano não é pro
+function mostrarTelaPagamento(msg){
+  document.getElementById('tela-login').innerHTML = `
+    <div class="lc" style="text-align:center;max-width:480px">
+      <div class="lc-logo">
+        <div class="lc-icon">🩺</div>
+        <div class="lc-titulo">SAE Fácil</div>
+        <div class="lc-sub">Assistente de Enfermagem com IA</div>
+      </div>
+
+      <div style="background:#E8F5E9;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#2e7d32;text-align:left">
+        ✅ ${msg}
+      </div>
+
+      <ul style="list-style:none;text-align:left;font-size:13px;color:#1A1F2E;line-height:2;margin-bottom:20px;background:#f4f6f9;border-radius:12px;padding:14px 18px">
+        <li>✅ Evolução SOAP com IA</li>
+        <li>✅ 121 Diagnósticos NANDA-I 2024-2026</li>
+        <li>✅ Calculadora de Medicamentos</li>
+        <li>✅ Passagem de Plantão SBAR + FAST HUG</li>
+        <li>✅ Escores Braden, Glasgow, Morse</li>
+        <li>✅ PDF com seu nome e COREN</li>
+        <li>✅ Funciona no celular no plantão</li>
+      </ul>
+
+      <div style="font-size:11px;font-weight:800;color:#6B7590;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">Escolha seu plano</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+
+        <div style="border:2px solid #E8ECF2;border-radius:16px;padding:16px 12px;text-align:center;cursor:pointer" onclick="window.open('https://pay.hotmart.com/S105507836E','_blank')">
+          <div style="font-size:11px;font-weight:800;color:#6B7590;text-transform:uppercase;margin-bottom:6px">Mensal</div>
+          <div style="font-size:28px;font-weight:900;color:#0F4C81;line-height:1">R$ 97</div>
+          <div style="font-size:12px;color:#6B7590;margin-bottom:12px">por mês</div>
+          <div style="background:#0F4C81;color:#fff;border-radius:99px;padding:8px 10px;font-size:12px;font-weight:700">Assinar mensal</div>
+        </div>
+
+        <div style="border:2px solid #0A7C5C;border-radius:16px;padding:16px 12px;text-align:center;cursor:pointer;position:relative" onclick="window.open('https://pay.hotmart.com/S105507836E?offDiscount=true','_blank')">
+          <div style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#0A7C5C;color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;white-space:nowrap">⭐ MELHOR OPÇÃO</div>
+          <div style="font-size:11px;font-weight:800;color:#0A7C5C;text-transform:uppercase;margin-bottom:6px">Anual</div>
+          <div style="font-size:22px;font-weight:900;color:#0A7C5C;line-height:1.1">12× R$ 57,92</div>
+          <div style="font-size:11px;color:#6B7590;margin-bottom:4px">≈ R$ 695/ano</div>
+          <div style="font-size:11px;color:#0A7C5C;font-weight:700;margin-bottom:10px">Economize R$ 484!</div>
+          <div style="background:#0A7C5C;color:#fff;border-radius:99px;padding:8px 10px;font-size:12px;font-weight:700">Assinar anual</div>
+        </div>
+
+      </div>
+
+      <div style="font-size:13px;color:#6B7590;margin-bottom:12px">
+        Já pagou? 
+        <span style="color:#1A6DB5;cursor:pointer;font-weight:700" onclick="location.reload()">Clique aqui para entrar</span>
+      </div>
+      <div style="font-size:12px;color:#6B7590">
+        Dúvidas? <strong>(34) 99636-5102</strong>
+      </div>
+    </div>
+  `;
+}
+
 window.onload = () => {
   U = JSON.parse(localStorage.getItem('sae_u')||'null');
   SAES = JSON.parse(localStorage.getItem('sae_d')||'[]');
   pacientesPlantao = JSON.parse(localStorage.getItem('sae_plantao')||'[]');
-  if (U) iniciar();
+  if (U && U.plano === 'pro') iniciar();
+  else if (U) mostrarTelaPagamento('Para acessar o SAE Fácil, conclua o pagamento.');
   const h = new Date().getHours();
   const s = document.getElementById('saud');
   if(s) s.textContent = h<12?'Bom dia! 👋':h<18?'Boa tarde! 👋':'Boa noite! 👋';
@@ -1217,7 +1276,12 @@ async function fazerLogin(){
     const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
     const d=await r.json();
     if(!r.ok) throw new Error(d.erro||'Credenciais inválidas');
-    U={...d,email}; localStorage.setItem('sae_u',JSON.stringify(U)); iniciar();
+    U={...d,email}; localStorage.setItem('sae_u',JSON.stringify(U));
+    if(U.plano === 'pro'){
+      iniciar();
+    } else {
+      mostrarTelaPagamento('Para acessar o SAE Fácil, assine o plano Pro.');
+    }
   }catch(e){
     erro.textContent=e.message||'E-mail ou senha incorretos';
     erro.style.display='block';
@@ -1242,11 +1306,10 @@ async function fazerCadastro(){
     U={...d,email};
     localStorage.setItem('sae_u',JSON.stringify(U));
     // Redireciona para pagamento se plano não for pro
-    if(U.plano !== 'pro'){
-      toast('Conta criada! Conclua o pagamento para acessar o SAE Fácil.','ok');
-      setTimeout(()=>window.open('https://pay.hotmart.com/S105507836E','_blank'),1500);
-    } else {
+    if(U.plano === 'pro'){
       iniciar(); toast('Bem-vindo(a) ao SAE Fácil! 🎉','ok');
+    } else {
+      mostrarTelaPagamento('Conta criada com sucesso! Assine o plano Pro para acessar.');
     }
   }catch(e){
     erro.textContent=e.message||'Erro ao criar conta. Tente novamente.';
@@ -1967,7 +2030,7 @@ function atualizarStats(){
 }
 
 function atualizarBannerPlano(){
-  const plano = U?.plano || 'gratuito';
+  const plano = U?.plano || '';
   const trialDias = U?.trial_dias || 0;
   const temTrial = U?.tem_trial || false;
   // Esconde todos os banners
@@ -1987,9 +2050,9 @@ function atualizarBannerPlano(){
       document.getElementById('trial-titulo').textContent = `⏳ ${trialDias} dias de trial restantes`;
       document.getElementById('trial-txt').textContent = 'Após o trial, o Plano Pro é ativado por R$ 97,00/mês';
     }
-  } else if(plano === 'gratuito'){
-    // Mostrar sempre o banner de assinar Pro (sem mencionar gratuito)
-    const el=document.getElementById('banner-gratuito'); if(el) el.style.display='flex';
+  } else {
+    // Qualquer plano diferente de 'pro' — redireciona para pagamento
+    mostrarTelaPagamento('Para acessar o SAE Fácil, assine o plano Pro.');
   }
 }
 
