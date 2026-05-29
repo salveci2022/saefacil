@@ -1446,8 +1446,24 @@ function iniciar(){
   document.getElementById('gr-nome').textContent=`Olá, ${(U.nome||'').split(' ')[0]}! Pronto para documentar? 📋`;
   // Busca stats atualizados do servidor (inclui plano e trial_dias)
   fetch(`${API}/api/stats`,{headers:{'Authorization':`Bearer ${U?.token||''}`}})
-    .then(r=>r.json()).then(d=>{
+    .then(r=>{
+      // Sessão inválida — força logout e tela de pagamento
+      if(r.status===401){
+        localStorage.removeItem('sae_u');
+        location.reload();
+        return null;
+      }
+      return r.json();
+    }).then(d=>{
+      if(!d) return;
       if(d.plano){ U.plano=d.plano; U.trial_dias=d.trial_dias||0; localStorage.setItem('sae_u',JSON.stringify(U)); }
+      // Se plano não for pro, expulsa para tela de pagamento imediatamente
+      if(U.plano !== 'pro'){
+        document.getElementById('tela-app').classList.remove('ativa');
+        document.getElementById('tela-login').classList.add('ativa');
+        mostrarTelaPagamento('Para acessar o SAE Fácil, assine o plano Pro.');
+        return;
+      }
       document.getElementById('s-hj').textContent=d.hoje||0;
       document.getElementById('s-ms').textContent=d.mes||0;
       document.getElementById('s-tt').textContent=d.total||0;
