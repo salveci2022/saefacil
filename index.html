@@ -297,10 +297,15 @@ textarea.ci{min-height:90px}
       <div class="fg"><label class="fl">E-mail</label><input type="email" id="l-email" class="fi" placeholder="seu@email.com"></div>
       <div class="fg"><label class="fl">Senha</label><div style="position:relative"><input type="password" id="l-senha" class="fi" placeholder="••••••••" style="padding-right:42px"><span onclick="toggleSenha('l-senha',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;opacity:.5" title="Mostrar/ocultar senha">👁️</span></div><div id="l-erro" class="ferr">E-mail ou senha incorretos</div></div>
       <button class="btn-p" onclick="fazerLogin()">Entrar</button>
-      <div class="ls">Não tem conta? <span onclick="ver('form-cadastro')">Cadastre-se grátis</span></div>
-      <div class="ls" style="margin-top:6px"><span onclick="abrirRecuperarSenha()" style="color:var(--cinza3);font-size:13px">🔑 Esqueci minha senha</span></div>
+      <div class="ls"><a href="https://pay.hotmart.com/S105507836E" target="_blank" style="color:#1A6DB5;font-weight:700">Assinar para ter acesso →</a></div>
+      <div class="ls" style="margin-top:6px"><span onclick="abrirRecuperarSenha()" style="color:var(--cinza3);font-size:13px">🔑 Esqueci minha senha
+      <div style="text-align:center;margin-top:20px;padding:16px;background:#E8F5E9;border-radius:12px">
+        <div style="font-size:13px;color:#2e7d32;font-weight:700;margin-bottom:8px">Ainda não tem acesso?</div>
+        <a href="https://pay.hotmart.com/S105507836E" target="_blank" style="display:block;background:#0A7C5C;color:#fff;padding:12px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none">🚀 Assinar o SAE Fácil</a>
+        <div style="font-size:11px;color:#6B7590;margin-top:8px">R$ 97/mês · ou 12× R$ 57,92 no anual</div>
+      </div></span></div>
     </div>
-    <div id="form-cadastro" style="display:none">
+    <div id="form-cadastro" style="display:none!important" style="display:none">
       <div class="fg"><label class="fl">Nome completo</label><input type="text" id="c-nome" class="fi" placeholder="Enf. Maria Silva"></div>
       <div class="fg"><label class="fl">Categoria</label>
         <select id="c-cat" class="fi"><option value="">Selecione...</option><option>Enfermeiro(a)</option><option>Técnico(a) de Enfermagem</option><option>Enfermeiro(a) Especialista</option></select>
@@ -1266,7 +1271,7 @@ window.onload = () => {
 };
 
 // AUTH
-function ver(id){['form-login','form-cadastro'].forEach(f=>document.getElementById(f).style.display=f===id?'block':'none')}
+function ver(id){ document.getElementById("form-login").style.display="block"; }
 async function fazerLogin(){
   const email=document.getElementById('l-email').value.trim();
   const senha=document.getElementById('l-senha').value;
