@@ -1212,16 +1212,14 @@ async function fazerLogin(){
   const email=document.getElementById('l-email').value.trim();
   const senha=document.getElementById('l-senha').value;
   const erro=document.getElementById('l-erro');
+  erro.style.display='none';
   try{
     const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
     const d=await r.json();
-    if(!r.ok) throw new Error(d.erro);
+    if(!r.ok) throw new Error(d.erro||'Credenciais inválidas');
     U={...d,email}; localStorage.setItem('sae_u',JSON.stringify(U)); iniciar();
   }catch(e){
-    const us=JSON.parse(localStorage.getItem('sae_us')||'[]');
-    const u=us.find(u=>u.email===email&&u.senha===senha);
-    if(u){U=u;localStorage.setItem('sae_u',JSON.stringify(U));iniciar();return;}
-    if(email&&senha.length>=3){U={nome:email.split('@')[0],email,categoria:'Enfermeiro(a)',coren:'COREN-DF 000000',plano:'gratuito'};localStorage.setItem('sae_u',JSON.stringify(U));iniciar();return;}
+    erro.textContent=e.message||'E-mail ou senha incorretos';
     erro.style.display='block';
   }
 }
@@ -1232,20 +1230,28 @@ async function fazerCadastro(){
   const email=document.getElementById('c-email').value.trim();
   const senha=document.getElementById('c-senha').value;
   const erro=document.getElementById('c-erro');
-  if(!nome||!cat||!email||senha.length<6){erro.style.display='block';return;}
+  if(!nome||!cat||!email||senha.length<6){
+    erro.textContent='Preencha todos os campos. Senha mínimo 6 caracteres.';
+    erro.style.display='block';return;
+  }
   erro.style.display='none';
   try{
     const r=await fetch(`${API}/api/auth/registro`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,categoria:cat,coren,email,senha})});
     const d=await r.json();
-    if(!r.ok) throw new Error(d.erro);
+    if(!r.ok) throw new Error(d.erro||'Erro ao criar conta');
     U={...d,email};
+    localStorage.setItem('sae_u',JSON.stringify(U));
+    // Redireciona para pagamento se plano não for pro
+    if(U.plano !== 'pro'){
+      toast('Conta criada! Conclua o pagamento para acessar o SAE Fácil.','ok');
+      setTimeout(()=>window.open('https://pay.hotmart.com/S105507836E','_blank'),1500);
+    } else {
+      iniciar(); toast('Bem-vindo(a) ao SAE Fácil! 🎉','ok');
+    }
   }catch(e){
-    const us=JSON.parse(localStorage.getItem('sae_us')||'[]');
-    U={nome,categoria:cat,coren,email,senha,plano:'gratuito'};
-    us.push(U);localStorage.setItem('sae_us',JSON.stringify(us));
+    erro.textContent=e.message||'Erro ao criar conta. Tente novamente.';
+    erro.style.display='block';
   }
-  localStorage.setItem('sae_u',JSON.stringify(U));
-  iniciar(); toast('Bem-vindo(a) ao SAE Fácil! 🎉','ok');
 }
 // ── PERFIL — carregar campos ao abrir ──
 function carregarCamposPerfil(){
